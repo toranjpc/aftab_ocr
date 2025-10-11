@@ -1,0 +1,53 @@
+{
+  "name": "amuzesh",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:ws": "node rtsp-server.js",
+    "dev": "nuxt",
+    "dev:host": "nuxt --hostname 0.0.0.0",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate",
+    "lint:js": "eslint --ext \".js,.vue\" --ignore-path .gitignore .",
+    "lint": "npm run lint:js",
+    "deploy": "push-dir --dir=dist --branch=production --cleanup"
+  },
+  "dependencies": {
+    "@nuxtjs/auth": "^4.9.1",
+    "@nuxtjs/axios": "^5.13.6",
+    "@nuxtjs/pwa": "^3.3.5",
+    "animate.css": "^4.1.1",
+    "apexcharts": "^3.40.0",
+    "chart.js": "^2.9.4",
+    "core-js": "^3.15.1",
+    "event-source-polyfill": "^1.0.31",
+    "express": "^5.1.0",
+    "express-ws": "^5.0.2",
+    "jalali-moment": "^3.3.11",
+    "majra": "0.4.16",
+    "num2persian": "^3.2.2",
+    "nuxt": "^2.15.7",
+    "rtsp-relay": "^1.9.0",
+    "validate": "^5.2.0",
+    "vue-apexcharts": "^1.6.2",
+    "vue-chartjs": "^3.5.1",
+    "vue-gates": "^2.1.0",
+    "nuxt-leaflet": "0.0.25",
+    "vue2-dropzone": "^3.6.0",
+    "vuetify": "^2.5.5"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.14.7",
+    "@mdi/font": "^5.9.55",
+    "@nuxtjs/eslint-config": "^6.0.1",
+    "@nuxtjs/eslint-module": "^3.0.2",
+    "@nuxtjs/vuetify": "^1.12.1",
+    "eslint": "^7.29.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-nuxt": "^2.0.0",
+    "eslint-plugin-vue": "^7.12.1",
+    "prettier": "^2.3.2",
+    "push-dir": "^0.4.1"
+  }
+}

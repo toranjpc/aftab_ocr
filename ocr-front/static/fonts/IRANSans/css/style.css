@@ -1,0 +1,21 @@
+﻿@import url(./fontiran.css);
+
+.set-iransas,
+.set-iransas h1,
+.set-iransas h2,
+.set-iransas h3,
+.set-iransas h4,
+.set-iransas h5,
+.set-iransas h6,
+.set-iransas input,
+.set-iransas textarea {
+  font-family: IRANSans !important;
+  font-weight: 300;
+}
+
+h1 {
+  font-weight: bold;
+}
+.v-list-item--active {
+  color: white !important;
+}

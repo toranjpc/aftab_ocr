@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  front:
+    image: bandar-front
+    container_name: bandar-front
+    build: .
+    ports:
+    - 3232:3232
+    volumes:
+    - .:/app

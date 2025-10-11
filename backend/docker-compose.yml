@@ -1,0 +1,60 @@
+version: "3.7"
+
+networks:
+    backend:
+
+
+services:
+    proxy:
+        image: nginx:latest
+        ports:
+            - "9090:80"
+        volumes:
+            - .:/var/www/app
+            - ./docker/nginx/nginx-site.conf:/etc/nginx/conf.d/default.conf
+        networks:
+            - backend
+
+    php:
+        build:
+            context: ./docker/php
+            dockerfile: Dockerfile
+        volumes:
+            - .:/var/www/app
+        networks:
+            - backend
+        restart: always
+        entrypoint: >
+         /bin/sh -c "
+         composer install &&
+         php artisan migrate &&
+         php-fpm
+         "
+
+    db:
+      image: mariadb
+      restart: always
+      environment:
+        MARIADB_USER: add
+        MARIADB_PASSWORD: add
+        MARIADB_ROOT_PASSWORD: 66665521
+        MARIADB_DATABASE: add
+      ports:
+        - "3307:3306"
+      volumes:
+        - ./docker/data/db_data:/var/lib/mysql
+        - ./docker/mysql:/etc/mysql
+
+    phpmyadmin:
+        image: phpmyadmin
+        container_name: phpmyadmin
+        restart: always
+        environment:
+          PMA_HOST: db
+          PMA_USER: add
+          PMA_PASSWORD: add
+          PMA_PORT: 3307
+        ports:
+          - "8080:80"
+        depends_on:
+          - db
