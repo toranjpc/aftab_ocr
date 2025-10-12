@@ -15,10 +15,13 @@ export default {
   beforeCreate() {
     const hiddenActions = getPermissions.call(this)
 
+    var matchGate = this.$route.params.id || 0;
+
     this.$majra.init({
       hiddenActions,
       fields: fields(this),
-      mainRoute: { route: '/camera', key: 'Camera' },
+      mainRoute: { route: `/camera/?group=${matchGate}`, key: 'Camera' },
+      formData: { group: matchGate }
     })
   },
 }

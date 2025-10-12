@@ -50,13 +50,13 @@ handlers.forEach(({ key, handler }) => {
 
     // مدیریت خطاها
     const errorHandler = (error) => {
-      console.error(`WebSocket error for ${name} (${connectionId}):`, error);
+      console.error(`WebSocket error for ${key} (${connectionId}):`, error);
       cleanupConnection(connectionId);
     };
 
     // مدیریت بسته شدن connection
     const closeHandler = () => {
-      console.log(`Connection closed for ${name}, ID: ${connectionId}`);
+      console.log(`Connection closed for ${key}, ID: ${connectionId}`);
       cleanupConnection(connectionId);
     };
 
@@ -138,7 +138,7 @@ process.on('unhandledRejection', (reason, promise) => {
 app.listen(8081, () => {
   console.log(`سرور WebSocket روی پورت ${8081} اجرا شد`);
   console.log('دوربین‌های فعال:');
-  handlers.forEach(({ name }) => {
-    console.log(`- ${name}: ws://localhost:8081/api/stream/${name}`);
+  handlers.forEach(({ key }) => {
+    console.log(`- ${key}: ws://localhost:8081/api/stream/${key}`);
   });
 });

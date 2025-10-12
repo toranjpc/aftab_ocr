@@ -49,6 +49,7 @@ export default function (val) {
       isHeader: true,
       props: {
         rules: [validations.required()],
+        readonly: true,
       },
     },
 

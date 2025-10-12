@@ -1,12 +1,7 @@
 <template>
   <div class="w-100 d-flex flex-row flex-wrap justify-center">
-    <div
-      v-for="(camera, key) in cameras"
-      :key="'_' + key"
-      class="col-12 mb-3 mx-1"
-      :class="'col-md-' + col"
-      style="max-width: 350px"
-    >
+    <div v-for="(camera, key) in cameras" :key="'_' + key" class="col-12 mb-3 mx-1" :class="'col-md-' + col"
+      style="max-width: 350px">
       <div v-show="label" class="col-12 info white--text mb-2 rounded-lg">
         <v-icon dark right>fal fa-cctv</v-icon>
         <b>{{ camera.name }}</b>
@@ -65,7 +60,7 @@ export default {
   created() {
     this.getCameras();
   },
-  mounted() {},
+  mounted() { },
   methods: {
     getSafe,
 
