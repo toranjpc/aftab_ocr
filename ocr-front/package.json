@@ -28,12 +28,12 @@
     "majra": "0.4.16",
     "num2persian": "^3.2.2",
     "nuxt": "^2.15.7",
+    "nuxt-leaflet": "0.0.25",
     "rtsp-relay": "^1.9.0",
     "validate": "^5.2.0",
     "vue-apexcharts": "^1.6.2",
     "vue-chartjs": "^3.5.1",
     "vue-gates": "^2.1.0",
-    "nuxt-leaflet": "0.0.25",
     "vue2-dropzone": "^3.6.0",
     "vuetify": "^2.5.5"
   },

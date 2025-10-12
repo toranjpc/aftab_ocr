@@ -1,0 +1,24 @@
+// rtsp-server.js
+const express = require('express');
+const expressWs = require('express-ws');
+const { proxy } = require('rtsp-relay')(express());
+
+const app = express();
+expressWs(app);
+
+// ✅ RTSP URL با رمز encoded
+const CAMERA_URL = 'rtsp://admin:Admin%40123@192.168.10.10:554';
+
+// WebSocket برای پخش ویدیو
+app.ws('/ws/stream/main', proxy({ url: CAMERA_URL }));
+
+// مسیر تست اتصال WebSocket (نه RTSP)
+app.ws('/ws/test', (ws, req) => {
+  ws.send('✅ WebSocket Server OK');
+  ws.on('message', msg => ws.send(`Echo: ${msg}`));
+});
+
+const PORT = 9000;
+app.listen(PORT, () => {
+  console.log(`🎥 RTSP relay running on: ws://localhost:${PORT}/ws/stream/main`);
+});

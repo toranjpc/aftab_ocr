@@ -32,7 +32,7 @@ Route::get('/', function () {
 
 Route::get('/test', function () {
 
-    $text = [
+   return $text = [
         "@attributes" =>  [
             "xmlnxsd" => "http://www.w3.org/2001/XMLSchema",
             "xmlnxsi" => "http://www.w3.org/2001/XMLSchema-instance"

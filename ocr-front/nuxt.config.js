@@ -6,7 +6,7 @@
 // const domain = 'http://46.148.36.110:8080/'
 
 // const domain = 'http://46.148.36.110:8000/ocrbackend/'
-const domain = 'http://api.local/'
+const domain = '/api/'
 const cameraUrls = {
   "1": {
     title: "شرقی 1",
@@ -115,7 +115,7 @@ export default {
 
   server: {
     host: '0.0.0.0',
-    port: 3232,
+    port: 8082,
   },
 
   auth: {
@@ -160,5 +160,9 @@ export default {
 
   build: {
     transpile: ['rtsp-relay']
-  }
+  },
+
+  //   serverMiddleware: [
+  //   '~/serverMiddleware/rtsp-relay.js'
+  // ]
 }
