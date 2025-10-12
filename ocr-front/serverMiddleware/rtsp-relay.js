@@ -7,14 +7,27 @@ require('events').EventEmitter.defaultMaxListeners = 20;
 
 // تنظیمات دوربین‌ها
 const cameras = {
-  "1": {
+  "west_1": {
     name: 'plate',
     url: 'rtsp://admin:Admin@123@192.168.10.10:554/cam/realmonitor?channel=1&subtype=1'
+  },
+  "east_1": {
+    name: 'plate',
+    url: 'rtsp://admin:Admin@123@172.23.11.21:554/cam/realmonitor?channel=1&subtype=1'
+  },
+  "east_2": {
+    name: 'plate',
+    url: 'rtsp://admin:Admin@123@172.23.12.21:554/cam/realmonitor?channel=1&subtype=1'
+  },
+  "east_3": {
+    name: 'plate',
+    url: 'rtsp://admin:Admin@123@172.23.13.21:554/cam/realmonitor?channel=1&subtype=1'
   },
 };
 
 // ایجاد handler برای هر دوربین
-const handlers = Object.values(cameras).map(camera => ({
+const handlers = Object.entries(cameras).map(([key, camera]) => ({
+  key,
   ...camera,
   handler: proxy({
     url: camera.url,
@@ -23,15 +36,16 @@ const handlers = Object.values(cameras).map(camera => ({
   })
 }));
 
+
 // مدیریت active connections
 const activeConnections = new Map();
 
 // ثبت routeهای WebSocket برای هر دوربین
-handlers.forEach(({ name, handler }) => {
-  app.ws(`/cam/${name}`, (ws, req) => {
+handlers.forEach(({ key, handler }) => {
+  app.ws(`/cam/${key}`, (ws, req) => {
     const connectionId = Date.now() + Math.random();
+    console.log(`New connection for ${key}, ID: ${connectionId}`);
 
-    console.log(`New connection for ${name}, ID: ${connectionId}`);
     activeConnections.set(connectionId, ws);
 
     // مدیریت خطاها

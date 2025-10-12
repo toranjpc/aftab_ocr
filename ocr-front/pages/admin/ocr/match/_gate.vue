@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-column">
-    <CameraWidget :col="6" :gate="gateName" :matchGate="matchGate" />
+    <CameraWidget :col="6" :gate="this.matchGate" :matchGate="matchGate" />
     <CurrentLog :item="lastTruck" />
 
     <DynamicTemplate>

@@ -22,7 +22,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/1',
+        to: '/admin/ocr/match/west_1',
         text: 'مچینگ',
         icon: 'cctv',
       },
@@ -85,7 +85,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/2',
+        to: '/admin/ocr/match/east_1',
         text: 'مچینگ',
         icon: 'cctv',
       },
@@ -148,7 +148,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/3',
+        to: '/admin/ocr/match/east_2',
         text: 'مچینگ',
         icon: 'cctv',
       },
@@ -211,7 +211,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/4',
+        to: '/admin/ocr/match/east_3',
         text: 'مچینگ',
         icon: 'cctv',
       },

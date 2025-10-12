@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex flex-column">
     <div class="d-flex flex-row flex-wrap align-center justify-center">
-      <CameraWidget v-for="gate in gates" :key="gate" :gate="mapGates[gate]" />
+      <CameraWidget v-for="gate in gates" :key="gate" :gate="this.matchGate" />
     </div>
 
     <DynamicTemplate>

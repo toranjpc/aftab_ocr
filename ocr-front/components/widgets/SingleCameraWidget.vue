@@ -109,7 +109,8 @@ export default {
         // url: `ws://localhost:2000/api/stream/${camera.type}`,
         // url: `ws://${window.location.host}/ws/api/stream/${camera.type}`,
         // url: `ws://${this.cameraDet.camera.ip}/ws/api/stream/${camera.type}`,
-        url: `ws://${camera.ip}/ws/api/stream/${camera.type}`,
+        // url: `ws://${camera.ip}/ws/api/stream/${camera.type}`,
+        url: `ws://${window.location.hostname}:4200/cam/${this.gate}`,
         canvas: document.getElementById(`canvas-${camera.id}`)
       });
 

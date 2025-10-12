@@ -12,6 +12,7 @@ use Modules\Ocr\OcrBuffer;
 use Modules\Ocr\Jobs\ProcessOcrLog;
 use Modules\Ocr\Models\OcrMatch;
 use Modules\Ocr\Requests\OcrLogRequest;
+use App\Models\Log as reqlog;
 
 class OcrLogController extends Controller
 {
@@ -107,6 +108,14 @@ class OcrLogController extends Controller
                 $ocrLog->id
             );
         }
+
+
+        reqlog::create([
+            "table_name" => "ocr_logs",
+            "table_id" => $ocrLog->id,
+            "log_type" => "ai",
+            "data" => $request,
+        ]);
 
         return ['id5' => $ocrLog->id];
     }
