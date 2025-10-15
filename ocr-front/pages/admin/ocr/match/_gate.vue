@@ -194,10 +194,10 @@ export default {
 
     gateName() {
       return {
-        1: 'west_1',
-        2: 'east_1',
-        3: 'east_2',
-        4: 'east_3',
+        1: '1',
+        2: '2',
+        3: '3',
+        4: '4',
       }[this.gateId]
     },
 
@@ -406,7 +406,7 @@ export default {
         container_ccs_ok: ['فاکتور (کانتینر)', 'green'],
         container_ccs_nok: ['بدون فاکتور', 'red'],
         plate_ccs_ok: ['فاکتور (پلاک)', 'green'],
-        plate_css_nok: ['بدون فاکتور', 'red'],
+        plate_ccs_nok: ['بدون فاکتور', 'red'],
       }
 
       return {

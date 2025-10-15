@@ -15,9 +15,9 @@ class CreateLogTable extends Migration
     {
         Schema::create('logs', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->bigInteger('user_id')->unsigned();
+            $table->bigInteger('user_id')->unsigned()->default(0);
             $table->dateTime('log_date');
-            $table->string('table_name')->nullable();//, 50
+            $table->string('table_name', 50)->nullable();//
             $table->bigInteger('table_id')->default(0);
             $table->string('log_type', 50);
             $table->longText('data');

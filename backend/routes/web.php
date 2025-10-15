@@ -10,10 +10,14 @@ use Modules\Ocr\Models\OcrMatch;
 use Modules\Ocr\OcrBuffer;
 use Modules\Ocr\TruckMatcher;
 use modules\Auth\Models\User;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 
 //حذف
 Route::get('/', function () {
+    return url()->current();
     // if (!auth()->check()) {
     //     $user = User::first();
     //     // $user->password = bcrypt("0012300123");
@@ -30,9 +34,125 @@ Route::get('/', function () {
 // php artisan queue:listen
 // php artisan queue:work --daemon --sleep=1 --tries=3
 
+
+// Route::post('/test', function () {
+//     try {
+//         Log::error('Simulation failed: ' . json_encode(request()->all()));
+//     } catch (\Throwable $th) {
+//         throw $th;
+//     }
+// });
 Route::get('/test', function () {
 
-   return $text = [
+    // $response = Http::withoutVerifying()->post("http://172.16.13.10:8083/test", ['since_updated' => 0]);
+    // return;
+    try {
+
+        set_time_limit(0);
+
+        $response = Http::withoutVerifying()->get("https://api.hssai.ir/test", ['since_updated' => 0]);
+        $records = collect($response->json());
+
+        $plateNumbers = $records->pluck('plate_number');
+        $containerNumbers = $records->pluck('container_code');
+
+        $existingPlates = Modules\Ocr\Models\OcrLog::whereIn('plate_number', $plateNumbers)->pluck('plate_number');
+        $existingContainers = Modules\Ocr\Models\OcrLog::whereIn('container_code', $containerNumbers)->pluck('container_code');
+
+        $records = $records->reject(
+            fn($r) =>
+            $existingPlates->contains($r['plate_number']) ||
+                $existingContainers->contains($r['container_code'])
+        );
+
+        foreach ($records as $record) {
+            echo 'entiring : ' . $record['id'] . "<br />";
+
+            $ocrLog = OcrLog::create(
+                collect($record)->except(['match_status', 'camera_number'])->toArray()
+            );
+            OcrBuffer::addToBuffer($ocrLog, 1, isset($record['plate_number']) ? 'plate' : 'container');
+            ProcessOcrLog::dispatch($ocrLog->id);
+            sleep(5);
+
+            /*
+
+            $plateData = [
+                'ocr_accuracy' => 0.95,
+                'plate_type' => 'ABC',
+                'log_time' => now()->toDateTimeString(),
+                'plate_number' => $record['plate_number'],
+                'direction' => 'entry',
+                'container_code' => '',
+                'container_code_validation' => 0,
+                'frequency' => 1.0,
+                'plate_reading_status' => 'read',
+                'camera_number' => 1,
+                'gate_number' => 1,
+                'image_time' => now()->toDateTimeString(),
+            ];
+
+            try {
+                Http::withoutVerifying()
+                    ->attach('plate_image', file_get_contents(public_path('کراپ پلاک.png')), 'dummy_plate.jpg')
+                    ->attach('vehicle_image_front', file_get_contents(public_path('جلو کامیون.png')), 'dummy_front.jpg')
+                    ->attach('vehicle_image_back', file_get_contents(public_path('پشت کامیون.png')), 'dummy_back.jpg')
+                    ->attach('vehicle_image_left', file_get_contents(public_path('جلو کامیون.png')), 'dummy_left.jpg')
+                    ->attach('vehicle_image_right', file_get_contents(public_path('جلو کامیون.png')), 'dummy_right.jpg')
+                    ->post('http://172.16.13.10:8083/api/ocr-log', $plateData);
+            } catch (\Exception $ex) {
+                return $ex;
+                Log::error("Plate upload failed for {$record['plate_number']}: " . $ex->getMessage());
+            }
+
+            sleep(5);
+
+            $containerData = $plateData;
+            $containerData['plate_number'] = '';
+            $containerData['container_code'] = $record['container_code'];
+
+            try {
+                Http::withoutVerifying()
+                    ->attach('container_code_image', file_get_contents(public_path('کراپ کانتینر.png')), 'dummy_container.jpg')
+                    ->post('http://172.16.13.10:8083/api/ocr-log', $containerData);
+            } catch (\Exception $ex) {
+                return $ex;
+                Log::error("Container upload failed for {$record['container_code']}: " . $ex->getMessage());
+            }
+
+            sleep(5);
+            */
+        }
+
+        return response()->json(['status' => 'completed', 'count' => count($records)]);
+    } catch (\Exception $ex) {
+        return $ex;
+        Log::error('Simulation failed: ' . $ex->getMessage());
+        return ['error' => $ex->getMessage()];
+    }
+    return;
+
+
+
+    // try {
+    //     $response = Http::withoutVerifying()->get("https://api.hssai.ir/test", ['since_updated' => 0]);
+    //     return   $response = $response->json();
+
+
+
+
+    // } catch (\Exception $e) {
+    //     return $e->getMessage();
+    // }
+
+
+
+
+
+
+
+
+    return $text = [
         "@attributes" =>  [
             "xmlnxsd" => "http://www.w3.org/2001/XMLSchema",
             "xmlnxsi" => "http://www.w3.org/2001/XMLSchema-instance"

@@ -1,12 +1,20 @@
+//nuxt.config.js
+// 
+
 // const domain = 'https://ocrapi.add-app.ir/'
 
 // const domain = 'http://127.0.0.1:8000/'
 // const domain = 'http://bandar-api.test/'
 // const domain = 'http://185.145.187.250:8080/'
 // const domain = 'http://46.148.36.110:8080/'
-
 // const domain = 'http://46.148.36.110:8000/ocrbackend/'
-const domain = '/api/'
+
+// let domain = 'http://46.148.36.110:4200/ocrbackend/'
+// let domain = 'http://172.16.13.10:8083';
+let domain = '/ocrbackend';
+
+
+
 const cameraUrls = {
   "1": {
     title: "شرقی 1",
@@ -14,7 +22,7 @@ const cameraUrls = {
     camera: {
       camera_number: "1",
       ip: '46.148.36.110:8000',
-      type:'plate'
+      type: 'plate'
     }
   },
   "2": {
@@ -23,7 +31,7 @@ const cameraUrls = {
     camera: {
       camera_number: "1",
       ip: '46.148.36.110:8000',
-      type:'plate'
+      type: 'plate'
     }
   },
   "3": {
@@ -32,7 +40,7 @@ const cameraUrls = {
     camera: {
       camera_number: "1",
       ip: '46.148.36.110:8000',
-      type:'plate'
+      type: 'plate'
     }
   },
   "4": {
@@ -41,7 +49,7 @@ const cameraUrls = {
     camera: {
       camera_number: "1",
       ip: '46.148.36.110:8000',
-      type:'plate'
+      type: 'plate'
     }
   },
 }
@@ -102,20 +110,20 @@ export default {
   buildModules: ['@nuxtjs/pwa'],
 
   axios: {
-    baseURL: domain + 'api',
+    baseURL: domain + '/api',//+ ''
   },
 
   env: {
-    baseURL: domain,
-    uploadPath: domain + 'api/upload-file',
-    posCallbackUrl: domain + 'api/callback',
+    baseURL: domain + '/',//
+    uploadPath: domain + '/api/upload-file',//
+    posCallbackUrl: domain + '/api/callback',//
 
     cameraUrls: cameraUrls
   },
 
   server: {
     host: '0.0.0.0',
-    port: 8082,
+    port: 3232,
   },
 
   auth: {
@@ -154,7 +162,7 @@ export default {
   },
 
   router: {
-    base: '/ocr/',
+    base: '',///ocr/
     trailingSlash: false,
   },
 

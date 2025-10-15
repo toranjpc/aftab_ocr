@@ -6,7 +6,7 @@ import ConvertToImg from '@/helpers/NormalizeVehicleNumberAsImg.js'
 import NormalizeVehicleNumberAsImg from '@/helpers/NormalizeVehicleNumberAsImg'
 import NormalizeContainerCodeAsImg from '@/helpers/NormalizeContainerCodeAsImg'
 
-const url = process.env.baseURL
+const url = process.env.baseURL.replace("api/","")
 
 const runDebounce = debounce((callback) => {
   callback()

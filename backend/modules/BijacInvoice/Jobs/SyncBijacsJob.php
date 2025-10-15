@@ -29,6 +29,6 @@ class SyncBijacsJob implements ShouldQueue
     public function handle(BijacFetchService $service)
     {
         $res = $service->fetchAndStore();
-        echo json_encode($res);
+        // echo json_encode($res);
     }
 }

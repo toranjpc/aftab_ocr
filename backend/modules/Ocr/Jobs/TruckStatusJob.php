@@ -8,6 +8,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Queueable;
 use Modules\Ocr\Models\OcrMatch;
+use Modules\BijacInvoice\Clients\BijacApiClient;
+
 
 class TruckStatusJob implements ShouldQueue
 {
@@ -52,14 +54,15 @@ class TruckStatusJob implements ShouldQueue
                 }
             } else if ($bijac = $match->bijacs->first()) {
 
-
                 // if (!cache()->get('truckstatus_reran_' . $this->log)) {
                 //     cache()->put('truckstatus_reran_' . $this->log, true, 60);
 
-                //     (new Modules\BijacInvoice\Clients\BijacApiClient::fetchBijacs($this->log, $type))->handle();
+                //     $BijacApiClient = new BijacApiClient();
+                //     $BijacApiClient->fetchBijacs($this->log); //, $type
 
                 //     return (new self($this->log, $this->type))->handle();
                 // }
+
 
 
                 if ($bijac->type === 'gcoms') {

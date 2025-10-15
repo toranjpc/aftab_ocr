@@ -29,7 +29,7 @@ class OcrMatchController extends Controller
             "isCustomCheck"
         ]);
         if (!empty($request->gate)) {
-            // $ocrMatches->where('gate_number', $request->gate);
+            $ocrMatches->where('gate_number', $request->gate);
         } else {
             // $ocrMatches->where('gate_number', 0);
         }

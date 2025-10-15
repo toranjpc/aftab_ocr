@@ -84,6 +84,7 @@ export default {
     this._listen('captcha', () => {
       this.getCaptcha()
     })
+    console.log(process.env.baseURL)
   },
 
   methods: {

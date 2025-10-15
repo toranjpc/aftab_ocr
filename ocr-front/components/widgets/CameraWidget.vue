@@ -108,16 +108,14 @@ export default {
         // url: `ws://46.148.36.110:8000/ws/api/stream/${camera.type}`,
         // url: `ws://${window.location.host}/ws/api/stream/${camera.type}`,
         // url: `ws://${window.location.host}/ocr/ws/api/stream2/${camera.type}`,
-        url: `ws://${window.location.hostname}:4200/cam/${this.gate}`,
-        // url: `ws://${window.location.hostname}/cam/${camera.type}`,
-
+        
         // url: `ws://${this.cameraDet.camera.ip}/ws/api/stream/${camera.type}`,
         // url: `ws://${camera.ip}/ws/api/stream/${camera.type}`,
-
+        
+        url: `ws://${window.location.host}/cam/${this.gate}`,
         canvas: document.getElementById(`canvas-${camera.id}`),
       });
-
-      console.log(this.cameraDet);
+      // console.log(this.ca.meraDet);
     },
   },
 };

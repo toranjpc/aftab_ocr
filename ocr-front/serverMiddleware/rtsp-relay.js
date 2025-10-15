@@ -7,19 +7,19 @@ require('events').EventEmitter.defaultMaxListeners = 20;
 
 // تنظیمات دوربین‌ها
 const cameras = {
-  "west_1": {
+  "1": {
     name: 'plate',
     url: 'rtsp://admin:Admin@123@192.168.10.10:554/cam/realmonitor?channel=1&subtype=1'
   },
-  "east_1": {
+  "2": {
     name: 'plate',
     url: 'rtsp://admin:Admin@123@172.23.11.21:554/cam/realmonitor?channel=1&subtype=1'
   },
-  "east_2": {
+  "3": {
     name: 'plate',
     url: 'rtsp://admin:Admin@123@172.23.12.21:554/cam/realmonitor?channel=1&subtype=1'
   },
-  "east_3": {
+  "4": {
     name: 'plate',
     url: 'rtsp://admin:Admin@123@172.23.13.21:554/cam/realmonitor?channel=1&subtype=1'
   },
@@ -139,6 +139,6 @@ app.listen(8081, () => {
   console.log(`سرور WebSocket روی پورت ${8081} اجرا شد`);
   console.log('دوربین‌های فعال:');
   handlers.forEach(({ key }) => {
-    console.log(`- ${key}: ws://localhost:8081/api/stream/${key}`);
+    console.log(`- ${key}: ws://localhost:8081/cam/${key}`);
   });
 });

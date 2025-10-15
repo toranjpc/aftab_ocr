@@ -2,7 +2,7 @@ import { get as getSafe } from 'lodash'
 import NormalizeVehicleNumberAsImg from '@/helpers/NormalizeVehicleNumberAsImg'
 import NormalizeContainerCodeAsImg from '@/helpers/NormalizeContainerCodeAsImg'
 
-const url = process.env.baseURL
+const url = process.env.baseURL.replace("api/","")
 
 export default function (val) {
   return [

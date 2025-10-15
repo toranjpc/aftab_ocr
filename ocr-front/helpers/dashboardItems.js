@@ -22,7 +22,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/west_1',
+        to: '/admin/ocr/match/1',
         text: 'مچینگ',
         icon: 'cctv',
       },
@@ -42,7 +42,7 @@ export default [
       },
       {
         link: true,
-        to: '/admin/camera/west_1',
+        to: '/admin/camera/1',
         text: 'دوربین‌ها',
         icon: 'cctv',
       },
@@ -56,7 +56,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/monitoring/west_1',
+        to: '/admin/monitoring/1',
         text: 'گیت (نگهبانی)',
         icon: 'box',
       },
@@ -85,7 +85,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/east_1',
+        to: '/admin/ocr/match/2',
         text: 'مچینگ',
         icon: 'cctv',
       },
@@ -105,7 +105,7 @@ export default [
       },
       {
         link: true,
-        to: '/admin/camera/east_1',
+        to: '/admin/camera/2',
         text: 'دوربین‌ها',
         icon: 'cctv',
       },
@@ -119,7 +119,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/monitoring/east_1',
+        to: '/admin/monitoring/2',
         text: 'گیت (نگهبانی)',
         icon: 'box',
       },
@@ -148,7 +148,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/east_2',
+        to: '/admin/ocr/match/3',
         text: 'مچینگ',
         icon: 'cctv',
       },
@@ -168,7 +168,7 @@ export default [
       },
       {
         link: true,
-        to: '/admin/camera/east_2',
+        to: '/admin/camera/3',
         text: 'دوربین‌ها',
         icon: 'cctv',
       },
@@ -182,7 +182,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/monitoring/east_2',
+        to: '/admin/monitoring/3',
         text: 'گیت (نگهبانی)',
         icon: 'box',
       },
@@ -211,7 +211,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/match/east_3',
+        to: '/admin/ocr/match/4',
         text: 'مچینگ',
         icon: 'cctv',
       },
@@ -231,7 +231,7 @@ export default [
       },
       {
         link: true,
-        to: '/admin/camera/east_3',
+        to: '/admin/camera/4',
         text: 'دوربین‌ها',
         icon: 'cctv',
       },
@@ -245,7 +245,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/monitoring/east_3',
+        to: '/admin/monitoring/4',
         text: 'گیت غربی (نگهبانی)',
         icon: 'box',
       },

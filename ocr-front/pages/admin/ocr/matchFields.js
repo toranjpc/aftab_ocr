@@ -1,6 +1,6 @@
 import { get as getSafe } from 'lodash'
 
-const url = process.env.baseURL
+const url = process.env.baseURL.replace("api/","")
 
 export default function (val) {
   return [

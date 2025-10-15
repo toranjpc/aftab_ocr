@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Auth\Controllers\AuthController;
 use Modules\Auth\Controllers\AIAuthController;
 
-Route::get('captcha/', function () {
+Route::get('captcha', function () {
     return [app('Captcha')::create('flat', true)];
 });
 

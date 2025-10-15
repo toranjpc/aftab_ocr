@@ -46,10 +46,10 @@ export default {
       west: [1],
     },
     mapGates: {
-      1: 'west_1',
-      2: 'east_1',
-      3: 'east_2',
-      4: 'east_3',
+      1: '1',
+      2: '2',
+      3: '3',
+      4: '4',
     },
   }),
 

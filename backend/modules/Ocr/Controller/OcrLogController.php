@@ -110,12 +110,13 @@ class OcrLogController extends Controller
         }
 
 
-        reqlog::create([
-            "table_name" => "ocr_logs",
-            "table_id" => $ocrLog->id,
-            "log_type" => "ai",
-            "data" => $request,
-        ]);
+        // reqlog::create([
+        //     "table_name" => "ocr_logs",
+        //     "table_id" => $ocrLog->id,
+        //     "log_type" => "ai",
+        //     "data" => $request,
+        //     "log_date" => now(),
+        // ]);
 
         return ['id5' => $ocrLog->id];
     }
