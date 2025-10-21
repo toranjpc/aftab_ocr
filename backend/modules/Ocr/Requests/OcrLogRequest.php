@@ -21,16 +21,17 @@ class OcrLogRequest extends FormRequest
     public function rules()
     {
         // Log::debug(request()->all());
-        
+        // dd(request()->input('plate_number'));
+
         return  [
-            // 'vehicle_image_front' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-            // 'vehicle_image_back' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-            // 'vehicle_image_left' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-            // 'vehicle_image_right' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-            // 'plate_image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'vehicle_image_front' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'vehicle_image_back' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'vehicle_image_left' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'vehicle_image_right' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'plate_image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
             'direction' => 'nullable|in:entry,exit',
             'plate_type' => 'nullable|string|max:255',
-            'plate_number' => 'required_without:container_code|string|max:255',
+            'plate_number' => 'nullable|string|max:255',//required_without:container_code
             'plate_number_2' => 'nullable|string|max:255',
             'camera_number' => 'nullable|string|max:255',
             'gate_number' => 'nullable|string|max:255',

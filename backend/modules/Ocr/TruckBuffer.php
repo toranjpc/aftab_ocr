@@ -2,6 +2,8 @@
 
 namespace Modules\Ocr;
 
+use Illuminate\Support\Facades\Log;
+
 class TruckBuffer
 {
     static function addToBuffer($item)

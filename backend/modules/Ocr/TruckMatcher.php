@@ -69,7 +69,7 @@ class TruckMatcher
                 return $result;
             }
         } catch (\Exception $e) {
-            Log::error($e);
+            Log::error("err : " . $e);
         }
         return $item2;
     }
@@ -104,7 +104,7 @@ class TruckMatcher
 
 
 
-    /* from smart*/
+    /* from smart * /
 
     public static function plateMatching($item)
     {
@@ -429,5 +429,6 @@ class TruckMatcher
 
         return $cacheSetter($stack);
     }
-    /* from smart*/
+   
+    */
 }

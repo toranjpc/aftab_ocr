@@ -82,10 +82,10 @@
       <template #item.match_status="item">
         <div class="d-flex p-0 m-0">
 
-          <v-btn :color="renderBTN(item.match_status).color" dark @click="_event('ccs.dialog', item)"
-            :data-id="item.id">
+          <v-btn :color="renderBTN(item.match_status, (item.is_custom_check || localConfirmed[item.id])).color" dark
+            @click="_event('ccs.dialog', item)" :data-id="item.id">
             <strong>
-              {{ renderBTN(item.match_status).text }}
+              {{ renderBTN(item.match_status, (item.is_custom_check || localConfirmed[item.id])).text }}
               <span v-if="item.invoices.length > 1" class="px-1 ms-1" style="border: 1px solid #fff;">{{
                 item.invoices.length }}</span>
             </strong>
@@ -96,18 +96,18 @@
             </v-icon>
           </v-btn>
 
-          <v-btn small class="" color="danger mr-1" title=" تایید بیجک / فاکتور" @click="customCheck_confirm(item.id)"
+          <v-btn small class="" color="orange mr-1" title=" تایید بیجک / فاکتور" @click="customCheck_confirm(item.id)"
             v-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status) && !item.is_custom_check && !localConfirmed[item.id]">
             <v-icon class="" color="white">
               far fa-check
             </v-icon>
           </v-btn>
-          <v-btn small class="" color="success mr-1" title="مدارک بررسی شده"
+          <!-- <v-btn small class="" color="success mr-1" title="مدارک بررسی شده"
             v-else-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)">
             <v-icon class="" color="white">
               far fa-check
             </v-icon>
-          </v-btn>
+          </v-btn> -->
         </div>
       </template>
 
@@ -393,9 +393,9 @@ export default {
       },
       */
 
-    renderBTN(status) {
+    renderBTN(status, ifFalse = false) {
 
-      const list = {
+      let list = {
         // bad_match_nok: ['دو فاکتور متفاوت', 'purple'],
         gcoms_ok: ['فاکتور', 'cyan'],
         gcoms_nok: ['بدون فاکتور', 'red'],
@@ -407,6 +407,10 @@ export default {
         container_ccs_nok: ['بدون فاکتور', 'red'],
         plate_ccs_ok: ['فاکتور (پلاک)', 'green'],
         plate_ccs_nok: ['بدون فاکتور', 'red'],
+      }
+      if (ifFalse) {
+        list['container_without_bijac'] = ['بیجک تأیید شده', 'success']
+        list['plate_without_bijac'] = ['بیجک تأیید شده', 'success']
       }
 
       return {

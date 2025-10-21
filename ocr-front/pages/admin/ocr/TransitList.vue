@@ -168,7 +168,7 @@ export default {
         container_ccs_ok: ['فاکتور (کانتینر)', 'green'],
         container_ccs_nok: ['بدون فاکتور', 'red'],
         plate_ccs_ok: ['فاکتور (پلاک)', 'green'],
-        plate_css_nok: ['بدون فاکتور', 'red'],
+        plate_ccs_nok: ['بدون فاکتور', 'red'],
       }
 
       return {

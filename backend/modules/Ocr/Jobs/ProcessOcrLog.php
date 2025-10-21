@@ -39,11 +39,7 @@ class ProcessOcrLog implements ShouldQueue
 
         try {
             $ocr = OcrLog::findOrFail($this->ocrId);
-            // $match = OcrMatch::findOrFail(OcrMatch::max('id'));
             $limit = config('ocr.last_matches_limit');
-            // $matches = OcrMatch::orderByDesc('id')
-            //     ->take($limit)
-            //     ->get();
 
             $matches = OcrMatch::where('ocr_log_id', '<', $ocr->id)
                 // ->orderBy('created_at', 'desc')

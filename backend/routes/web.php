@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
-
 //حذف
 Route::get('/', function () {
     return url()->current();
@@ -33,7 +32,7 @@ Route::get('/', function () {
 // php artisan schedule:run
 // php artisan queue:listen
 // php artisan queue:work --daemon --sleep=1 --tries=3
-
+// php artisan optimize:clear
 
 // Route::post('/test', function () {
 //     try {
@@ -44,6 +43,14 @@ Route::get('/', function () {
 // });
 Route::get('/test', function () {
 
+    // $InvoiceService = new Modules\BijacInvoice\Services\InvoiceService();
+    // return  $InvoiceService->getWithReceiptNumber('BSRGCBI10411379');
+    // return  $InvoiceService->getWithReceiptNumber('BSRCC14040163669');
+
+
+
+
+    return;
     // $response = Http::withoutVerifying()->post("http://172.16.13.10:8083/test", ['since_updated' => 0]);
     // return;
     try {

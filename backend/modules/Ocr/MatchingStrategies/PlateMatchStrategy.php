@@ -56,9 +56,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
         }
 
         $numbers = preg_replace('/\D/', '', $plate);
-
         $match = $matches->where('plate_number_3', substr($numbers, 0, 5))->first();
-
         if ($match) {
             $this->fillMatchFromOcr($match, $ocr, [
                 'vehicle_image_front_url',

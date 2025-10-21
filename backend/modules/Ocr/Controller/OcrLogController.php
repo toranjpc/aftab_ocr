@@ -18,6 +18,8 @@ class OcrLogController extends Controller
 {
     public function store(OcrLogRequest $request)
     {
+        // Log::error("request from AI : " . json_encode($request->all()));
+
         $plate = false;
         if (isset($request->plate_number)) {
             $plate = $this->checkPlateIsDuplicate([
@@ -107,6 +109,7 @@ class OcrLogController extends Controller
             ProcessOcrLog::dispatch(
                 $ocrLog->id
             );
+            return ['id5' => $ocrLog->id];
         }
 
 
@@ -118,7 +121,6 @@ class OcrLogController extends Controller
         //     "log_date" => now(),
         // ]);
 
-        return ['id5' => $ocrLog->id];
     }
 
     public function store2(Request $request)
@@ -129,26 +131,29 @@ class OcrLogController extends Controller
     private function checkPlateIsDuplicate($data)
     {
         [$input, $gate] = $data;
+        $threshold = config('ocr.field_thresholds.plate_number', config('ocr.levenshtein_threshold'));
 
         $lastSixPlate = OcrBuffer::getBuffer($gate);
 
         $closest = false;
 
-        if ($input)
+        if ($input) {
             foreach ($lastSixPlate as $key => $plate) {
                 if ($plate->plate_number) {
 
                     $lev = levenshtein($input, $plate->plate_number);
 
-                    if ($lev == 0)
-                        return $plate;
+                    if ($lev == 0) return $plate;
 
-                    // if ($lev < 3) {
-                    //     $closest = $plate;
-                    // }
+                    if ($lev < $threshold) {
+                        $closest = $plate;
+                    }
 
                     if (
-                        $key < 3 && (
+                        $key < 3 &&
+                        strlen($input) > $threshold &&
+                        strlen($plate->plate_number) > $threshold &&
+                        (
                             str_contains($input, $plate->plate_number) ||
                             str_contains($plate->plate_number, $input)
                         )
@@ -157,7 +162,7 @@ class OcrLogController extends Controller
                     }
                 }
             }
-
+        }
         return $closest;
     }
 
@@ -166,13 +171,11 @@ class OcrLogController extends Controller
         function extractDigits($string)
         {
             preg_match_all('/\d+/', $string, $matches);
-
             return implode('', $matches[0]);
         }
-
         [$input, $gate] = $data;
-
         $lastSix = OcrBuffer::getBuffer($gate, 'container');
+        $threshold = config('ocr.field_thresholds.container_code', config('ocr.levenshtein_threshold'));
 
         $closest = false;
 
@@ -187,7 +190,7 @@ class OcrLogController extends Controller
                     if ($lev == 0)
                         return $container;
 
-                    if ($lev < 3) {
+                    if ($lev < $threshold) {
                         $closest = $container;
                     }
                 }

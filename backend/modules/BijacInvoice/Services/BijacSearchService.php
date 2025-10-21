@@ -32,11 +32,8 @@ class BijacSearchService
         return Bijac::forPlate($item, $isEdited)->get();
     }
 
-    /**
-     * گرفتن بیجک‌های مربوط به کانتینر
-     */
     public static function getContainerBijacs($item, $isEdited = false)
     {
-        return Bijac::forContainer($item, $isEdited); // forContainer خودش Collection برمی‌گرداند
+        return Bijac::forContainer($item, $isEdited);
     }
 }
