@@ -14,11 +14,18 @@ use Modules\Ocr\Models\OcrMatch;
 use Modules\Ocr\Requests\OcrLogRequest;
 use App\Models\Log as reqlog;
 
+use Modules\Traffic\Controller\TrafficController;
+use Modules\Traffic\Requests\TrafficRequest;
+
 class OcrLogController extends Controller
 {
     public function store(OcrLogRequest $request)
     {
         // Log::error("request from AI : " . json_encode($request->all()));
+        // $trafficController = app(TrafficController::class);
+        // $trafficRequest = new TrafficRequest();
+        // $trafficRequest->merge($request->all());
+        // $trafficController->store($trafficRequest);
 
         $plate = false;
         if (isset($request->plate_number)) {

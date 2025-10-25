@@ -10,12 +10,56 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Modules\Traffic\Requests\TrafficRequest;
 
+
 class TrafficController extends Controller
 {
+    const MATCH_DAY = 3600 * 3;
+
     public function store(TrafficRequest $request)
     {
-        // Log::error("request from AI : " . json_encode($request->all()));
+        $redis = app('redis');
+        $key   = 'Traffic_queue';
+        $all = $redis->lrange($key, 0, -1);
+        // Log::error("stored id cache : " . json_encode($all));
 
+
+        $plate = false;
+        $container = false;
+        if (isset($request->plate_number)) {
+            $plate = $this->checkPlateIsDuplicate([
+                $request->plate_number,
+                $request->gate_number,
+            ]);
+
+            if ($plate) {
+                if ($plate->ocr_accuracy >= $request->ocr_accuracy) {
+
+                    Traffic::where('id', $plate->id)->update([
+                        'plate_number_2' => $request->plate_number,
+                    ]);
+
+                    return ['id1' => $plate->id];
+                }
+            }
+        } elseif (isset($request->container_code)) {
+            $container = $this->checkDuplicateIsContainer([
+                $request->container_code,
+                $request->gate_number,
+            ]);
+
+            if ($container) {
+                if ($container->ocr_accuracy >= $request->ocr_accuracy) {
+                    Traffic::where('id', $container->id)->update([
+                        'container_code_2' => $request->container_code,
+                    ]);
+
+                    return ['id2' => $container->id];
+                }
+            }
+            // Log::error("request from AI : " . json_encode($request->vehicle_image_back));
+        }
+
+        return;
         $plate = false;
         if (isset($request->plate_number)) {
             $plate = $this->checkPlateIsDuplicate([
@@ -39,7 +83,7 @@ class TrafficController extends Controller
         if (isset($request->container_code)) {
 
 
-            $container = $this->checkIsDuplicateContainer([
+            $container = $this->checkDuplicateIsContainer([
                 $request->container_code,
                 $request->gate_number,
             ]);
@@ -161,7 +205,7 @@ class TrafficController extends Controller
         return $closest;
     }
 
-    private function checkIsDuplicateContainer($data)
+    private function checkDuplicateIsContainer($data)
     {
         function extractDigits($string)
         {

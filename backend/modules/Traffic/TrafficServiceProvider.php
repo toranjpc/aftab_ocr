@@ -5,7 +5,8 @@ namespace Modules\Traffic;
 use Illuminate\Support\Facades\Event;
 use App\Providers\ModuleServiceProvider;
 use Modules\BijacInvoice\Models\Bijac;
-use Modules\BijacInvoice\Models\TrafficMatch;
+use Modules\Traffic\Models\Traffic;
+use Modules\Traffic\Observers\TrafficObserver;
 
 
 class TrafficServiceProvider extends ModuleServiceProvider
@@ -26,6 +27,6 @@ class TrafficServiceProvider extends ModuleServiceProvider
         //     PlateMatcher::class,
         // ]);
 
-        TrafficMatch::observe(TrafficObserver::class);
+        Traffic::observe(TrafficObserver::class);
     }
 }
