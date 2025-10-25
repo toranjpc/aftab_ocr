@@ -43,8 +43,10 @@ Route::get('/', function () {
 // });
 Route::get('/test', function () {
 
-    // $InvoiceService = new Modules\BijacInvoice\Services\InvoiceService();
-    // return  $InvoiceService->getWithReceiptNumber('BSRGCBI10411379');
+    if (isset(request()->rec)) {
+        $InvoiceService = new Modules\BijacInvoice\Services\InvoiceService();
+        return  $InvoiceService->getWithReceiptNumber(request()->rec);
+    }
     // return  $InvoiceService->getWithReceiptNumber('BSRCC14040163669');
 
 

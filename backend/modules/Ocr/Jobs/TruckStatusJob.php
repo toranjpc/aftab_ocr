@@ -38,7 +38,9 @@ class TruckStatusJob implements ShouldQueue
         if ($match) {
 
             if (!$match->bijac_has_invoice && $match->bijacs->first()) {
-                $this->noInvoice($this->log, $match);
+                Log::error("bijac not finde : {$match->id}");
+
+                $match = $this->noInvoice($this->log, $match);
             }
 
             if ($match->bijac_has_invoice) {
@@ -80,6 +82,8 @@ class TruckStatusJob implements ShouldQueue
                         ])->save();
                 }
             } else {
+                Log::error("plate without bijac : {$match->plate_number} - {$match->id}");
+
                 if ($match->plate_number)
                     return $match->forceFill([
                         'match_status' => 'plate_without_bijac'
@@ -110,14 +114,30 @@ class TruckStatusJob implements ShouldQueue
                 $doned = [];
                 foreach ($match->bijacs as $key => $value) {
                     if (isset($doned[$value->receipt_number])) continue;
-                    if (str_starts_with($value->receipt_number, 'BSRGCB')) {
-                        return;
-                    }
                     $doned[$value->receipt_number] = true;
+                    if (str_starts_with($value->receipt_number, 'BSRGCB')) continue;
+
+                    // $invoiceService_ = new InvoiceService();
+                    // $invoiceService =  $invoiceService_->getWithReceiptNumber($value->receipt_number);
 
                     $invoiceService_ = new InvoiceService();
-                    $invoiceService =  $invoiceService_->getWithReceiptNumber($value->receipt_number);
+                    $attempts = 0;
+                    $maxAttempts = 3;
+                    $invoiceService = null;
+                    while ($attempts < $maxAttempts) {
+                        $invoiceService = $invoiceService_->getWithReceiptNumber($value->receipt_number);
+                        Log::error("getWithReceiptNumber : {$value->receipt_number} - {$value->id}");
+                        if (!empty($invoiceService)) {
+                            Log::error("getWithReceiptNumber DONED : {$value->receipt_number} - {$value->id}");
+                            break;
+                        }
+                        $attempts++;
+                        Log::error("getWithReceiptNumber not find : {$value->receipt_number} - {$value->id}");
+                        sleep(1);
+                    }
+
                     if ($invoiceService && isset($invoiceService[0])) {
+
                         $invoiceService = $invoiceService[0];
                         if ($invoiceService && !isset($invoiceService['InvoiceNumber'])) continue;
 
@@ -151,31 +171,19 @@ class TruckStatusJob implements ShouldQueue
                         $fildes["request_date"] = now();
 
                         Invoice::create($fildes);
-                        Log::error("DONED : " . $value->receipt_number);
+                        Log::error("DONED : {$value->receipt_number} - {$value->id}");
                         break;
                     }
+
                     sleep(1);
                 }
                 $match = OcrMatch::with(["bijacs" => function ($query) {
                     $query->with('invoices');
                 }])->find($log);
-                // $match = OcrMatch::with(["bijacs" => function ($query) {
-                //     $query->with('invoices');
-                // }])->find($log);
-
-                // Log::error("🚚 [TruckStatusJob] noInvoice() started for receipt_number={$bijac->receipt_number}");
-                // $service = new \Modules\BijacInvoice\Services\InvoiceService();
-                // $fetched = $service->getWithReceiptNumber($bijac->receipt_number);
-
-                // if (empty($fetched)) {
-                // Log::error("🚫 [TruckStatusJob] No invoice found for receipt_number={$bijac->receipt_number}");
-                // return;
-                // }
-                // Log::error("[TruckStatusJob] processed invoices before upsert: " . json_encode($processed));
-                // Log::error("✅ [TruckStatusJob] Invoice upsert completed for receipt_number={$bijac->receipt_number}");
             } catch (\Throwable $e) {
                 Log::error("❌ [TruckStatusJob] Error during noInvoice for receipt_number = " . $e->getMessage());
             }
+            return $match;
         }
     }
 }

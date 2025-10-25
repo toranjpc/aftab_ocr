@@ -13,13 +13,11 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
 {
     public function match(OcrLog $ocr, $matches, BijacSearchService $bijacService): bool
     {
-        if (!$ocr->plate_number)
-            return false;
+        if (!$ocr->plate_number) return false;
 
         $plate = $ocr->plate_number;
 
         $match = $matches->where('plate_number_3', $plate)->first();
-
         if ($match) {
             $this->fillMatchFromOcr($match, $ocr, [
                 'vehicle_image_front_url',

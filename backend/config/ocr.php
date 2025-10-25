@@ -10,7 +10,7 @@ return [
     |--------------------------------------------------------------------------
     | Maximum allowed distance for a match. Lower values = stricter matching.
     */
-    'levenshtein_threshold' => env('OCR_THRESHOLD', 2),
+    'levenshtein_threshold' => env('OCR_THRESHOLD', 3),
 
     /*
     |--------------------------------------------------------------------------

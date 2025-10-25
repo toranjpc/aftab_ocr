@@ -22,7 +22,7 @@
             {{ gettime() }}
           </div>
         </v-card>
-        <SingleCameraWidget gate="west_1" :plate="true" :label="false" :matchGate="matchGate" />
+        <SingleCameraWidget :gate="matchGate" :plate="true" :label="false" :matchGate="matchGate" />
 
         <TruckListMinimal :fields="truckFields" @select="selectTruck" />
 

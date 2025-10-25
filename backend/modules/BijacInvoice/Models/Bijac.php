@@ -66,7 +66,7 @@ class Bijac extends Base
         $cleanNumber = preg_replace('/\D/', '', $plate_number);
 
         if (strlen($cleanNumber) < 3) {
-            return $query->whereRaw('1=0'); // هیچی برنگرده
+            return $query->whereRaw('1=0');
         }
 
         foreach (self::SEARCH_DAY as $day) {

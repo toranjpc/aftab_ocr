@@ -1,22 +1,18 @@
 <?php
 
-namespace Modules\Ocr\Controller;
+namespace Modules\Traffic\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Modules\Ocr\Models\OcrLog;
+use Modules\Traffic\Models\Traffic;
+use Modules\Traffic\TrafficBuffer;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
-use Modules\Ocr\Models\TruckLog;
-use Modules\Ocr\OcrBuffer;
-use Modules\Ocr\Jobs\ProcessOcrLog;
-use Modules\Ocr\Models\OcrMatch;
-use Modules\Ocr\Requests\OcrLogRequest;
-use App\Models\Log as reqlog;
+use Modules\Traffic\Requests\TrafficRequest;
 
-class OcrLogController extends Controller
+class TrafficController extends Controller
 {
-    public function store(OcrLogRequest $request)
+    public function store(TrafficRequest $request)
     {
         // Log::error("request from AI : " . json_encode($request->all()));
 
@@ -30,7 +26,7 @@ class OcrLogController extends Controller
             if ($plate) {
                 if ($plate->ocr_accuracy >= $request->ocr_accuracy) {
 
-                    OcrLog::where('id', $plate->id)->update([
+                    Traffic::where('id', $plate->id)->update([
                         'plate_number_2' => $request->plate_number,
                     ]);
 
@@ -50,7 +46,7 @@ class OcrLogController extends Controller
 
             if ($container) {
                 if ($container->ocr_accuracy >= $request->ocr_accuracy) {
-                    OcrLog::where('id', $container->id)->update([
+                    Traffic::where('id', $container->id)->update([
                         'container_code_2' => $request->container_code,
                     ]);
 
@@ -89,7 +85,7 @@ class OcrLogController extends Controller
         $data = array_merge($validated, $imageUrls);
 
         if ($plate) {
-            OcrLog::where('id', $plate->id)
+            Traffic::where('id', $plate->id)
                 ->update([
                     ...$data,
                     'plate_number_2' => $plate->plate_number
@@ -97,7 +93,7 @@ class OcrLogController extends Controller
 
             return ['id3' => $plate->id];
         } elseif ($container) {
-            OcrLog::where('id', $container->id)
+            Traffic::where('id', $container->id)
                 ->update([
                     ...$data,
                     'container_code_2' => $container->container_code
@@ -105,20 +101,20 @@ class OcrLogController extends Controller
 
             return ['id4' => $container->id];
         } else {
-            $ocrLog = OcrLog::create($data);
+            $traffic = Traffic::create($data);
 
-            OcrBuffer::addToBuffer($ocrLog, $request->gate_number, isset($request->plate_number) ? 'plate' : 'container');
+            TrafficBuffer::addToBuffer($traffic, $request->gate_number, isset($request->plate_number) ? 'plate' : 'container');
 
-            ProcessOcrLog::dispatch(
-                $ocrLog->id
+            ProcessTraffic::dispatch(
+                $traffic->id
             );
-            return ['id5' => $ocrLog->id];
+            return ['id5' => $traffic->id];
         }
 
 
         // reqlog::create([
         //     "table_name" => "ocr_logs",
-        //     "table_id" => $ocrLog->id,
+        //     "table_id" => $traffic->id,
         //     "log_type" => "ai",
         //     "data" => $request,
         //     "log_date" => now(),
@@ -126,17 +122,13 @@ class OcrLogController extends Controller
 
     }
 
-    public function store2(Request $request)
-    {
-        return TruckLog::create($request->all());
-    }
 
     private function checkPlateIsDuplicate($data)
     {
         [$input, $gate] = $data;
         $threshold = config('ocr.field_thresholds.plate_number', config('ocr.levenshtein_threshold'));
 
-        $lastSixPlate = OcrBuffer::getBuffer($gate);
+        $lastSixPlate = TrafficBuffer::getBuffer($gate);
 
         $closest = false;
 
@@ -177,7 +169,7 @@ class OcrLogController extends Controller
             return implode('', $matches[0]);
         }
         [$input, $gate] = $data;
-        $lastSix = OcrBuffer::getBuffer($gate, 'container');
+        $lastSix = TrafficBuffer::getBuffer($gate, 'container');
         $threshold = config('ocr.field_thresholds.container_code', config('ocr.levenshtein_threshold'));
 
         $closest = false;

@@ -184,6 +184,9 @@ return [
         Modules\Dynamic\DynamicServiceProvider::class,
         Modules\BijacInvoice\BijacServiceProvider::class,
         Modules\Camera\CameraServiceProvider::class,
+
+
+        Modules\Traffic\TrafficServiceProvider::class,
     ],
 
     /*

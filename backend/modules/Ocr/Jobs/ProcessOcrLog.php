@@ -32,7 +32,6 @@ class ProcessOcrLog implements ShouldQueue
     public function handle(BijacSearchService $bijacService)
     {
         $lock = Cache::lock('match_container_plate_lock', 15);
-
         if (!$lock->get()) {
             return $this->release();
         }
@@ -48,8 +47,8 @@ class ProcessOcrLog implements ShouldQueue
                 ->get();
 
             $strategies = [
-                new ContainerMatchStrategy(),
-                new PlateMatchStrategy()
+                new PlateMatchStrategy(),
+                new ContainerMatchStrategy()
             ];
 
             foreach ($strategies as $strategy) {

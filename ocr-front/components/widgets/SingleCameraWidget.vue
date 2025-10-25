@@ -94,6 +94,7 @@ export default {
       this.$axios
         .get('/camera?filters[group][$eq]=' + this.gate + '&filters[active][$eq]=1' + q)
         .then((res) => {
+          // console.log(this.gate)
           this.cameras = getSafe(res, 'data.Camera.data', [])
           return this.cameras;
         }).then((cameras) => {
@@ -104,6 +105,7 @@ export default {
     },
 
     loadStream(camera) {
+      // console.log(this.cameraDet)
       if (this.players[camera.id]) return;
       this.players[camera.id] = loadPlayer({
         // url: `ws://localhost:2000/api/stream/${camera.type}`,
