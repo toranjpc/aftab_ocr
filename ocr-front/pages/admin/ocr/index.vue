@@ -4,7 +4,7 @@
 
     <DynamicTemplate>
       <template #header-btn>
-        <SseBtn :route="'api/sse/ocr-log?receiver_id=' + gateId" />
+        <SseBtn :route="`api/sse/ocr-log?receiver_id=${gateId}&gate_number=${gateId}`" />
       </template>
 
       <template #item.plate_number="item">

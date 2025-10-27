@@ -54,8 +54,13 @@ export default {
   }),
 
   computed: {
+
     sseUrl() {
-      return 'api/sse/ocr-log?receiver_id=' + this.gates.join(',')
+      alert(this.$route.params.gate)
+      return 'api/sse/ocr-log?receiver_id=' + this.$route.params.gate
+    },
+    gateId() {
+      return this.$route.params.gate
     },
 
     gates() {

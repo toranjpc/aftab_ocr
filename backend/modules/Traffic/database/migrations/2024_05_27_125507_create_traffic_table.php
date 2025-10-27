@@ -13,7 +13,7 @@ class CreateOcrLogsTable extends Migration
      */
     public function up()
     {
-        Schema::create('tarffic', function (Blueprint $table) {
+        Schema::create('traffic', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('parent_id')->nullable(); //
 
@@ -31,22 +31,25 @@ class CreateOcrLogsTable extends Migration
             $table->integer("gate_number")->nullable(); // شماره گیت
             $table->boolean('IMDG')->nullable(); //کالای خطر ناک
             $table->boolean('seal')->nullable(); //پلمپ
-            $table->string("container_type")->nullable(); // نوع بار
-            $table->string("vehicle_type")->nullable(); // نوع وسلیه نقلیه -> سواری کامیون
+            $table->boolean('load_type')->nullable(); //نوع بار
 
             $table->string("plate_number")->nullable(); // شماره پلاک
             $table->string("plate_number_edit")->nullable(); // شماره پلاک
             $table->string("plate_number_2")->nullable(); // شماره پلاکهای احتمالی
+            $table->string("plate_number_by_bijac")->nullable(); // شماره پلاک گرفته شده از بیجک
             $table->string("vehicle_location")->nullable(); // لوکیشن پلاک
             $table->string("plate_type")->nullable(); // نوع پلاک -> ایرانی افغانی اروپایی
+            $table->string("vehicle_type")->nullable(); // نوع وسلیه نقلیه -> سواری کامیون
 
             $table->string("container_code")->nullable(); // کد کانینر
             $table->string("container_code_edit")->nullable(); // کد کانینر
             $table->string("container_code_2")->nullable(); // کد کانینر 2
             $table->string("container_code_3")->nullable(); // کد کانینر 3
+            $table->string("container_code_by_bijac")->nullable(); // کد کانینر 3
             // $table->boolean("container_code_validation")->default(0); // تایید اعتبار کد کانیتر (هرسه مثل هم بوده یا ن )
             $table->string("coordinate")->nullable(); // سایز کانینر
             $table->string("container_size")->nullable(); // سایز کانینر
+            $table->string("container_type")->nullable(); // نوع بار
 
             $table->float("ocr_accuracy")->nullable(); // درصد ocr
             $table->float("frequency")->nullable(); // درصد فراوانی
@@ -54,6 +57,13 @@ class CreateOcrLogsTable extends Migration
 
             $table->text("data")->nullable(); // خوندن یا نخودن
 
+            $table->timestamps();
+        });
+        Schema::create('traffic_bijac_invoice', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('traffic_id')->constrained('traffic')->cascadeOnDelete();
+            $table->foreignId('bijac_id');
+            $table->foreignId('invoice_id');
             $table->timestamps();
         });
     }
@@ -66,7 +76,8 @@ class CreateOcrLogsTable extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('tarffic');
+        Schema::dropIfExists('traffic');
+        Schema::dropIfExists('traffic_bijac_invoice');
     }
 }
 

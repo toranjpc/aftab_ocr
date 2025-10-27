@@ -5,6 +5,7 @@ namespace Modules\Sse\Controllers;
 use Modules\Sse\Models\SSE;
 use App\Http\Controllers\Controller;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\Log;
 
 class SSEController extends Controller
 {
@@ -16,7 +17,7 @@ class SSEController extends Controller
         return $this->runInPeriod(5, function () {
             $this->printSSE('heart');
             if (connection_aborted()) {
-                exit ();
+                exit();
             }
         });
     }
@@ -59,6 +60,7 @@ class SSEController extends Controller
 
                     if (request('receiver_id')) {
                         $notifs->where('receiver_id', request('receiver_id'));
+                        Log::error("event : {$event} - created_at : {$fromDate} - {$tillDate} - receiver_id : " . request('receiver_id'));
                     }
 
                     $notifs = $notifs->get();
@@ -66,12 +68,16 @@ class SSEController extends Controller
                     if ($notifs->count()) {
                         foreach ($notifs as $notif) {
                             $this->printSSE($notif->message);
+
+                            // Log::error("SSE RUNED FOR : {$notif->message}");
+
                             sleep(1);
                         }
                     }
 
                     sleep(3);
 
+                    // Log::error("SSE REMOVED : " . json_encode($notifs->pluck('id')) . "");
                     SSE::destroy($notifs->pluck('id')->toArray());
                 }
             }

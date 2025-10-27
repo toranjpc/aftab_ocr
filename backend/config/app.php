@@ -186,7 +186,7 @@ return [
         Modules\Camera\CameraServiceProvider::class,
 
 
-        Modules\Traffic\TrafficServiceProvider::class,
+        // Modules\Traffic\TrafficServiceProvider::class,
     ],
 
     /*

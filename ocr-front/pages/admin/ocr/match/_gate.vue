@@ -5,7 +5,7 @@
 
     <DynamicTemplate>
       <template #header-btn>
-        <SseBtn :route="'api/sse/ocr-match?receiver_id=' + gateId" />
+        <SseBtn :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number'${matchGate}`" />
       </template>
 
       <template #item.plate_number="item">
@@ -236,7 +236,7 @@ export default {
       fields: fields(this),
       mainRoute: {
         // route: '/ocr-match?_append=invoice_with=bijacs&filters[plate_number][$notNull]',
-        route: '/ocr-match/list?_append=invoice_with=bijacs&gate=' + this.matchGate,
+        route: '/ocr-match/list?_append=invoice_with=bijacs&receiver_id=' + this.matchGate + '&gate=' + this.matchGate,
         key: 'OcrMatch',
       },
     })

@@ -6,7 +6,7 @@ use Modules\Traffic\Controller\TrafficController;
 use Modules\Traffic\Controller\TrafficMatchController;
 use Modules\Traffic\Controller\GateController;
 
-// Route::post('/traffic-log', [TrafficController::class, 'store']);
+Route::post('/traffic/addlog', [TrafficController::class, 'store']);
     // ->middleware('auth:sanctum');//بررسی شود
 
 // Route::middleware(['auth'])->group(function () {

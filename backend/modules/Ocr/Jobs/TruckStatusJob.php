@@ -126,13 +126,13 @@ class TruckStatusJob implements ShouldQueue
                     $invoiceService = null;
                     while ($attempts < $maxAttempts) {
                         $invoiceService = $invoiceService_->getWithReceiptNumber($value->receipt_number);
-                        Log::error("getWithReceiptNumber : {$value->receipt_number} - {$value->id}");
+                        Log::error("getWithReceiptNumber : {$value->receipt_number} - {$match->plate_number}");
                         if (!empty($invoiceService)) {
-                            Log::error("getWithReceiptNumber DONED : {$value->receipt_number} - {$value->id}");
+                            Log::error("getWithReceiptNumber DONED : {$value->receipt_number} - {$match->plate_number}");
                             break;
                         }
                         $attempts++;
-                        Log::error("getWithReceiptNumber not find : {$value->receipt_number} - {$value->id}");
+                        Log::error("getWithReceiptNumber not find : {$value->receipt_number} - {$match->plate_number}");
                         sleep(1);
                     }
 

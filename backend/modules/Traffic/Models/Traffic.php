@@ -77,26 +77,127 @@ class Traffic extends Base
         );
     }
 
+    public function isCustomCheck()
+    {
+        return $this->hasOne(Log::class, 'table_id')
+            ->select("user_id", "table_id")
+            ->where('table_name', 'OcrMatch')
+            ->where('log_type', 'checked');
+    }
+
+    public function bijacs(): MorphToMany
+    {
+        return $this->belongsToMany(
+            Bijac::class,
+            'traffic_bijac_invoice',
+            'traffic_id',
+            'bijac_id'
+        );
+    }
+    public function getInvoiceAttribute()
+    {
+        return $this->bijacs
+            ->flatMap
+            ->invoices
+            ->unique('id')
+            ->sortBy([
+                ['pay_date', 'desc'],
+                ['request_date', 'desc'],
+            ])
+            ->first() ??
+            null;
+        // return $this->bijacs()->whereHas('invoice')->first()->invoice ?? null;
+    }
+    public function getInvoicesAttribute()
+    {
+        return $this->bijacs
+            ->flatMap
+            ->invoices
+            ->unique('id')
+            ->sortBy([
+                ['pay_date', 'desc'],
+                ['request_date', 'desc'],
+            ])
+            ->values()
+            ->all();
+    }
+    public function getBijacHasInvoiceAttribute()
+    {
+        $allInvoices = $this->bijacs->flatMap(function ($bijac) {
+            return $bijac->invoices;
+        });
+        return $allInvoices
+            ->unique('id')
+            ->sortBy([
+                ['pay_date', 'desc'],
+                ['request_date', 'desc'],
+            ])
+            ->first() ??
+            null;
+        /*
+        return $this->bijacs
+            ->flatMap
+            ->invoices
+            ->unique('id')
+            ->sortBy([
+                ['pay_date', 'desc'],
+                ['request_date', 'desc'],
+            ])
+            ->first() ??
+            null;
+        */
+        // return $this->bijacs()->whereHas('invoice')->first() ?? null;
+    }
+
+
+
+
     public function getContainerCodeStandardAttribute()
     {
         $code = $this->container_code;
 
-        if (!$code) return '';
+        if (!$code)
+            return '';
 
-        $words = substr($code, 0, 4);
-        $digits = substr($code, 4, 7);
+        $split = explode("_", $code);
+        // $words = substr($code, 0, 4);
+        // $digits = substr($code, 4, 6);
 
-        return [$words, $digits];
+        $words = $split[0] ?? '';
+        $digits = $split[1] ?? '';
+
+        return $words . ' ' . $digits;
     }
-
     public function getContainerCodeStandard2Attribute()
     {
         $code = $this->container_code_2;
-        if (!$code) return '';
 
-        $words = substr($code, 0, 4);
-        $digits = substr($code, 4, 6);
+        if (!$code)
+            return '';
 
-        return [$words, $digits];
+        $split = explode("_", $code);
+        // $words = substr($code, 0, 4);
+        // $digits = substr($code, 4, 6);
+
+        $words = $split[0] ?? '';
+        $digits = $split[1] ?? '';
+
+        return $words . ' ' . $digits;
+    }
+    public function getContainerCodeEditStandardAttribute()
+    {
+        $code = $this->container_code_edit;
+
+        if (!$code)
+            return '';
+
+        $split = explode("_", $code);
+        // $words = substr($code, 0, 4);
+        // $digits = substr($code, 4, 6);
+
+        $words = $split[0] ?? '';
+        $digits = $split[1] ?? '';
+
+        return $words . ' ' . $digits;
     }
 }

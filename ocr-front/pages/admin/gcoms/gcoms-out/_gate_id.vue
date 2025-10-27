@@ -86,7 +86,7 @@ export default {
     //   this.getOcrMatches()
     // })
 
-    this.$sse.connect('api/sse/ocr-match?receiver_id=' + this.gateId, () => {
+    this.$sse.connect('api/sse/ocr-match?gate_number=' + this.gateId + '&receiver_id=' + this.gateId, () => {
       this.getOcrMatches()
     });
   },

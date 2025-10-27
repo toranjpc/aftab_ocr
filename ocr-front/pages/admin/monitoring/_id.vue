@@ -94,7 +94,7 @@
 
             <LogHistory :ocr-log="selectedTruck" />
 
-            <component :is="comp" :route="'api/sse/ocr-match?receiver_id=' + matchGate" />
+            <component :is="comp" :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number=${matchGate}`" />
           </template>
           <v-card-text class="pb-0 pa-0 d-flex flex-row flex-wrap">
             <div class="col-12 d-flex flex-wrap flex-row pa-0">
@@ -261,7 +261,7 @@ export default {
 
       this.$axios
         .$post(
-          `/log/rip?_with=bijacs,bijacs.invoice&filters[log_time][$between][0]=${s}&filters[log_time][$between][1]=${e}&filters[plate_number][$notNull]&disable_all=true`
+          `/log/rip?_with=bijacs,bijacs.invoice&gate_number=${this.matchGate}&filters[log_time][$between][0]=${s}&filters[log_time][$between][1]=${e}&filters[plate_number][$notNull]&disable_all=true`
         )
         .then((res) => {
           this.movement = res.counts.all
