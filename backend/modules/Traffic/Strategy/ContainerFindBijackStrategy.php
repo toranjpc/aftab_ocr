@@ -40,13 +40,13 @@ class ContainerFindBijackStrategy
                     $result = (clone $baseQuery)
                         ->where('container_number', 'LIKE', "{$substr}%")
                         ->get();
-                    if (!$result->isEmpty()) continue;
+                    if (!$result->isEmpty()) break;
 
                     $substr = substr($container, 0, 11);
                     $result = (clone $baseQuery)
                         ->where('container_number', 'LIKE', "{$substr}%")
                         ->get();
-                    if (!$result->isEmpty()) continue;
+                    if (!$result->isEmpty()) break;
 
                     $cleanNumber = substr(preg_replace('/\D/', '', $container), 0, 6);
                     $result = (clone $baseQuery)
@@ -71,25 +71,17 @@ class ContainerFindBijackStrategy
                         if ($container_number == $cleanNumber) return true;
                     });
                 }
+                if (!$result->isEmpty()) {
+                    $trafficData = $result->mapWithKeys(function ($bijac) {
+                        return [$bijac->id => ['type' => 'Container']];
+                    });
+                    $Traffic->bijacs()->sync($trafficData);
+                    return $result;
+                }
             }
-
-            $trafficData = $result->mapWithKeys(function ($bijac) {
-                return [$bijac->id => ['type' => 'Container']];
-            });
-            $Traffic->bijacs()->sync($trafficData);
-            return $result;
         } catch (\Throwable $th) {
             //throw $th;
             return false;
         }
-    }
-
-    public function latestBetween($query, array $dateRange)
-    {
-        $maxDate = (clone $query)
-            ->whereBetween('bijac_date', $dateRange)
-            ->max('bijac_date');
-        if (!$maxDate) return $query->whereRaw('1=0');
-        return $query->where('bijac_date', $maxDate);
     }
 }

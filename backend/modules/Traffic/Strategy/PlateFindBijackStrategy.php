@@ -11,7 +11,7 @@ class PlateFindBijackStrategy
 {
     const SEARCH_DAY = [3]; //, 7, 30
 
-    public function match($Traffic): bool
+    public function match($Traffic)
     {
         try {
             if (!$Traffic->plate_number) return false;
@@ -22,94 +22,81 @@ class PlateFindBijackStrategy
                 'plate_number_2',
                 'plate_number_by_bijac'
             ];
+            $threshold = config('ocr.field_thresholds.plate_number', config('ocr.levenshtein_threshold'));
 
             foreach (self::SEARCH_DAY as $day) {
                 $dateRange = [
                     (clone $Traffic->created_at)->subDays($day),
                     $Traffic->created_at,
                 ];
+                $baseQuery = Bijac::select('id', 'plate_normal', 'bijac_date')
+                    ->doesntHave('PlateTraffics')
+                    ->whereBetween('bijac_date', $dateRange);
 
                 foreach ($checklist as $field) {
                     $plate = $Traffic->$field;
                     if (!$plate) continue;
 
+                    $result = (clone $baseQuery)
+                        ->where('plate_normal', $plate)
+                        ->get();
+                    if (!$result->isEmpty()) break;
+
                     $normalized = $plateService->normalizePlate($plate);
+                    $result = (clone $baseQuery)
+                        ->where('plate_normal', $normalized)
+                        ->get();
+                    if (!$result->isEmpty()) break;
+
                     $cleanNumber = $plateService->extractDigits($plate);
-
-                    // ۱. تطابق مستقیم
-                    $result = $this->latestBetween(
-                        Bijac::where('plate_normal', $normalized)
-                            ->whereBetween('bijac_date', $dateRange),
-                        $dateRange
-                    )->first();
-                    if ($result) return $result;
-
-                    // ۲. وایلدکارد دو رقم آخر
                     if (strlen($cleanNumber) === 7) {
                         $wild = substr($normalized, 0, -2) . '??';
-                        $result = $this->latestBetween(
-                            Bijac::where('plate_normal', $wild)
-                                ->whereBetween('bijac_date', $dateRange),
-                            $dateRange
-                        )->first();
-                        if ($result) return $result;
+                        $result = (clone $baseQuery)
+                            ->where('plate_normal', $wild)
+                            ->get();
+                        if (!$result->isEmpty()) break;
                     }
 
-                    // ۳. پلاک افغان (حاوی L)
                     if (str_contains($normalized, 'L')) {
-                        $result = $this->latestBetween(
-                            Bijac::where(function ($q) use ($normalized, $cleanNumber) {
+                        $result = (clone $baseQuery)
+                            ->where(function ($q) use ($normalized, $cleanNumber) {
                                 $q->where('plate_normal', $normalized)
                                     ->orWhere('plate_normal', '???,' . $cleanNumber . ',L');
-                            })->whereBetween('bijac_date', $dateRange),
-                            $dateRange
-                        )->first();
-                        if ($result) return $result;
+                            })->get();
+                        if (!$result->isEmpty()) break;
                     }
 
-                    // ۴. فقط اعداد
-                    $result = $this->latestBetween(
-                        Bijac::where(function ($q) use ($cleanNumber) {
+                    $result = (clone $baseQuery)
+                        ->where(function ($q) use ($cleanNumber) {
                             $q->whereRaw("REGEXP_REPLACE(plate, '[^0-9]', '') = ?", [$cleanNumber])
                                 ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') = ?", [$cleanNumber]);
-                        })->whereBetween('bijac_date', $dateRange),
-                        $dateRange
-                    )->first();
-                    if ($result) return $result;
+                        })
+                        ->get();
+                    if (!$result->isEmpty()) break;
 
-                    // ۵. تطبیق جزئی
                     if (strlen($cleanNumber) > 5) {
                         $partial = substr($cleanNumber, 0, 5);
-                        $result = $this->latestBetween(
-                            Bijac::where(function ($q) use ($partial) {
+                        $result = (clone $baseQuery)
+                            ->where(function ($q) use ($partial) {
                                 $q->whereRaw("REGEXP_REPLACE(plate, '[^0-9]', '') LIKE ?", ["{$partial}%"])
                                     ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", ["{$partial}%"]);
-                            })->whereBetween('bijac_date', $dateRange),
-                            $dateRange
-                        )->first();
-                        if ($result) return $result;
+                            })
+                            ->get();
+                        if (!$result->isEmpty()) break;
                     }
                 }
-            }
 
-            $trafficData = $result->mapWithKeys(function ($bijac) {
-                return [$bijac->id => ['type' => 'Plate']];
-            });
-            $Traffic->bijacs()->sync($trafficData);
-            return false;
-            // $plateType = $PlateService->determinePlateType($Traffic->plate_number);
+                if (!$result->isEmpty()) {
+                    $trafficData = $result->mapWithKeys(function ($bijac) {
+                        return [$bijac->id => ['type' => 'Plate']];
+                    });
+                    $Traffic->bijacs()->sync($trafficData);
+                    return $result;
+                }
+            }
         } catch (\Throwable $th) {
             //throw $th;
             return false;
         }
-    }
-
-    public function latestBetween($query, array $dateRange)
-    {
-        $maxDate = (clone $query)
-            ->whereBetween('bijac_date', $dateRange)
-            ->max('bijac_date');
-        if (!$maxDate) return $query->whereRaw('1=0');
-        return $query->where('bijac_date', $maxDate);
     }
 }
