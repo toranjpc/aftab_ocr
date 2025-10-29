@@ -42,6 +42,15 @@ Route::get('/', function () {
 //     }
 // });
 Route::get('/test', function () {
+    return;
+
+    if (isset(request()->bij)) {
+        $command = new Modules\Collector\Services\CcsService();
+        $data = $command->makeRequest();
+        dd($data);
+        return response()->json($data);
+    }
+
 
     if (isset(request()->rec)) {
         $InvoiceService = new Modules\BijacInvoice\Services\InvoiceService();

@@ -34,32 +34,42 @@ class TruckStatusJob implements ShouldQueue
         $match = OcrMatch::with(["bijacs" => function ($query) {
             $query->with('invoices');
         }])->find($this->log);
+        $noInvoice = '';
 
         if ($match) {
 
             if (!$match->bijac_has_invoice && $match->bijacs->first()) {
-                Log::error("bijac not finde : {$match->id}");
+                Log::error("noInvoice STARTED : {$match->plate_number} -  {$match->container_code}");
 
-                $match = $this->noInvoice($this->log, $match);
+                $noInvoice = '_req';
+                $this->noInvoice($this->log, $match);
+                // sleep(3);
+
+                $match = null;
+                $match = OcrMatch::with(["bijacs" => function ($query) {
+                    $query->with('invoices');
+                }])->find($this->log);
+            } elseif (str_contains($match->match_status, '_req')) {
+                $noInvoice = '_req';
             }
 
             if ($match->bijac_has_invoice) {
                 if ($match->bijacs->first()->type === 'gcoms') {
                     return $match->forceFill([
-                        'match_status' => 'gcoms_ok'
+                        'match_status' => 'gcoms_ok' . $noInvoice
                     ])->save();
                 } else {
                     if ($match->plate_number && $match->container_code)
                         return $match->forceFill([
-                            'match_status' => 'ccs_ok'
+                            'match_status' => 'ccs_ok' . $noInvoice
                         ])->save();
                     else if ($match->plate_number)
                         return $match->forceFill([
-                            'match_status' => 'plate_ccs_ok'
+                            'match_status' => 'plate_ccs_ok' . $noInvoice
                         ])->save();
                     else
                         return $match->forceFill([
-                            'match_status' => 'container_ccs_ok'
+                            'match_status' => 'container_ccs_ok' . $noInvoice
                         ])->save();
                 }
             } else if ($bijac = $match->bijacs->first()) {
@@ -177,13 +187,13 @@ class TruckStatusJob implements ShouldQueue
 
                     sleep(1);
                 }
-                $match = OcrMatch::with(["bijacs" => function ($query) {
-                    $query->with('invoices');
-                }])->find($log);
+                // $match = OcrMatch::with(["bijacs" => function ($query) {
+                //     $query->with('invoices');
+                // }])->find($log);
             } catch (\Throwable $e) {
                 Log::error("❌ [TruckStatusJob] Error during noInvoice for receipt_number = " . $e->getMessage());
             }
-            return $match;
+            // return $match;
         }
     }
 }

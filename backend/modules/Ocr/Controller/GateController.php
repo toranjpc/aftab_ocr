@@ -2,7 +2,9 @@
 
 namespace Modules\Ocr\Controller;
 
-use App\Models\Log;
+// use App\Models\Log;
+use Illuminate\Support\Facades\Log;
+
 use Modules\BijacInvoice\Models\Bijac;
 use Modules\Collector\Services\GcomsService;
 use Modules\Ocr\Jobs\TruckStatusJob;
@@ -15,7 +17,7 @@ use Modules\BijacInvoice\BijacMatcher;
 
 class GateController extends Controller
 {
-	public function checkBy()
+    public function checkBy()
     {
         $params = request('params');
 
@@ -23,7 +25,8 @@ class GateController extends Controller
 
         if (isset($params['receipt_number'])) {
             $data = GcomsService::getBijacTaki($params['receipt_number']);
-
+            log::info('GcomsService : ' . $data);
+            return;
             if (!!$data) {
                 TruckMatcher::bijacMatching($ocrMatch);
                 return [$data];
@@ -42,7 +45,7 @@ class GateController extends Controller
             }
         }
 
-        BijacMatcher::bijacMatching($ocrMatch);
+        // BijacMatcher::bijacMatching($ocrMatch);
         TruckStatusJob::dispatch($ocrMatch, 'plate');
         if (!!$ocrMatch->container_code_image_url) {
             TruckStatusJob::dispatch($ocrMatch, 'container');

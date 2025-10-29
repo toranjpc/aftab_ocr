@@ -17,8 +17,6 @@ class TrafficController extends Controller
 
     public function store(TrafficRequest $request)
     {
-        return;
-
         $plate = false;
         $container = false;
         if (isset($request->plate_number)) {
@@ -27,7 +25,7 @@ class TrafficController extends Controller
                 Traffic::where('id', $plate->id)->update([
                     'plate_number_2' => $request->plate_number,
                 ]);
-                Log::error("duplicate plate updated : " . $plate->id);
+                Log::info("duplicate plate updated : " . $plate->id);
                 return ['id1' => $plate->id];
             }
         } elseif (isset($request->container_code)) {
@@ -38,7 +36,7 @@ class TrafficController extends Controller
                 ]);
                 return ['id2' => $container->id];
             }
-            Log::error("duplicate container updated : " . $container->id);
+            Log::info("duplicate container updated : " . $container->id);
         }
 
         $validated = $request->safe()
@@ -84,10 +82,6 @@ class TrafficController extends Controller
             return ['id4' => $container->id];
         } else {
             $traffic = Traffic::create($data);
-            // TrafficBuffer::addToBuffer($traffic, $request->gate_number, isset($request->plate_number) ? 'plate' : 'container');
-            // ProcessTraffic::dispatch(
-            //     $traffic->id
-            // );
             return ['id5' => $traffic->id];
         }
     }

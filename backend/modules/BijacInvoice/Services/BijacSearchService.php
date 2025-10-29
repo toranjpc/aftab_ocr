@@ -6,7 +6,7 @@ use Modules\BijacInvoice\Models\Bijac;
 
 class BijacSearchService
 {
-    const MATCH_DAY = 30;
+    const MATCH_DAY = 3;
 
     public static function getBijacs($item, $isEdited = false)
     {

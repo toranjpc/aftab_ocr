@@ -8,8 +8,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Modules\Traffic\Models\Traffic;
-use Modules\Traffic\Strategy\PlateMatchStrategy;
-use Modules\Traffic\Strategy\ContainerMatchStrategy;
+use Modules\Traffic\Strategy\PlateFindBijackStrategy;
+use Modules\Traffic\Strategy\ContainerFindBijackStrategy;
 
 class ProcessTrafficMatch implements ShouldQueue
 {
@@ -42,13 +42,17 @@ class ProcessTrafficMatch implements ShouldQueue
                 ->get();
 
             $strategies = [
-                new PlateMatchStrategy(),
-                new ContainerMatchStrategy()
+                new PlateFindBijackStrategy(),
+                new ContainerFindBijackStrategy()
             ];
-
+            $searchStatus = [];
             foreach ($strategies as $strategy) {
-                if ($strategy->match($Traffic, $matches)) break;
+                $searchStatus = $strategy->match($Traffic);
+                if ($searchStatus) break;
             }
+
+
+            
         } finally {
             $lock->release();
         }

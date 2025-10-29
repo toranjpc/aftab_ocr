@@ -103,16 +103,18 @@ export default {
     loadStream(camera) {
       if (this.players[camera.id]) return;
       // await this.loadScriptOnce();
+      const wsUrl = `ws://${window.location.host}/cam/${camera.group}/${camera.type}`;
       this.players[camera.id] = loadPlayer({
         // videoBufferSize: 10 * 1024 * 1024,
         // url: `ws://46.148.36.110:8000/ws/api/stream/${camera.type}`,
         // url: `ws://${window.location.host}/ws/api/stream/${camera.type}`,
         // url: `ws://${window.location.host}/ocr/ws/api/stream2/${camera.type}`,
-        
+
         // url: `ws://${this.cameraDet.camera.ip}/ws/api/stream/${camera.type}`,
         // url: `ws://${camera.ip}/ws/api/stream/${camera.type}`,
-        
-        url: `ws://${window.location.host}/cam/${this.gate}`,
+
+        // url: `ws://${window.location.host}/cam/${this.gate}`,
+        url: wsUrl,
         canvas: document.getElementById(`canvas-${camera.id}`),
       });
       // console.log(this.ca.meraDet);

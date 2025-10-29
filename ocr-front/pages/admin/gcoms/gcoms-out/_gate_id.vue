@@ -15,7 +15,8 @@
         <div class="d-flex flex-row flex-wrap">
           <div class="d-none d-md-block col-6 col-md-4">
             <div class="rounded-lg fill-height" style="border: 1px dashed rgba(0, 0, 0, 0.4)">
-              <CameraWidget gate="west_1" :plate="true" />
+              <CameraWidget :col="6" :gate="gateId" :matchGate="gateId" />
+
             </div>
           </div>
 

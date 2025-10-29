@@ -9,7 +9,7 @@ use Modules\Traffic\Jobs\ProcessTrafficMatch;
 class TrafficObserver
 {
     const CACHE_TIME = 3600 * 3;
-    const CACHE_length = 20;
+    const CACHE_length = 10;
 
     public function created(Traffic $item)
     {

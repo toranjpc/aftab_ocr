@@ -10,6 +10,7 @@ class DynamicController extends Controller
 {
     public function index(Request $request, $modelName)
     {
+
         [$key, $query, $model] = $this->resolveModel($modelName);
 
         $this->checkAccess();

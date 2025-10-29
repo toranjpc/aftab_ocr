@@ -209,7 +209,7 @@ class OcrLogController extends Controller
         return $closest;
     }
 
-    public function storeFile($file, $type = "img")
+    public function storeFile($file, $type = "img", $gate = '')
     {
         if (!isset($file)) {
             return ['message' => 'فایل ارسال نشده. مجدد تلاش کنید', "statuscode" => Response::HTTP_BAD_REQUEST, 'link' => null];
@@ -217,7 +217,7 @@ class OcrLogController extends Controller
 
         $fileName = uniqid() . '.' . $file->extension();
 
-        $savePath = 'uploaded/' . $type . '/' . $fileName;
+        $savePath = 'uploaded/' . $type . '/' . $gate . $fileName;
 
         $file->move(public_path('uploaded/' . $type . '/'), $fileName);
 

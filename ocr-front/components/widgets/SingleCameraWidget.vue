@@ -107,12 +107,14 @@ export default {
     loadStream(camera) {
       // console.log(this.cameraDet)
       if (this.players[camera.id]) return;
+      const wsUrl = `ws://${window.location.host}/cam/${camera.group}/${camera.type}`;
       this.players[camera.id] = loadPlayer({
         // url: `ws://localhost:2000/api/stream/${camera.type}`,
         // url: `ws://${window.location.host}/ws/api/stream/${camera.type}`,
         // url: `ws://${this.cameraDet.camera.ip}/ws/api/stream/${camera.type}`,
         // url: `ws://${camera.ip}/ws/api/stream/${camera.type}`,
-        url: `ws://${window.location.host}/cam/${this.gate}`,
+        // url: `ws://${window.location.host}/cam/${this.gate}`,
+        url: wsUrl,
         canvas: document.getElementById(`canvas-${camera.id}`)
       });
 

@@ -57,7 +57,7 @@ export default {
 
     sseUrl() {
       alert(this.$route.params.gate)
-      return 'api/sse/ocr-log?receiver_id=' + this.$route.params.gate
+      return 'api/sse/ocr-log?receiver_id=' + this.$route.params.gate + '&gate_number=' + this.$route.params.gate
     },
     gateId() {
       return this.$route.params.gate

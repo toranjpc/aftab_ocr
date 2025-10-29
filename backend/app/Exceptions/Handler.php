@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\Facades\Log;
 
 class Handler extends ExceptionHandler
 {
@@ -24,6 +25,23 @@ class Handler extends ExceptionHandler
         'password',
         'password_confirmation',
     ];
+
+
+    public function report(\Throwable $e)
+    {
+        if ($this->shouldReport($e)) {
+            Log::error('🔥 Exception caught', [
+                'url' => request()->fullUrl(),
+                'method' => request()->method(),
+                'ip' => request()->ip(),
+                'user' => auth()->user()?->id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile() . ':' . $e->getLine(),
+            ]);
+        }
+
+        parent::report($e);
+    }
 
     /**
      * Register the exception handling callbacks for the application.

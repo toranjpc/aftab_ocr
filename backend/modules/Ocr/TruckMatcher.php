@@ -3,13 +3,13 @@
 namespace Modules\Ocr;
 
 use Carbon\Carbon;
-use Modules\Ocr\Jobs\SendLogJob;
-use Modules\Ocr\Models\LogReceiver;
-use Illuminate\Support\Facades\Log;
-
 use Modules\Collector\Models\CcsData;
 use Modules\BijacInvoice\Models\Bijac;
 use Modules\Collector\Services\InvoiceService;
+
+use Modules\Ocr\Jobs\SendLogJob;
+use Modules\Ocr\Models\LogReceiver;
+use Illuminate\Support\Facades\Log;
 
 class TruckMatcher
 {
@@ -25,86 +25,6 @@ class TruckMatcher
             SendLogJob::dispatch($logId, $receiver);
         }
     }
-
-    public static function plateContainerMatchingWithBuffer($item1, $item2)
-    {
-        try {
-            $diffInSeconds = (new Carbon($item1['data']->log_time))->diffInSeconds($item2['data']->log_time);
-
-            if ($item1['type'] !== $item2['type'] && $diffInSeconds <= 6) {
-                if ($item1['type'] === 'container_code') {
-                    $result = $item2['data']->update([
-                        'parent_id' => $item1['data']->id
-                    ]);
-
-                    static::makeSendJobs($item2['data']->id);
-
-                    return $result;
-                }
-
-                $result = $item1['data']->update([
-                    'parent_id' => $item2['data']->id
-                ]);
-
-                static::makeSendJobs($item1['data']->id);
-
-                return $result;
-            }
-
-            if ($item1['type'] === $item2['type']) {
-                return $item2;
-            }
-
-            if (static::containerIs20Foot($item2['data']->container_code)) {
-                return $item2;
-            }
-
-            if ($item1['type'] !== $item2['type'] && $item1['type'] === 'plate') {
-                $result = $item1['data']->update([
-                    'parent_id' => $item2['data']->id
-                ]);
-
-                static::makeSendJobs($item1['data']->id);
-
-                return $result;
-            }
-        } catch (\Exception $e) {
-            Log::error("err : " . $e);
-        }
-        return $item2;
-    }
-
-    static function setCache($cacheKey)
-    {
-        return function ($stack) use ($cacheKey) {
-            cache()->set($cacheKey, $stack);
-        };
-    }
-
-    static function getType($item)
-    {
-        if ($item->plate_number)
-            return 'plate';
-
-        if ($item->container_code)
-            return 'container_code';
-
-        return false;
-    }
-
-    static function containerIs20Foot($containerCode)
-    {
-        if (!$containerCode)
-            return false;
-
-        return str_contains($containerCode, '22G1');
-    }
-
-
-
-
-
-    /* from smart * /
 
     public static function plateMatching($item)
     {
@@ -429,6 +349,64 @@ class TruckMatcher
 
         return $cacheSetter($stack);
     }
-   
-    */
+
+    public static function plateContainerMatchingWithBuffer($item1, $item2)
+    {
+        $diffInSeconds = (new Carbon($item1['data']->log_time))->diffInSeconds($item2['data']->log_time);
+
+        if ($item1['type'] !== $item2['type'] && $diffInSeconds <= 5) {
+            if ($item1['type'] === 'container_code')
+                return $item2['data']->update([
+                    'parent_id' => $item1['data']->id
+                ]);
+
+            return $item1['data']->update([
+                'parent_id' => $item2['data']->id
+            ]);
+        }
+
+        if ($item1['type'] === $item2['type']) {
+            return $item2;
+        }
+
+        if (static::containerIs20Foot($item2['data']->container_code) && $diffInSeconds > 6) {
+            return $item2;
+        }
+
+        if ($item1['type'] !== $item2['type'] && $item1['type'] === 'plate') {
+            $item1['data']->update([
+                'parent_id' => $item2['data']->id
+            ]);
+
+            return true;
+        }
+
+        return $item2;
+    }
+
+    static function setCache($cacheKey)
+    {
+        return function ($stack) use ($cacheKey) {
+            cache()->set($cacheKey, $stack);
+        };
+    }
+
+    static function getType($item)
+    {
+        if ($item->plate_number)
+            return 'plate';
+
+        if ($item->container_code)
+            return 'container_code';
+
+        return false;
+    }
+
+    static function containerIs20Foot($containerCode)
+    {
+        if (!$containerCode)
+            return false;
+
+        return str_contains($containerCode, '22G1');
+    }
 }

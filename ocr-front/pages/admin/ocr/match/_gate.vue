@@ -236,7 +236,7 @@ export default {
       fields: fields(this),
       mainRoute: {
         // route: '/ocr-match?_append=invoice_with=bijacs&filters[plate_number][$notNull]',
-        route: '/ocr-match/list?_append=invoice_with=bijacs&receiver_id=' + this.matchGate + '&gate=' + this.matchGate,
+        route: `/ocr-match/list?_append=invoice_with=bijacs&gate_number=${this.matchGate}&gate=${this.matchGate}`,
         key: 'OcrMatch',
       },
     })
@@ -394,18 +394,30 @@ export default {
       */
 
     renderBTN(status, ifFalse = false) {
+      if (!status) {
+        return {
+          text: 'در حال جستجو فاکتور موردی',
+          color: 'grey'
+        }
+      }
+
+      var req = ''
+      if (status.includes('_req')) {
+        req = ' - موردی';
+        status = status.replace('_req', '');
+      }
 
       let list = {
         // bad_match_nok: ['دو فاکتور متفاوت', 'purple'],
-        gcoms_ok: ['فاکتور', 'cyan'],
+        gcoms_ok: ['فاکتور' + req, 'cyan'],
         gcoms_nok: ['بدون فاکتور', 'red'],
-        ccs_ok: ['فاکتور', 'green darken-4'],
+        ccs_ok: ['فاکتور' + req, 'green darken-4'],
         ccs_nok: ['بدون فاکتور', 'red'],
         container_without_bijac: ['بدون بیجک', 'orange'],
         plate_without_bijac: ['بدون بیجک', 'orange'],
-        container_ccs_ok: ['فاکتور (کانتینر)', 'green'],
+        container_ccs_ok: ['فاکتور (کانتینر)' + req, 'green'],
         container_ccs_nok: ['بدون فاکتور', 'red'],
-        plate_ccs_ok: ['فاکتور (پلاک)', 'green'],
+        plate_ccs_ok: ['فاکتور (پلاک)' + req, 'green'],
         plate_ccs_nok: ['بدون فاکتور', 'red'],
       }
       if (ifFalse) {

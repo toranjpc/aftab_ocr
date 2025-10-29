@@ -60,7 +60,7 @@ class SSEController extends Controller
 
                     if (request('receiver_id')) {
                         $notifs->where('receiver_id', request('receiver_id'));
-                        Log::error("event : {$event} - created_at : {$fromDate} - {$tillDate} - receiver_id : " . request('receiver_id'));
+                        // Log::error("event : {$event} - created_at : {$fromDate} - {$tillDate} - receiver_id : " . request('receiver_id'));
                     }
 
                     $notifs = $notifs->get();

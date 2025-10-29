@@ -192,7 +192,7 @@ class PlateService
     }
 
     // استخراج فقط اعداد از ورودی (حذف تمام حروف و نمادها)
-    private function extractDigits(string $input): string
+    public function extractDigits(string $input): string
     {
         return preg_replace('/\D/', '', $input);
     }
@@ -295,22 +295,6 @@ class PlateService
         }
 
         // در غیر این صورت پلاک ناشناخته
-        return 'other';
-
-
-        /**************************** */
-        foreach ($this->platePatterns as $type => $patterns) {
-            foreach ($patterns as $pattern) {
-                if (preg_match($pattern, $plate)) {
-                    return $type;
-                }
-            }
-        }
-
-        if ($this->isAfghanProvincePattern($plate)) {
-            return 'afghan';
-        }
-
         return 'other';
     }
 

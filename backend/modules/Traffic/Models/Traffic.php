@@ -6,6 +6,7 @@ use App\Models\Base;
 use Modules\Gcoms\Models\GcomsOutNotPermission;
 use Illuminate\Support\Facades\DB;
 
+use modules\BijacInvoice\Models\Bijac;
 
 class Traffic extends Base
 {
@@ -85,7 +86,7 @@ class Traffic extends Base
             ->where('log_type', 'checked');
     }
 
-    public function bijacs(): MorphToMany
+    public function bijacs()
     {
         return $this->belongsToMany(
             Bijac::class,

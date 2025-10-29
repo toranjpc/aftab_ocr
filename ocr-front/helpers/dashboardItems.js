@@ -14,7 +14,7 @@ export default [
     children: [
       {
         link: true,
-        to: '/admin/ocr',
+        to: '/admin/ocr/1',
         text: 'دوربین ocr',
         icon: 'cctv',
         staticData: '1'
@@ -78,7 +78,7 @@ export default [
     children: [
       {
         link: true,
-        to: '/admin/ocr',
+        to: '/admin/ocr/2',
         text: 'دوربین ocr',
         icon: 'cctv',
       },
@@ -141,7 +141,7 @@ export default [
     children: [
       {
         link: true,
-        to: '/admin/ocr',
+        to: '/admin/ocr/3',
         text: 'دوربین ocr',
         icon: 'cctv',
       },
@@ -204,8 +204,8 @@ export default [
     children: [
       {
         link: true,
-        to: '/admin/ocr',
-        text: 'دوربین غربی ocr',
+        to: '/admin/ocr/4',
+        text: 'دوربین ocr',
         icon: 'cctv',
       },
 
@@ -246,7 +246,7 @@ export default [
       {
         link: true,
         to: '/admin/monitoring/4',
-        text: 'گیت غربی (نگهبانی)',
+        text: 'گیت (نگهبانی)',
         icon: 'box',
       },
 

@@ -64,6 +64,7 @@ class CreateOcrLogsTable extends Migration
             $table->foreignId('traffic_id')->constrained('traffic')->cascadeOnDelete();
             $table->foreignId('bijac_id');
             $table->foreignId('invoice_id');
+            $table->string("type")->nullable();
             $table->timestamps();
         });
     }
