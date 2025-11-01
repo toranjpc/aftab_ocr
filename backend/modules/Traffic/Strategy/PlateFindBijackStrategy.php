@@ -50,29 +50,12 @@ class PlateFindBijackStrategy
 
                     $cleanNumber = $plateService->extractDigits($plate);
                     if (strlen($cleanNumber) === 7) {
-                        $wild = substr($normalized, 0, -2) . '??';
+                        $wild = substr($normalized, 0, -2) . '__';
                         $result = (clone $baseQuery)
-                            ->where('plate_normal', $wild)
+                            ->where('plate_normal', 'like', $wild)
                             ->get();
                         if (!$result->isEmpty()) break;
                     }
-
-                    if (str_contains($normalized, 'L')) {
-                        $result = (clone $baseQuery)
-                            ->where(function ($q) use ($normalized, $cleanNumber) {
-                                $q->where('plate_normal', $normalized)
-                                    ->orWhere('plate_normal', '???,' . $cleanNumber . ',L');
-                            })->get();
-                        if (!$result->isEmpty()) break;
-                    }
-
-                    $result = (clone $baseQuery)
-                        ->where(function ($q) use ($cleanNumber) {
-                            $q->whereRaw("REGEXP_REPLACE(plate, '[^0-9]', '') = ?", [$cleanNumber])
-                                ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') = ?", [$cleanNumber]);
-                        })
-                        ->get();
-                    if (!$result->isEmpty()) break;
 
                     if (strlen($cleanNumber) > 5) {
                         $partial = substr($cleanNumber, 0, 5);
@@ -84,6 +67,21 @@ class PlateFindBijackStrategy
                             ->get();
                         if (!$result->isEmpty()) break;
                     }
+
+                    if (str_contains($normalized, 'L')) {
+                        $result = (clone $baseQuery)
+                            ->Where('plate_normal', '___,' . $cleanNumber . ',L')
+                            ->get();
+                        if (!$result->isEmpty()) break;
+                    }
+
+                    $result = (clone $baseQuery)
+                        ->where(function ($q) use ($cleanNumber) {
+                            $q->whereRaw("REGEXP_REPLACE(plate, '[^0-9]', '') = ?", [$cleanNumber])
+                                ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') = ?", [$cleanNumber]);
+                        })
+                        ->get();
+                    if (!$result->isEmpty()) break;
                 }
 
                 if (!$result->isEmpty()) {
