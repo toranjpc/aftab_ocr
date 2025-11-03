@@ -31,7 +31,7 @@ class ProcessOcrLog implements ShouldQueue
 
     public function handle(BijacSearchService $bijacService)
     {
-        $lock = Cache::lock('match_container_plate_lock', 15);
+        $lock = Cache::lock('match_container_plate_lock', 5);
         if (!$lock->get()) {
             return $this->release();
         }
@@ -59,3 +59,6 @@ class ProcessOcrLog implements ShouldQueue
         }
     }
 }
+
+
+

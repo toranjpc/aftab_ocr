@@ -6,8 +6,12 @@ use Modules\Ocr\Controller\OcrLogController;
 use Modules\Ocr\Controller\OcrMatchController;
 use Modules\Ocr\Controller\GateController;
 
+// Route::post('/ocr-log', [\Modules\Traffic\Controller\TrafficController::class, 'store']);
+// Route::post('/ocr-log', function () {
+//     return 1;
+// });
 Route::post('/ocr-log', [OcrLogController::class, 'store']);
-    // ->middleware('auth:sanctum');//بررسی شود
+// ->middleware('auth:sanctum');//بررسی شود
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/ocr-match/list', [OcrMatchController::class, 'getList']);

@@ -21,11 +21,20 @@ class OcrLogController extends Controller
 {
     public function store(OcrLogRequest $request)
     {
-        // Log::error("request from AI : " . json_encode($request->all()));
-        // $trafficController = app(TrafficController::class);
-        // $trafficRequest = new TrafficRequest();
-        // $trafficRequest->merge($request->all());
-        // $trafficController->store($trafficRequest);
+        // try {
+        //     $trafficController = app(TrafficController::class);
+        //     $base = Request::create('/', 'POST', $request->all());
+        //     $trafficRequest = TrafficRequest::createFromBase($base);
+        //     $trafficRequest->setContainer(app())->validateResolved();
+        //     $trafficController->store($trafficRequest);
+        // } catch (\Throwable $th) {
+        //     log::build(['driver' => 'single', 'path' => storage_path("logs/TrafficMatch"),])
+        //         ->info("TrafficController error ");
+        // }
+
+        /**********************/
+
+
 
         $plate = false;
         if (isset($request->plate_number)) {
@@ -141,7 +150,7 @@ class OcrLogController extends Controller
     private function checkPlateIsDuplicate($data)
     {
         [$input, $gate] = $data;
-        $threshold = config('ocr.field_thresholds.plate_number', config('ocr.levenshtein_threshold'));
+        $threshold = config('ocr.field_thresholds.plate_number', 1);
 
         $lastSixPlate = OcrBuffer::getBuffer($gate);
 
@@ -153,16 +162,16 @@ class OcrLogController extends Controller
 
                     $lev = levenshtein($input, $plate->plate_number);
 
-                    if ($lev == 0) return $plate;
+                    // if ($lev == 0) return $plate;
 
                     if ($lev < $threshold) {
-                        $closest = $plate;
+                        return $plate;
                     }
 
                     if (
                         $key < 3 &&
-                        strlen($input) > $threshold &&
-                        strlen($plate->plate_number) > $threshold &&
+                        strlen($input) > 5 &&
+                        strlen($plate->plate_number) > 5 &&
                         (
                             str_contains($input, $plate->plate_number) ||
                             str_contains($plate->plate_number, $input)

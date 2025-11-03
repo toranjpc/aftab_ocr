@@ -72,7 +72,8 @@ class TruckStatusJob implements ShouldQueue
                             'match_status' => 'container_ccs_ok' . $noInvoice
                         ])->save();
                 }
-            } else if ($bijac = $match->bijacs->first()) {
+            } else if ($match->bijacs->first()) {
+                $bijac = $match->bijacs->first();
                 if ($bijac->type === 'gcoms') {
                     return $match->forceFill([
                         'match_status' => 'gcoms_nok'

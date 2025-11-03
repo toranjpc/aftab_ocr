@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateOcrLogsTable extends Migration
+class CreateTrafficTable extends Migration
 {
     /**
      * Run the migrations.
@@ -62,8 +62,8 @@ class CreateOcrLogsTable extends Migration
         Schema::create('traffic_bijac_invoice', function (Blueprint $table) {
             $table->id();
             $table->foreignId('traffic_id')->constrained('traffic')->cascadeOnDelete();
-            $table->foreignId('bijac_id');
-            $table->foreignId('invoice_id');
+            $table->foreignId('bijac_id')->nullable();
+            $table->foreignId('invoice_id')->nullable();
             $table->string("type")->nullable();
             $table->timestamps();
         });
@@ -82,7 +82,7 @@ class CreateOcrLogsTable extends Migration
     }
 }
 
-
+/*
 $aa = [
     "date" => "2025-10-25",
     "log_time" => "2025-10-25 12:29:22",
@@ -119,3 +119,4 @@ $aa = [
     "frequency" => "1.0",
     "ocr_accuracy" => "0.9697834253311157",
 ];
+*/

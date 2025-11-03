@@ -5,6 +5,8 @@ namespace Modules\Traffic\Observers;
 use Illuminate\Support\Facades\Cache;
 use Modules\Traffic\Models\Traffic;
 use Modules\Traffic\Jobs\ProcessTrafficMatch;
+use Illuminate\Support\Facades\Log;
+use Modules\Sse\Models\SSE;
 
 class TrafficObserver
 {
@@ -16,6 +18,8 @@ class TrafficObserver
         $this->pushToTrafficQueue($item);
 
         ProcessTrafficMatch::dispatch($item->id);
+
+        $this->createSSE($item);
     }
 
     public function updated(Traffic $item)
@@ -28,6 +32,8 @@ class TrafficObserver
         ) {
             ProcessTrafficMatch::dispatch($item->id);
         }
+
+        $this->createSSE($item);
     }
 
     protected function pushToTrafficQueue(Traffic $item, $event = 'Traffic')
@@ -47,16 +53,29 @@ class TrafficObserver
     {
         $redis = app('redis');
         $key   = 'Traffic_queue_' . $item->gate_number;
-        $all = $redis->lrange($key, 0, -1);
-        $filtered = array_filter($all, function ($json) use ($item) {
-            $data = json_decode($json, true) ?? [];
-            return isset($data['data']['id']) && $data['data']['id'] != $item->id;
-        });
-        $redis->del($key);
-        foreach ($filtered as $row) {
-            $redis->rpush($key, $row);
+        $all   = collect($redis->lrange($key, 0, -1));
+
+        foreach ($all as $index => $json) {
+            $data = json_decode($json, true);
+            if (($data['data']['id'] ?? null) == $item->id) {
+                $redis->lset($key, $index, '__TO_DELETE__');
+                $redis->lrem($key, 1, '__TO_DELETE__');
+                break;
+            }
         }
+
         $this->pushToTrafficQueue($item, 'Traffic_updated');
+    }
+
+    public function createSSE(Traffic $item)
+    {
+        SSE::create([
+            // 'message' => ['data' => $item->toArray()],
+            'message' => ['data' => $item->id],
+            'event' => 'Traffic',
+            'model' => Traffic::class,
+            'receiver_id' => $item->gate_number,
+        ]);
     }
 
 

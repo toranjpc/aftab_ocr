@@ -3,6 +3,7 @@
 namespace Modules\Traffic\Models;
 
 use App\Models\Base;
+use App\Models\Log;
 use Modules\Gcoms\Models\GcomsOutNotPermission;
 use Illuminate\Support\Facades\DB;
 
@@ -82,7 +83,7 @@ class Traffic extends Base
     {
         return $this->hasOne(Log::class, 'table_id')
             ->select("user_id", "table_id")
-            ->where('table_name', 'OcrMatch')
+            ->where('table_name', 'traffic')
             ->where('log_type', 'checked');
     }
 
@@ -95,6 +96,7 @@ class Traffic extends Base
             'bijac_id'
         );
     }
+
     public function getInvoiceAttribute()
     {
         return $this->bijacs

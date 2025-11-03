@@ -9,12 +9,12 @@ const cameras = [
   // { name: 'غربی', type: 'plate', group: '1', url: 'rtsp://admin:Admin@123@192.168.10.10:554/cam/realmonitor?channel=1&subtype=1' },
   // { name: 'غربی - کانتینر خوان', type: 'container', group: '1', url: 'rtsp://admin:Admin@123@192.168.10.12:554/cam/realmonitor?channel=1&subtype=1' },
   // { name: 'غربی - کانتینر از بغل', type: 'face', group: '1', url: 'rtsp://admin:Admin@123@192.168.10.15:554/cam/realmonitor?channel=1&subtype=1' },
-  // { name: 'شرقی 1', type: 'plate', group: '2', url: 'rtsp://admin:Admin@123@172.23.11.21:554/cam/realmonitor?channel=1&subtype=1' },
+  { name: 'شرقی 1', type: 'plate', group: '2', url: 'rtsp://admin:Admin@123@172.23.11.21:554/cam/realmonitor?channel=1&subtype=1' },
   // { name: 'شرقی 1 - کانتینر خوان', type: 'container', group: '2', url: 'rtsp://admin:Admin@123@172.23.11.16:554/cam/realmonitor?channel=1&subtype=1' },
-  // { name: 'شرقی 2', type: 'plate', group: '3', url: 'rtsp://admin:Admin@123@172.23.12.21:554/cam/realmonitor?channel=1&subtype=1' },
+  { name: 'شرقی 2', type: 'plate', group: '3', url: 'rtsp://admin:Admin@123@172.23.12.21:554/cam/realmonitor?channel=1&subtype=1' },
   // { name: 'شرقی 2 - کانتینر خوان', type: 'container', group: '3', url: 'rtsp://admin:Admin@123@172.23.12.15:554/cam/realmonitor?channel=1&subtype=1' },
   { name: 'شرقی 3', type: 'plate', group: '4', url: 'rtsp://admin:Admin@123@172.23.13.21:554/cam/realmonitor?channel=1&subtype=1' },
-  { name: 'شرقی 3 - کانتینر خوان', type: 'container', group: '4', url: 'rtsp://admin:Admin@123@172.23.13.15:554/cam/realmonitor?channel=1&subtype=1' },
+  // { name: 'شرقی 3 - کانتینر خوان', type: 'container', group: '4', url: 'rtsp://admin:Admin@123@172.23.13.15:554/cam/realmonitor?channel=1&subtype=1' },
 ];
 
 // ایجاد handler برای هر دوربین

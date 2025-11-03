@@ -7,14 +7,14 @@ use Modules\Traffic\Controller\TrafficMatchController;
 use Modules\Traffic\Controller\GateController;
 
 Route::post('/traffic/addlog', [TrafficController::class, 'store']);
-    // ->middleware('auth:sanctum');//بررسی شود
+// ->middleware('auth:sanctum');//بررسی شود
 
-// Route::middleware(['auth'])->group(function () {
-//     Route::get('/traffic-match/list', [TrafficMatchController::class, 'getList']);
-//     Route::get('/traffic-match/{traffic}/items', [TrafficMatchController::class, 'getGroupItems']);
-//     Route::patch('/traffic-match/{trafficMatch}', [TrafficMatchController::class, 'update']);
-//     Route::middleware('api')->post('/traffic-match/customCheck/{trafficMatch}', [TrafficMatchController::class, 'update_customCheck']);
-// });
+Route::middleware(['auth'])->group(function () {
+    Route::get('/traffics/bygate/list/all', [TrafficController::class, 'getList'])->name('traffic_list');
+    //     Route::get('/traffic-match/{traffic}/items', [TrafficMatchController::class, 'getGroupItems']);
+    //     Route::patch('/traffic-match/{trafficMatch}', [TrafficMatchController::class, 'update']);
+    Route::middleware('api')->post('/traffic-match/customCheck/{trafficMatch}', [TrafficController::class, 'update_customCheck']);
+});
 
 // Route::post('/truck-log', [TrafficController::class, 'store2']);
 
