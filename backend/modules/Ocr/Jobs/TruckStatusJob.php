@@ -39,7 +39,7 @@ class TruckStatusJob implements ShouldQueue
         if ($match) {
 
             if (!$match->bijac_has_invoice && $match->bijacs->first()) {
-                Log::error("noInvoice STARTED : {$match->plate_number} -  {$match->container_code}");
+                // Log::error("noInvoice STARTED : {$match->plate_number} -  {$match->container_code}");
 
                 $noInvoice = '_req';
                 $this->noInvoice($this->log, $match);
@@ -137,7 +137,7 @@ class TruckStatusJob implements ShouldQueue
                     $invoiceService = null;
                     while ($attempts < $maxAttempts) {
                         $invoiceService = $invoiceService_->getWithReceiptNumber($value->receipt_number);
-                        Log::error("getWithReceiptNumber : {$value->receipt_number} - {$match->plate_number}");
+                        // Log::error("getWithReceiptNumber : {$value->receipt_number} - {$match->plate_number}");
                         if (!empty($invoiceService)) {
                             Log::error("getWithReceiptNumber DONED : {$value->receipt_number} - {$match->plate_number}");
                             break;
