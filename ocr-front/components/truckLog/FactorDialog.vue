@@ -323,7 +323,7 @@ export default {
   created() {
     this._listen('ccs.dialog', (log) => {
       this.log = log
-      console.log(log.id)
+      // console.log(log)
       this.dialog = true
       this.selectedBijac = getSafe(this.log, 'bijacs[0]', {})
       this.selectedInvoice = getSafe(this.log, 'invoices[0]', {})
@@ -376,17 +376,17 @@ export default {
         this.selectedInvoice = invoice
 
         console.log(invoice.id)
-        // const response = await this.$axios.post('/api/invoice/select', {
-        //   log_id: this.log.id,
-        //   invoice_id: invoice.id,
-        // })
+        const response = await this.$axios.post('/ocr-match/addBaseInvoice/' + this.log.id, {
+          // log_id: this.log.id,
+          invoice_id: invoice.id,
+        })
 
         // console.log('✅ پاسخ سرور:', response.data)
-        // this.$toast?.success?.('فاکتور انتخاب شد')
+        this.$toast?.success?.('فاکتور انتخاب شد')
 
       } catch (error) {
         // console.error('❌ خطا در ارسال درخواست:', error)
-        // this.$toast?.error?.('خطا در ثبت انتخاب فاکتور')
+        this.$toast?.error?.('خطا در ثبت انتخاب فاکتور')
       }
     },
 

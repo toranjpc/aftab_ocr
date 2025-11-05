@@ -4,6 +4,7 @@ namespace Modules\Ocr\Controller;
 
 use Illuminate\Http\Request;
 use Modules\BijacInvoice\Models\Bijac;
+use Modules\BijacInvoice\Models\Invoice;
 use Modules\Gcoms\Models\GcomsOutData;
 use Modules\Ocr\Models\OcrLog;
 use Modules\Ocr\Models\OcrMatch;
@@ -223,6 +224,35 @@ class OcrMatchController extends Controller
             ], 500);
         }
     }
+    public function addBaseInvoice(Request $request, $ocrMatchId)
+    {
+        try {
+            $request->validate([
+                'invoice_id' => 'required|integer|exists:invoices,id',
+            ]);
+            $ocrMatch = OcrMatch::with('bijacs.invoices')->findOrFail($ocrMatchId);
+            $invoiceIds = $ocrMatch->bijacs
+                ->flatMap(fn($bijac) => $bijac->invoices->pluck('id'))
+                ->unique();
+
+            if ($invoiceIds->isEmpty()) {
+                return response()->json(['message' => 'هیچ فاکتوری برای این مچ پیدا نشد.'], 404);
+            }
+            Invoice::whereIn('id', $invoiceIds)->update(['base' => 0]);
+            Invoice::where('id', $request->invoice_id)->update(['base' => 1]);
+
+            return response()->json([
+                'message' => 'Base invoice بروزرسانی شد.',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('❌ خطا در addBaseInvoice:', ['error' => $e->getMessage()]);
+            // return response()->json([
+            //     'message' => 'خطا در بروزرسانی Base invoice',
+            //     'error' => $e->getMessage(),
+            // ], 500);
+        }
+    }
+
 
 
 

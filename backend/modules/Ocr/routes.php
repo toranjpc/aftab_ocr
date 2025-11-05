@@ -18,6 +18,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ocr-match/{ocr}/items', [OcrMatchController::class, 'getGroupItems']);
     Route::patch('/ocr-match/{ocrMatch}', [OcrMatchController::class, 'update']);
     Route::middleware('api')->post('/ocr-match/customCheck/{ocrMatch}', [OcrMatchController::class, 'update_customCheck']);
+    Route::middleware('api')->post('/ocr-match/addBaseInvoice/{ocrMatch}', [OcrMatchController::class, 'addBaseInvoice']);
 });
 
 Route::post('/truck-log', [OcrLogController::class, 'store2']);

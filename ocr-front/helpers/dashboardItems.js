@@ -29,14 +29,14 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/gate/west',
+        to: '/admin/ocr/gate/west/1',
         text: 'ورود/خروج',
         icon: 'truck',
       },
 
       {
         link: true,
-        to: '/admin/ocr/report',
+        to: '/admin/ocr/report/1',
         text: 'گزارش ترددها',
         icon: 'chart-area',
       },
@@ -49,7 +49,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/log-receiver',
+        to: '/admin/log-receiver/1',
         text: 'سرویس ها',
         icon: 'cctv',
       },
@@ -92,14 +92,14 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/gate/west',
+        to: '/admin/ocr/gate/west/1',
         text: 'ورود/خروج',
         icon: 'truck',
       },
 
       {
         link: true,
-        to: '/admin/ocr/report',
+        to: '/admin/ocr/report/1',
         text: 'گزارش ترددها',
         icon: 'chart-area',
       },
@@ -112,7 +112,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/log-receiver',
+        to: '/admin/log-receiver/1',
         text: 'سرویس ها',
         icon: 'cctv',
       },
@@ -155,14 +155,14 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/gate/west',
+        to: '/admin/ocr/gate/west/1',
         text: 'ورود/خروج',
         icon: 'truck',
       },
 
       {
         link: true,
-        to: '/admin/ocr/report',
+        to: '/admin/ocr/report/1',
         text: 'گزارش ترددها',
         icon: 'chart-area',
       },
@@ -175,7 +175,7 @@ export default [
 
       {
         link: true,
-        to: '/admin/log-receiver',
+        to: '/admin/log-receiver/1',
         text: 'سرویس ها',
         icon: 'cctv',
       },
@@ -218,27 +218,27 @@ export default [
 
       {
         link: true,
-        to: '/admin/ocr/gate/west',
+        to: '/admin/ocr/gate/west/1',
         text: 'ورود/خروج',
         icon: 'truck',
       },
 
       {
         link: true,
-        to: '/admin/ocr/report',
+        to: '/admin/ocr/report/1',
         text: 'گزارش ترددها',
         icon: 'chart-area',
       },
       {
         link: true,
-        to: '/admin/camera/4',
+        to: '/admin/camera/4/1',
         text: 'دوربین‌ها',
         icon: 'cctv',
       },
 
       {
         link: true,
-        to: '/admin/log-receiver',
+        to: '/admin/log-receiver/1',
         text: 'سرویس ها',
         icon: 'cctv',
       },
