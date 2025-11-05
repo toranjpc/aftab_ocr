@@ -54,6 +54,15 @@ class TruckStatusJob implements ShouldQueue
             }
 
             if ($match->bijac_has_invoice) {
+
+                try {
+                    if ($match->gate_number == 3) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                            ->info("TruckStatusJob _bijac_has_invoice ({$match->id}) down by palte : {$match->plate_number}  ");
+                    }
+                } catch (\Throwable $th) {
+                }
+
                 if ($match->bijacs->first()->type === 'gcoms') {
                     return $match->forceFill([
                         'match_status' => 'gcoms_ok' . $noInvoice
@@ -73,6 +82,15 @@ class TruckStatusJob implements ShouldQueue
                         ])->save();
                 }
             } else if ($match->bijacs->first()) {
+
+                try {
+                    if ($match->gate_number == 3) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                            ->info("TruckStatusJob _bijacs->first ({$match->id}) down by palte : {$match->plate_number}  ");
+                    }
+                } catch (\Throwable $th) {
+                }
+
                 $bijac = $match->bijacs->first();
                 if ($bijac->type === 'gcoms') {
                     return $match->forceFill([
@@ -93,6 +111,14 @@ class TruckStatusJob implements ShouldQueue
                         ])->save();
                 }
             } else {
+                try {
+                    if ($match->gate_number == 3) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                            ->info("TruckStatusJob _without bijac ({$match->id}) down by palte : {$match->plate_number}  ");
+                    }
+                } catch (\Throwable $th) {
+                }
+
                 Log::error("plate without bijac : {$match->plate_number} - {$match->id}");
 
                 if ($match->plate_number)
@@ -104,6 +130,12 @@ class TruckStatusJob implements ShouldQueue
                         'match_status' => 'container_without_bijac'
                     ])->save();
             }
+        }
+
+        try {
+            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                ->info("TruckStatusJob match not find ");
+        } catch (\Throwable $th) {
         }
     }
 

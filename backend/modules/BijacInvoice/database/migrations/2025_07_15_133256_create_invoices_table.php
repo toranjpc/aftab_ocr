@@ -27,6 +27,7 @@ class CreateInvoicesTable extends Migration
             $table->unsignedInteger('number')->nullable();
             $table->unsignedFloat('tax');
             $table->string('kutazh')->nullable();
+            $table->tinyInteger('base')->default(0);
             $table->dateTime('request_date')->nullable();
             $table->timestamps();
         });

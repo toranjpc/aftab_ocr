@@ -76,18 +76,19 @@ class OcrMatch extends Base
 
     public function getBijacHasInvoiceAttribute()
     {
-        $allInvoices = $this->bijacs->flatMap(function ($bijac) {
-            return $bijac->invoices;
-        });
-        return $allInvoices
-            ->unique('id')
-            ->sortBy([
-                ['pay_date', 'desc'],
-                ['request_date', 'desc'],
-            ])
-            ->first() ??
-            null;
-        /*
+        try {
+            $allInvoices = $this->bijacs->flatMap(function ($bijac) {
+                return $bijac->invoices;
+            });
+            return $allInvoices
+                ->unique('id')
+                ->sortBy([
+                    ['pay_date', 'desc'],
+                    ['request_date', 'desc'],
+                ])
+                ->first() ??
+                null;
+            /*
         return $this->bijacs
             ->flatMap
             ->invoices
@@ -99,7 +100,10 @@ class OcrMatch extends Base
             ->first() ??
             null;
         */
-        // return $this->bijacs()->whereHas('invoice')->first() ?? null;
+            // return $this->bijacs()->whereHas('invoice')->first() ?? null;
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
     }
 
     public function getInvoicesAttribute()

@@ -54,11 +54,16 @@ class ProcessOcrLog implements ShouldQueue
             foreach ($strategies as $strategy) {
                 if ($strategy->match($ocr, $matches, $bijacService)) break;
             }
+
+            try {
+                if ($ocr->gate_number == 3) {
+                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                        ->info("ProcessOcrLog ({$ocr->id}) down by palte : {$ocr->plate_number}  ");
+                }
+            } catch (\Throwable $th) {
+            }
         } finally {
             $lock->release();
         }
     }
 }
-
-
-

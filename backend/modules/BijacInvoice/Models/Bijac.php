@@ -12,7 +12,7 @@ class Bijac extends Base
 {
     protected $guarded = ['id', 'created_at', 'updated_at'];
 
-    const SEARCH_DAY = [3];//, 7, 30
+    const SEARCH_DAY = [3]; //, 7, 30
 
     public function invoice(): BelongsTo
     {
@@ -146,13 +146,15 @@ class Bijac extends Base
                     ->latestBetween($dateRange)
                     ->get();
 
-                // $result = Bijac::where(
-                //     'plate_normal',
-                //     $wildcardPattern
-                // )
-                //     ->whereBetween('bijac_date', $dateRange)
-                //     ->latestBetween($dateRange)
-                //     ->get();
+                if ($result->isEmpty()) {
+                    $result = Bijac::where(
+                        'plate_normal',
+                        $wildcardPattern
+                    )
+                        ->whereBetween('bijac_date', $dateRange)
+                        ->latestBetween($dateRange)
+                        ->get();
+                }
             }
 
             if ($result->isNotEmpty()) {

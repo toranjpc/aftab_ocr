@@ -4,6 +4,7 @@ namespace Modules\Ocr;
 
 use Modules\BijacInvoice\Models\Bijac;
 use Modules\BijacInvoice\Services\InvoiceService;
+use Illuminate\Support\Facades\Log;
 
 class BijacMatcher
 {
@@ -191,7 +192,14 @@ class BijacMatcher
                 static::plateMatching($item);
             }
             static::containerMatching($item);
-        } else
+        } else {
             static::plateMatching($item);
+        }
+
+
+        if ($item->gate_number == 3) {
+            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                ->info("BijacMatcher proccesed ({$item->id}) by palte : {$item->plate_number}  ");
+        }
     }
 }

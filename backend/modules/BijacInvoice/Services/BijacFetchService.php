@@ -100,6 +100,13 @@ class BijacFetchService
         //     );
         // }
 
+        try {
+            log::build(['driver' => 'single', 'path' => storage_path("logs/fetchBijacs.log"),])
+                ->info("bijacs fetched _ count : " . count($bijacs) . "_ invoice count : {$invoices->count()}  ");
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+
         if ($invoices->count()) {
 
             $processedInvoices = $invoices->map(function ($invoice) {
@@ -150,7 +157,7 @@ class BijacFetchService
                     // $bijac['type'] == 'ccs' ?
                     $service->normalizePlate($bijac['plate'])
                     // : $bijac['plate_normal']
-                    ;
+                ;
                 return $item;
             })->toArray();
 

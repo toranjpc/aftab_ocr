@@ -64,10 +64,14 @@
             </template>
             <template #actions>
               <v-btn v-for="invoice in log.invoices" small
-                :color="selectedInvoice.id === invoice.id ? 'info' : 'primary'" class="black--text ma-1"
+                :color="selectedInvoice.id === invoice.id ? 'info' : 'primary'" class="black--text ma-1 pe-1"
                 @click="selectedInvoice = invoice" :key="invoice.id">
                 {{ invoice.invoice_number }}
+
+                <input v-if="log.invoices?.length > 0" type="radio" class="ms-2" :name="'F_' + log.id"
+                  :value="invoice.id" :checked="invoice.base" @change="onInvoiceSelect(invoice)" />
               </v-btn>
+
             </template>
             <div class="d-flex flex-column">
               <div v-for="field in invoiceFields" :key="field.field" class="d-flex flex-row">
@@ -319,6 +323,7 @@ export default {
   created() {
     this._listen('ccs.dialog', (log) => {
       this.log = log
+      console.log(log.id)
       this.dialog = true
       this.selectedBijac = getSafe(this.log, 'bijacs[0]', {})
       this.selectedInvoice = getSafe(this.log, 'invoices[0]', {})
@@ -365,6 +370,27 @@ export default {
 
       return res
     },
+
+    async onInvoiceSelect(invoice) {
+      try {
+        this.selectedInvoice = invoice
+
+        console.log(invoice.id)
+        // const response = await this.$axios.post('/api/invoice/select', {
+        //   log_id: this.log.id,
+        //   invoice_id: invoice.id,
+        // })
+
+        // console.log('✅ پاسخ سرور:', response.data)
+        // this.$toast?.success?.('فاکتور انتخاب شد')
+
+      } catch (error) {
+        // console.error('❌ خطا در ارسال درخواست:', error)
+        // this.$toast?.error?.('خطا در ثبت انتخاب فاکتور')
+      }
+    },
+
+
   },
 }
 </script>

@@ -21,6 +21,16 @@ class OcrLogController extends Controller
 {
     public function store(OcrLogRequest $request)
     {
+        // if ($request->gate_number != 3) return;
+        try {
+            if ($request->gate_number == 3) {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                    ->info("OcrLogController (data recived) by palte : {$request->plate_number}  ");
+            }
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+
         // try {
         //     $trafficController = app(TrafficController::class);
         //     $base = Request::create('/', 'POST', $request->all());
@@ -33,7 +43,6 @@ class OcrLogController extends Controller
         // }
 
         /**********************/
-
 
 
         $plate = false;
@@ -98,7 +107,7 @@ class OcrLogController extends Controller
 
         foreach ($imageFields as $field) {
             if ($request->hasFile($field)) {
-                $imageUrls[$field . '_url'] = $this->storeFile($request->file($field))["link"];
+                $imageUrls[$field . '_url'] = $this->storeFile($request->file($field), $request->gate_number)["link"];
             }
         }
 
@@ -128,6 +137,16 @@ class OcrLogController extends Controller
             ProcessOcrLog::dispatch(
                 $ocrLog->id
             );
+
+            try {
+                if ($ocrLog->gate_number == 3) {
+                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                        ->info("OcrLogController ({$ocrLog->id}) by palte : {$ocrLog->plate_number}  ");
+                }
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
+
             return ['id5' => $ocrLog->id];
         }
 
@@ -170,14 +189,22 @@ class OcrLogController extends Controller
 
                     if (
                         $key < 3 &&
-                        strlen($input) > 5 &&
-                        strlen($plate->plate_number) > 5 &&
-                        (
-                            str_contains($input, $plate->plate_number) ||
-                            str_contains($plate->plate_number, $input)
-                        )
+                        strlen($input) >= 5 &&
+                        strlen($plate->plate_number) >= 5
                     ) {
-                        $closest = $plate;
+                        $input_substr = substr($input, 0, 5);
+                        $plate_number_substr = substr($plate->plate_number, 0, 5);
+                        if (
+                            str_contains($input_substr, $plate_number_substr) ||
+                            str_contains($plate_number_substr, $input_substr)
+                        ) {
+                            $closest = $plate;
+                        }
+
+                        $lev = levenshtein($input_substr, $plate_number_substr);
+                        if ($lev < $threshold) {
+                            return $plate;
+                        }
                     }
                 }
             }
@@ -218,7 +245,7 @@ class OcrLogController extends Controller
         return $closest;
     }
 
-    public function storeFile($file, $type = "img", $gate = '')
+    public function storeFile($file, $gate = '', $type = "img")
     {
         if (!isset($file)) {
             return ['message' => 'فایل ارسال نشده. مجدد تلاش کنید', "statuscode" => Response::HTTP_BAD_REQUEST, 'link' => null];
@@ -226,9 +253,9 @@ class OcrLogController extends Controller
 
         $fileName = uniqid() . '.' . $file->extension();
 
-        $savePath = 'uploaded/' . $type . '/' . $gate . $fileName;
+        $savePath = 'uploaded/' . $type . '/' . $gate . "_" . $fileName;
 
-        $file->move(public_path('uploaded/' . $type . '/'), $fileName);
+        $file->move(public_path('uploaded/' . $type . '/'), $gate . "_" . $fileName);
 
         return ['message' => 'ذخیره شد', "statuscode" => Response::HTTP_OK, 'link' => $savePath];
     }

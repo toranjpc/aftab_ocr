@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Modules\BijacInvoice\Models\Bijac;
 use Modules\Ocr\Models\OcrMatch;
 use Modules\BijacInvoice\Services\BijacSearchService;
+use Illuminate\Support\Facades\Log;
 
 // class EditedMatchBijacs implements ShouldQueue
 class EditedMatchBijacs
@@ -138,6 +139,15 @@ class EditedMatchBijacs
                 ]);
                 $match->bijacs()->sync($bijacs->pluck('id'));
             }
+        }
+
+
+        try {
+            if ($match->gate_number == 3) {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+                    ->info("EditedMatchBijacs ({$match->id}) down by palte : {$match->plate_number}  ");
+            }
+        } catch (\Throwable $th) {
         }
     }
 }
