@@ -25,7 +25,7 @@ class GateController extends Controller
 
         if (isset($params['receipt_number'])) {
             $data = GcomsService::getBijacTaki($params['receipt_number']);
-            log::info('GcomsService : ' . $data);
+            log::info('GcomsService : ' . json_encode($data));
             return;
             if (!!$data) {
                 TruckMatcher::bijacMatching($ocrMatch);

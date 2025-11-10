@@ -23,9 +23,12 @@ class OcrLogController extends Controller
     {
         // if ($request->gate_number != 3) return;
         try {
-            if ($request->gate_number == 3) {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
+            if (isset($request->plate_number)) {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
                     ->info("OcrLogController (data recived) by palte : {$request->plate_number}  ");
+            } elseif (isset($request->container_code)) {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                    ->info("OcrLogController (data recived) by palte : {$request->container_code}  ");
             }
         } catch (\Throwable $th) {
             //throw $th;
@@ -55,7 +58,7 @@ class OcrLogController extends Controller
             if ($plate) {
                 if ($plate->ocr_accuracy >= $request->ocr_accuracy) {
 
-                    OcrLog::where('id', $plate->id)->update([
+                    OcrLog::where('id', $plate->id)->where('gate_number', $request->gate_number)->update([
                         'plate_number_2' => $request->plate_number,
                     ]);
 
@@ -67,7 +70,6 @@ class OcrLogController extends Controller
         $container = false;
         if (isset($request->container_code)) {
 
-
             $container = $this->checkIsDuplicateContainer([
                 $request->container_code,
                 $request->gate_number,
@@ -75,7 +77,7 @@ class OcrLogController extends Controller
 
             if ($container) {
                 if ($container->ocr_accuracy >= $request->ocr_accuracy) {
-                    OcrLog::where('id', $container->id)->update([
+                    OcrLog::where('id', $container->id)->where('gate_number', $request->gate_number)->update([
                         'container_code_2' => $request->container_code,
                     ]);
 
@@ -115,6 +117,7 @@ class OcrLogController extends Controller
 
         if ($plate) {
             OcrLog::where('id', $plate->id)
+                ->where('gate_number', $request->gate_number)
                 ->update([
                     ...$data,
                     'plate_number_2' => $plate->plate_number
@@ -123,6 +126,7 @@ class OcrLogController extends Controller
             return ['id3' => $plate->id];
         } elseif ($container) {
             OcrLog::where('id', $container->id)
+                ->where('gate_number', $request->gate_number)
                 ->update([
                     ...$data,
                     'container_code_2' => $container->container_code

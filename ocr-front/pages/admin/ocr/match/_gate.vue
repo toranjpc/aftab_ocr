@@ -5,6 +5,8 @@
 
     <DynamicTemplate>
       <template #header-btn>
+        <AddPlateDialog />
+
         <SseBtn :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number'${matchGate}`" />
       </template>
 

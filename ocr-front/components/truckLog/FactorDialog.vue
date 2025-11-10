@@ -375,13 +375,13 @@ export default {
       try {
         this.selectedInvoice = invoice
 
-        console.log(invoice.id)
         const response = await this.$axios.post('/ocr-match/addBaseInvoice/' + this.log.id, {
           // log_id: this.log.id,
           invoice_id: invoice.id,
         })
 
-        // console.log('✅ پاسخ سرور:', response.data)
+        // console.log(invoice.id)
+        console.log('✅ پاسخ سرور:', response.data)
         this.$toast?.success?.('فاکتور انتخاب شد')
 
       } catch (error) {

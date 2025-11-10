@@ -18,6 +18,10 @@ class Bijac extends Base
     {
         return $this->belongsTo(Invoice::class, 'receipt_number', 'receipt_number');
     }
+    public function invoiceBase(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'receipt_number', 'receipt_number')->where('base', 1);
+    }
 
     public function invoices()
     {
@@ -87,7 +91,7 @@ class Bijac extends Base
 
             // حالت ۲: wildcard
             if ($result->isEmpty() && strlen($cleanNumber) == 7) {
-                $wildcardPattern = substr($plate_number, 0, -2) . '??';
+                $wildcardPattern = substr($plate_number, 0, -2) . '__';
 
                 $result = Bijac::when($day > 3, function ($query) {
                     return $query->doesntHave('ocrMatches');
@@ -103,7 +107,7 @@ class Bijac extends Base
                 $result = Bijac::when($day > 3, function ($query) {
                     return $query->doesntHave('ocrMatches');
                 })
-                    ->where('plate_normal', '???,' . $cleanNumber . ',L')
+                    ->where('plate_normal', '___,' . $cleanNumber . ',L')
                     ->whereBetween('bijac_date', $dateRange)
                     ->latestBetween($dateRange)
                     ->get();
@@ -115,7 +119,7 @@ class Bijac extends Base
                     return $query->doesntHave('ocrMatches');
                 })
                     ->whereRaw(
-                        "REGEXP_REPLACE(plate, '[^0-9]', '') = ?",
+                        "REGEXP_REPLACE(plate_normal, '[^0-9]', '') = ?",
                         [$cleanNumber]
                     )
                     // ->whereNull('plate_normal')
@@ -139,7 +143,7 @@ class Bijac extends Base
                     return $query->doesntHave('ocrMatches');
                 })
                     ->whereRaw(
-                        "REGEXP_REPLACE(plate, '[^0-9]', '') = ?",
+                        "REGEXP_REPLACE(plate_normal, '[^0-9]', '') = ?",
                         [$wildcardPattern]
                     )
                     ->whereBetween('bijac_date', $dateRange)
@@ -149,7 +153,8 @@ class Bijac extends Base
                 if ($result->isEmpty()) {
                     $result = Bijac::where(
                         'plate_normal',
-                        $wildcardPattern
+                        "LIKE",
+                        $cleanNumber
                     )
                         ->whereBetween('bijac_date', $dateRange)
                         ->latestBetween($dateRange)

@@ -150,6 +150,8 @@ class TruckStatusJob implements ShouldQueue
     }
     public function noInvoice($log, $match)
     {
+        log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
+            ->info("noInvoice run match id : {$match->id} ");
         // return;
         if (!cache()->get('truckstatus_reran_' . $log)) {
             cache()->put('truckstatus_reran_' . $log, true, 60);
@@ -171,11 +173,15 @@ class TruckStatusJob implements ShouldQueue
                         $invoiceService = $invoiceService_->getWithReceiptNumber($value->receipt_number);
                         // Log::error("getWithReceiptNumber : {$value->receipt_number} - {$match->plate_number}");
                         if (!empty($invoiceService)) {
-                            Log::error("getWithReceiptNumber DONED : {$value->receipt_number} - {$match->plate_number}");
+                            // Log::error("getWithReceiptNumber DONED : {$value->receipt_number} - {$match->plate_number}");
+                            log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
+                                ->info("getWithReceiptNumber invoice find match id : {$match->id} _ receipt_number:{$value->receipt_number} - plate_number:{$match->plate_number}");
                             break;
                         }
                         $attempts++;
-                        Log::error("getWithReceiptNumber not find : {$value->receipt_number} - {$match->plate_number}");
+                        // Log::error("getWithReceiptNumber not find : {$value->receipt_number} - {$match->plate_number}");
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
+                            ->info("getWithReceiptNumber not find match id : {$match->id} _ receipt_number:{$value->receipt_number} - plate_number:{$match->plate_number}");
                         sleep(1);
                     }
 
@@ -224,7 +230,9 @@ class TruckStatusJob implements ShouldQueue
                 //     $query->with('invoices');
                 // }])->find($log);
             } catch (\Throwable $e) {
-                Log::error("❌ [TruckStatusJob] Error during noInvoice for receipt_number = " . $e->getMessage());
+                // Log::error("❌ [TruckStatusJob] Error during noInvoice for receipt_number = " . $e->getMessage());
+                log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
+                    ->info("❌ [TruckStatusJob] Error during noInvoice _ match id : {$match->id} ");
             }
             // return $match;
         }

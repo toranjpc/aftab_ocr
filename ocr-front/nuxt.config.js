@@ -92,6 +92,9 @@ export default {
     },
     {
       src: '@/plugins/sse.js'
+    },
+    {
+      src: '@/plugins/global-components.js'
     }
   ],
 

@@ -21,6 +21,23 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('api')->post('/ocr-match/addBaseInvoice/{ocrMatch}', [OcrMatchController::class, 'addBaseInvoice']);
 });
 
+Route::get('/ocr-match/addBaseInvoice/54654/{ocrMatch}', function ($ocrMatch) {
+    return $ocrMatches = Modules\Ocr\Models\OcrMatch::with([
+        'bijacs' => function ($query) {
+            $query->withCount('ocrMatches')
+                ->with('invoice')
+                ->with('invoiceBase')
+                // ->with('allbijacs')
+            ;
+        },
+        "isCustomCheck"
+    ])
+        ->whereHas('bijacs.invoicebase', null, '>=', 1)
+        ->first();
+
+    return   $ocrMatches->Invoicebaseornot;
+});
+
 Route::post('/truck-log', [OcrLogController::class, 'store2']);
 
 Route::post('/log/rip', [LogRepController::class, 'index']);

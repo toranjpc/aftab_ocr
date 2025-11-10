@@ -1,4 +1,5 @@
 export const afghanCities = [
+  { text: 'کابل', value: 'KBL' },
   { text: 'بدخشان', value: 'BDN' },
   { text: 'کونر', value: 'KNR' },
   { text: 'بادغیس', value: 'BDG' },
@@ -25,7 +26,6 @@ export const afghanCities = [
   { text: 'سمنگان', value: 'SAM' },
   { text: 'جوزجان', value: 'JZJ' },
   { text: 'سرپل', value: 'SRP' },
-  { text: 'کابل', value: 'KBL' },
   { text: 'تخار', value: 'TAK' },
   { text: 'کندهار', value: 'KDR' },
   { text: 'اروزگان', value: 'ORZ' },
