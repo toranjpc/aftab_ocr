@@ -13,7 +13,6 @@ use Modules\Ocr\OcrBuffer;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use Modules\Sse\Models\SSE;
 
 use App\Models\Log;
 
@@ -86,9 +85,10 @@ class OcrMatchController extends Controller
                     ->get()
                     ->count();
 
-                if ($bijac->type == 'ccs' && $ocr->invoicebase) { //کانتینر
+                if ($bijac->type == 'ccs' && $ocr->invoice) { //کانتینر
                     // $Invoicebase = $ocr->invoicebase;
-                    $ocr['total_tu'] = round($ocr->invoicebase->amount / $customTariff);
+
+                    $ocr['total_tu'] = round($ocr->invoice->amount / $customTariff);
 
                     $ocr['ocr_tu'] = Bijac::has('ocrMatches')
                         ->whereIn('id', $bijacIds)
@@ -100,13 +100,13 @@ class OcrMatchController extends Controller
                         ->value('ocrTu');
                 }
 
-                if ($bijac->type == 'gcoms' && $ocr->invoicebase && $ocr->invoicebase->weight) { //فله
+                if ($bijac->type == 'gcoms' && $ocr->invoice && $ocr->invoice->weight) { //فله
                     $ocr->type = 'gcoms';
-                    $ocr['total_weight'] = $ocr->invoicebase->weight / 1000;
+                    $ocr['total_weight'] = $ocr->invoice->weight / 1000;
 
                     // در محاسبه زیر وزن بار ماشین در حال ورود وارد نمیشود، چون وزن کشی بعدا انجام میشود
                     $ocr['outed_weight'] = round(
-                        GcomsOutData::where('customNb', $ocr->invoicebase->kutazh)
+                        GcomsOutData::where('customNb', $ocr->invoice->kutazh)
                             ->where('created_at', '<=', $ocr->log_time)
                             ->sum('weight') / 1000,
                         2
@@ -241,13 +241,6 @@ class OcrMatchController extends Controller
             }
             Invoice::whereIn('id', $invoiceIds)->update(['base' => 0]);
             Invoice::where('id', $request->invoice_id)->update(['base' => 1]);
-
-            SSE::create([
-                'message' => ['data' => $ocrMatch->id],
-                'event' => 'ocr-match',
-                'model' => OcrMatch::class,
-                'receiver_id' => $ocrMatch->gate_number,
-            ]);
 
             return response()->json([
                 'message' => 'Base invoice بروزرسانی شد.',

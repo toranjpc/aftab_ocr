@@ -62,7 +62,7 @@ class OcrLogController extends Controller
                         'plate_number_2' => $request->plate_number,
                     ]);
 
-                    return ['id1' => $plate->id];
+                    return ['id1' => $plate->id, "status" => "duplic", "type" => "plate"];
                 }
             }
         }
@@ -81,7 +81,7 @@ class OcrLogController extends Controller
                         'container_code_2' => $request->container_code,
                     ]);
 
-                    return ['id2' => $container->id];
+                    return ['id2' => $container->id, "status" => "duplic", "type" => "container"];
                 }
             }
             // Log::error("request from AI : " . json_encode($request->vehicle_image_back));
@@ -123,7 +123,7 @@ class OcrLogController extends Controller
                     'plate_number_2' => $plate->plate_number
                 ]);
 
-            return ['id3' => $plate->id];
+            return ['id3' => $plate->id, "status" => "duplic", "type" => "plate"];
         } elseif ($container) {
             OcrLog::where('id', $container->id)
                 ->where('gate_number', $request->gate_number)
@@ -132,7 +132,7 @@ class OcrLogController extends Controller
                     'container_code_2' => $container->container_code
                 ]);
 
-            return ['id4' => $container->id];
+            return ['id4' => $container->id, "status" => "duplic", "type" => "container"];
         } else {
             $ocrLog = OcrLog::create($data);
 
@@ -151,7 +151,7 @@ class OcrLogController extends Controller
                 //throw $th;
             }
 
-            return ['id5' => $ocrLog->id];
+            return ['id5' => $ocrLog->id, "status" => "success"];
         }
 
 
