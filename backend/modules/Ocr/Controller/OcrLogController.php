@@ -62,7 +62,14 @@ class OcrLogController extends Controller
                         'plate_number_2' => $request->plate_number,
                     ]);
 
-                    return ['id1' => $plate->id, "status" => "duplic", "type" => "plate"];
+                    try {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                            ->info("OcrLogController (DUPLICATE DATA) by palte : {$request->plate_number}  ");
+                    } catch (\Throwable $th) {
+                        //throw $th;
+                    }
+
+                    return ['id1' => $plate->id ?? null, "status" => "duplic", "type" => "plate"];
                 }
             }
         }
@@ -81,7 +88,15 @@ class OcrLogController extends Controller
                         'container_code_2' => $request->container_code,
                     ]);
 
-                    return ['id2' => $container->id, "status" => "duplic", "type" => "container"];
+                    try {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                            ->info("OcrLogController (DUPLICATE DATA) by container : {$request->container_code}  ");
+                    } catch (\Throwable $th) {
+                        //throw $th;
+                    }
+
+
+                    return ['id2' => $container->id ?? null, "status" => "duplic", "type" => "container"];
                 }
             }
             // Log::error("request from AI : " . json_encode($request->vehicle_image_back));
@@ -102,6 +117,11 @@ class OcrLogController extends Controller
                 'IMDG',
                 'seal',
             ]);
+        if (empty($validated->log_time)) {
+            $validated['log_time'] = now();
+        }
+        // return $validated;
+
 
         $imageFields = ['vehicle_image_front', 'vehicle_image_back', 'vehicle_image_left', 'vehicle_image_right', 'plate_image', 'container_code_image'];
 
@@ -123,7 +143,14 @@ class OcrLogController extends Controller
                     'plate_number_2' => $plate->plate_number
                 ]);
 
-            return ['id3' => $plate->id, "status" => "duplic", "type" => "plate"];
+            try {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                    ->info("OcrLogController (DUPLICATE DATA by update traffic) by palte : {$request->plate_number}  ");
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
+
+            return ['id3' => $plate->id ?? null, "status" => "duplic", "type" => "plate"];
         } elseif ($container) {
             OcrLog::where('id', $container->id)
                 ->where('gate_number', $request->gate_number)
@@ -132,7 +159,14 @@ class OcrLogController extends Controller
                     'container_code_2' => $container->container_code
                 ]);
 
-            return ['id4' => $container->id, "status" => "duplic", "type" => "container"];
+            try {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                    ->info("OcrLogController (DUPLICATE DATA by update traffic) by container : {$request->container_code}  ");
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
+
+            return ['id4' => $container->id ?? null, "status" => "duplic", "type" => "container"];
         } else {
             $ocrLog = OcrLog::create($data);
 
@@ -143,15 +177,25 @@ class OcrLogController extends Controller
             );
 
             try {
-                if ($ocrLog->gate_number == 3) {
-                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
-                        ->info("OcrLogController ({$ocrLog->id}) by palte : {$ocrLog->plate_number}  ");
+                // if ($ocrLog->gate_number == 3) {
+                try {
+                    if (isset($request->plate_number)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                            ->info("OcrLogController ({$ocrLog->id}) created from palte : {$request->plate_number}  ");
+                    } elseif (isset($request->container_code)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                            ->info("OcrLogController ({$ocrLog->id}) created from continer : {$request->container_code}  ");
+                    }
+                } catch (\Throwable $th) {
+                    //throw $th;
                 }
+
+                // }
             } catch (\Throwable $th) {
                 //throw $th;
             }
 
-            return ['id5' => $ocrLog->id, "status" => "success"];
+            return ['id5' => $ocrLog->id ?? null, "status" => "success"];
         }
 
 
@@ -182,33 +226,73 @@ class OcrLogController extends Controller
         if ($input) {
             foreach ($lastSixPlate as $key => $plate) {
                 if ($plate->plate_number) {
-
                     $lev = levenshtein($input, $plate->plate_number);
-
                     // if ($lev == 0) return $plate;
-
                     if ($lev < $threshold) {
+
+                        try {
+                            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $gate . ".log"),])
+                                ->info("checkPlateIsDuplicate : {$input} - {$plate->plate_number}  ");
+                        } catch (\Throwable $th) {
+                            //throw $th;
+                        }
+
+
                         return $plate;
                     }
 
                     if (
-                        $key < 3 &&
-                        strlen($input) >= 5 &&
-                        strlen($plate->plate_number) >= 5
+                        $key < 4
+                        //  &&
+                        // strlen($input) >= 4 &&
+                        // strlen($plate->plate_number) >= 4
                     ) {
-                        $input_substr = substr($input, 0, 5);
-                        $plate_number_substr = substr($plate->plate_number, 0, 5);
+                        $input_substr = $input;
+                        $plate_number_substr = $plate->plate_number;
+                        // $input_substr = substr($input, 0, 4);
+                        // $plate_number_substr = substr($plate->plate_number, 0, 4);
                         if (
                             str_contains($input_substr, $plate_number_substr) ||
                             str_contains($plate_number_substr, $input_substr)
                         ) {
+
+                            try {
+                                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $gate . ".log"),])
+                                    ->info("checkPlateIsDuplicate : {$input} - {$plate->plate_number}  ");
+                            } catch (\Throwable $th) {
+                                //throw $th;
+                            }
+
+
+                            return $plate;
                             $closest = $plate;
                         }
 
-                        $lev = levenshtein($input_substr, $plate_number_substr);
-                        if ($lev < $threshold) {
+                        $input_substr = preg_replace('/\D/', '', $input);
+                        $plate_number_substr = preg_replace('/\D/', '', $plate->plate_number);
+                        // $input_substr = substr(preg_replace('/\D/', '', $input), 0, 4);
+                        // $plate_number_substr = substr(preg_replace('/\D/', '', $plate->plate_number), 0, 4);
+                        if (
+                            str_contains($input_substr, $plate_number_substr) ||
+                            str_contains($plate_number_substr, $input_substr)
+                        ) {
+
+                            try {
+                                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $gate . ".log"),])
+                                    ->info("checkPlateIsDuplicate : {$input} - {$plate->plate_number}  ");
+                            } catch (\Throwable $th) {
+                                //throw $th;
+                            }
+
+
                             return $plate;
+                            $closest = $plate;
                         }
+
+                        // $lev = levenshtein($input_substr, $plate_number_substr);
+                        // if ($lev < $threshold) {
+                        //     return $plate;
+                        // }
                     }
                 }
             }

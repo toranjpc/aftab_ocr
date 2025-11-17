@@ -197,9 +197,16 @@ class BijacMatcher
         }
 
 
-        if ($item->gate_number == 3) {
-            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
-                ->info("BijacMatcher proccesed ({$item->id}) by palte : {$item->plate_number}  ");
+        try {
+            if (!empty($item->plate_number)) {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                    ->info("BijacMatcher for plate_number : {$item->plate_number}  ");
+            } elseif (!empty($item->container_code)) {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                    ->info("BijacMatcher for container_code : {$item->container_code}  ");
+            }
+        } catch (\Throwable $th) {
+            //throw $th;
         }
     }
 }

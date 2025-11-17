@@ -15,7 +15,7 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
     }
 
     // اگر v2 شامل 5 رقم بود، اون رو اصلاح کن (ein اضافه می‌کنیم)
-    if (v2 && (v2.match(/\d/g) || []).length === 5) {
+    if (v2 && (v2.match(/\d/g) || []).length == 5) {
       const digits = v2.replace(/\D/g, '');
       const part1 = digits.substring(0, 2);
       let part2 = digits.substring(2);

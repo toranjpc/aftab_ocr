@@ -39,7 +39,18 @@ class TruckStatusJob implements ShouldQueue
         if ($match) {
 
             if (!$match->bijac_has_invoice && $match->bijacs->first()) {
-                // Log::error("noInvoice STARTED : {$match->plate_number} -  {$match->container_code}");
+                try {
+                    if (!empty($match->plate_number)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob invoice not found for plate_number : {$match->plate_number}  ");
+                    } elseif (!empty($match->container_code)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob invoice not found for container_code : {$match->container_code}  ");
+                    }
+                } catch (\Throwable $th) {
+                    //throw $th;
+                }
+
 
                 $noInvoice = '_req';
                 $this->noInvoice($this->log, $match);
@@ -56,12 +67,17 @@ class TruckStatusJob implements ShouldQueue
             if ($match->bijac_has_invoice) {
 
                 try {
-                    if ($match->gate_number == 3) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
-                            ->info("TruckStatusJob _bijac_has_invoice ({$match->id}) down by palte : {$match->plate_number}  ");
+                    if (!empty($match->plate_number)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob bijac_has_invoice plate_number : {$match->plate_number}  ");
+                    } elseif (!empty($match->container_code)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob bijac_has_invoice container_code : {$match->container_code}  ");
                     }
                 } catch (\Throwable $th) {
+                    //throw $th;
                 }
+
 
                 if ($match->bijacs->first()->type === 'gcoms') {
                     return $match->forceFill([
@@ -84,12 +100,17 @@ class TruckStatusJob implements ShouldQueue
             } else if ($match->bijacs->first()) {
 
                 try {
-                    if ($match->gate_number == 3) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
-                            ->info("TruckStatusJob _bijacs->first ({$match->id}) down by palte : {$match->plate_number}  ");
+                    if (!empty($match->plate_number)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob _bijacs->first plate_number : {$match->plate_number}  ");
+                    } elseif (!empty($match->container_code)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob _bijacs->first container_code : {$match->container_code}  ");
                     }
                 } catch (\Throwable $th) {
+                    //throw $th;
                 }
+
 
                 $bijac = $match->bijacs->first();
                 if ($bijac->type === 'gcoms') {
@@ -112,14 +133,16 @@ class TruckStatusJob implements ShouldQueue
                 }
             } else {
                 try {
-                    if ($match->gate_number == 3) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
-                            ->info("TruckStatusJob _without bijac ({$match->id}) down by palte : {$match->plate_number}  ");
+                    if (!empty($match->plate_number)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob _without bijac : {$match->plate_number}  ");
+                    } elseif (!empty($match->container_code)) {
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $match->gate_number . ".log"),])
+                            ->info("TruckStatusJob _without bijac : {$match->container_code}  ");
                     }
                 } catch (\Throwable $th) {
+                    //throw $th;
                 }
-
-                Log::error("plate without bijac : {$match->plate_number} - {$match->id}");
 
                 if ($match->plate_number)
                     return $match->forceFill([
@@ -148,7 +171,7 @@ class TruckStatusJob implements ShouldQueue
         }
         return $miladiDate;
     }
-    public function noInvoice($log, $match)
+    public function noInvoice($log, $match, $forAll = true)
     {
         log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
             ->info("noInvoice run match id : {$match->id} ");
@@ -160,10 +183,8 @@ class TruckStatusJob implements ShouldQueue
                 foreach ($match->bijacs as $key => $value) {
                     if (isset($doned[$value->receipt_number])) continue;
                     $doned[$value->receipt_number] = true;
-                    if (str_starts_with($value->receipt_number, 'BSRGCB')) continue;
+                    if ($forAll && str_starts_with($value->receipt_number, 'BSRGCB')) continue;
 
-                    // $invoiceService_ = new InvoiceService();
-                    // $invoiceService =  $invoiceService_->getWithReceiptNumber($value->receipt_number);
 
                     $invoiceService_ = new InvoiceService();
                     $attempts = 0;

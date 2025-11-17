@@ -7,43 +7,44 @@ use Modules\Gcoms\Models\GcomsData;
 use Illuminate\Support\Facades\Http;
 use Modules\Gcoms\Models\GcomsBijac;
 use Modules\Collector\Services\CustomerService;
+use Modules\BijacInvoice\Models\Bijac;
 
 class GcomsService
 {
-    static function invoiceRequest($invoiceSerial, $serial)
+    static function invoiceRequest($invoiceSerial = 'AFTAB03-3872', $serial = '10310534')
     {
         $url = "https://core.pomix.pmo.ir/v2/soap/Invoke";
 
         $payload = '
-        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/" xmlns:mas="http://schemas.datacontract.org/2004/07/Massan.Models.Core">
-        <soapenv:Header/>
-        <soapenv:Body>
-            <tem:Invoke>
-                <tem:model>
-                    <mas:Credential>
-                        <mas:Code>aftabd</mas:Code>
-                        <mas:Password>Aft@bD123</mas:Password>
-                    </mas:Credential>
-                    <mas:Parameters>
-                        <mas:ApiServiceParameterModel>
-                            <mas:ParameterName>serial</mas:ParameterName>
-                            <mas:ParameterValue>' . $serial . '</mas:ParameterValue>
-                        </mas:ApiServiceParameterModel>
-                        <mas:ApiServiceParameterModel>
-                            <mas:ParameterName>InvoiceSerial</mas:ParameterName>
-                            <mas:ParameterValue>' . $invoiceSerial . '</mas:ParameterValue>
-                        </mas:ApiServiceParameterModel>
-                        <mas:ApiServiceParameterModel>
-                            <mas:ParameterName>portCode</mas:ParameterName>
-                            <mas:ParameterValue>10</mas:ParameterValue>
-                        </mas:ApiServiceParameterModel>
-                    </mas:Parameters>
-                    <mas:Service>gcoms-GetInvoiceInfo</mas:Service>
-                </tem:model>
-            </tem:Invoke>
-        </soapenv:Body>
-        </soapenv:Envelope>
-	';
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/" xmlns:mas="http://schemas.datacontract.org/2004/07/Massan.Models.Core">
+                <soapenv:Header/>
+                <soapenv:Body>
+                    <tem:Invoke>
+                        <tem:model>
+                            <mas:Credential>
+                                <mas:Code>aftabd</mas:Code>
+                                <mas:Password>Aft@bD123</mas:Password>
+                            </mas:Credential>
+                            <mas:Parameters>
+                                <mas:ApiServiceParameterModel>
+                                    <mas:ParameterName>serial</mas:ParameterName>
+                                    <mas:ParameterValue>' . $serial . '</mas:ParameterValue>
+                                </mas:ApiServiceParameterModel>
+                                <mas:ApiServiceParameterModel>
+                                    <mas:ParameterName>InvoiceSerial</mas:ParameterName>
+                                    <mas:ParameterValue>' . $invoiceSerial . '</mas:ParameterValue>
+                                </mas:ApiServiceParameterModel>
+                                <mas:ApiServiceParameterModel>
+                                    <mas:ParameterName>portCode</mas:ParameterName>
+                                    <mas:ParameterValue>10</mas:ParameterValue>
+                                </mas:ApiServiceParameterModel>
+                            </mas:Parameters>
+                            <mas:Service>gcoms-GetInvoiceInfo</mas:Service>
+                        </tem:model>
+                    </tem:Invoke>
+                </soapenv:Body>
+                </soapenv:Envelope>
+	        ';
 
         $http = Http::withHeaders([
             'Content-Type' => 'application/xml',
@@ -223,7 +224,7 @@ class GcomsService
         $body = str_replace('d5p1:', '', $body);
 
         $body = str_replace('i:nil="true"', '', $body);
-        $body = str_replace('xmlns:d5p1="http://schemas.datacontract.org/2004/07/System.Collections.Generic"', '', $body);
+        return   $body = str_replace('xmlns:d5p1="http://schemas.datacontract.org/2004/07/System.Collections.Generic"', '', $body);
         try {
             $xml = new \SimpleXMLElement(html_entity_decode($body));
         } catch (\Exception $e) {
@@ -252,7 +253,7 @@ class GcomsService
     static function storeBijacs($data)
     {
         foreach ($data as $item) {
-            GcomsBijac::firstOrCreate(
+            Bijac::firstOrCreate(
                 $item
             );
         }
@@ -267,35 +268,35 @@ class GcomsService
         static::storeBijacs($data);
     }
 
-    public static function getBijacTaki($serial = '2535124')
+    public static function getBijacTaki($serial = '')
     {
         $url = "https://core.pomix.pmo.ir/v2/soap/Invoke";
 
         $payload = '
-        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/" xmlns:mas="http://schemas.datacontract.org/2004/07/Massan.Models.Core">
-        <soapenv:Header/>
-        <soapenv:Body>
-            <tem:Invoke>
-                <tem:model>
-                    <mas:Credential>
-                        <mas:Code>aftabd</mas:Code>
-                        <mas:Password>Aft@bD123</mas:Password>
-                    </mas:Credential>
-                    <mas:Parameters>
-                        <mas:ApiServiceParameterModel>
-                            <mas:ParameterName>portCode</mas:ParameterName>
-                            <mas:ParameterValue>10</mas:ParameterValue>
-                        </mas:ApiServiceParameterModel>
-                        <mas:ApiServiceParameterModel>
-                            <mas:ParameterName>gatePassSerial</mas:ParameterName>
-                            <mas:ParameterValue>' . $serial . '</mas:ParameterValue>
-                        </mas:ApiServiceParameterModel>
-                    </mas:Parameters>
-                    <mas:Service>gcoms-GetGatePassInfo</mas:Service>
-                </tem:model>
-            </tem:Invoke>
-        </soapenv:Body>
-        </soapenv:Envelope>
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/" xmlns:mas="http://schemas.datacontract.org/2004/07/Massan.Models.Core">
+                <soapenv:Header/>
+                <soapenv:Body>
+                    <tem:Invoke>
+                        <tem:model>
+                            <mas:Credential>
+                                <mas:Code>aftabd</mas:Code>
+                                <mas:Password>Aft@bD123</mas:Password>
+                            </mas:Credential>
+                            <mas:Parameters>
+                                <mas:ApiServiceParameterModel>
+                                    <mas:ParameterName>portCode</mas:ParameterName>
+                                    <mas:ParameterValue>10</mas:ParameterValue>
+                                </mas:ApiServiceParameterModel>
+                                <mas:ApiServiceParameterModel>
+                                    <mas:ParameterName>gatePassSerial</mas:ParameterName>
+                                    <mas:ParameterValue>' . $serial . '</mas:ParameterValue>
+                                </mas:ApiServiceParameterModel>
+                            </mas:Parameters>
+                            <mas:Service>gcoms-GetGatePassInfo</mas:Service>
+                        </tem:model>
+                    </tem:Invoke>
+                </soapenv:Body>
+                </soapenv:Envelope>
          ';
 
         $http = Http::withHeaders([
@@ -306,7 +307,7 @@ class GcomsService
             ->retry(3, 100)
             ->post($url);
 
-        $response = $http->body();
+        return  $response = $http->body();
 
         $data = static::makeStandardBijacs($response);
 

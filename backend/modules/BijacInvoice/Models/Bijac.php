@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphedByMany;
 use Modules\Ocr\Models\OcrMatch;
 use Illuminate\Support\Facades\DB;
+use Modules\BijacInvoice\Services\PlateService;
+use Illuminate\Support\Facades\Log;
 
 class Bijac extends Base
 {
@@ -59,14 +61,23 @@ class Bijac extends Base
     }
 
     /**
-     * Scope: پیدا کردن بیجک‌های مربوط به یک پلاک (اصلی‌ترین منطق شما)
+     * Scope: پیدا کردن بیجک‌های مربوط به یک پلاک 
      */
     public function scopeForPlate($query, $item, $isEdited)
     {
+        try {
+            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                ->info("scopeForPlateRun for plate_number : {$item->plate_number}  ");
+        } catch (\Throwable $th) {
+        }
+
         if ($isEdited && !$item->plate_number_edit) return $query->whereRaw('1=0');
         if (!$isEdited && !$item->plate_number) return $query->whereRaw('1=0');
 
         $plate_number = $isEdited ? $item->plate_number_edit : $item->plate_number;
+        $PlateService = new  PlateService();
+        $plate_number = $PlateService->normalizePlate($plate_number);
+
         $cleanNumber = preg_replace('/\D/', '', $plate_number);
 
         if (strlen($cleanNumber) < 3) {
@@ -80,91 +91,86 @@ class Bijac extends Base
                 $item->created_at,
             ];
 
-            // حالت ۱: تطابق مستقیم
             $result = Bijac::when($day > 3, function ($query) {
                 return $query->doesntHave('ocrMatches');
             })
-                ->where('plate_normal', $plate_number)
                 ->whereBetween('bijac_date', $dateRange)
+                // ->where('plate_normal', $plate_number)
+                ->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number])
                 ->latestBetween($dateRange)
                 ->get();
 
-            // حالت ۲: wildcard
-            if ($result->isEmpty() && strlen($cleanNumber) == 7) {
-                $wildcardPattern = substr($plate_number, 0, -2) . '__';
+            try {
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                    ->info("scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {$plate_number} ");
+            } catch (\Throwable $th) {
+            }
 
+            if (!$result->isEmpty()) continue;
+
+            $result = Bijac::when($day > 3, function ($query) {
+                return $query->doesntHave('ocrMatches');
+            })
+                ->whereBetween('bijac_date', $dateRange)
+                // ->where('plate_normal', $plate_number)
+                ->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number . "%"])
+                ->latestBetween($dateRange)
+                ->get();
+            if (!$result->isEmpty()) continue;
+
+
+            if (strlen($cleanNumber) <= 4) {
                 $result = Bijac::when($day > 3, function ($query) {
                     return $query->doesntHave('ocrMatches');
                 })
-                    ->where('plate_normal', $wildcardPattern)
                     ->whereBetween('bijac_date', $dateRange)
+                    ->where(function ($q) use ($cleanNumber) {
+                        $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber . '_']);
+                        $q->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber]);
+                    })
                     ->latestBetween($dateRange)
                     ->get();
+                if (!$result->isEmpty()) continue;
             }
 
-            // حالت ۳: شامل L
-            if ($result->isEmpty() && str_contains($plate_number, 'L')) {
-                $result = Bijac::when($day > 3, function ($query) {
-                    return $query->doesntHave('ocrMatches');
+            // if (strlen($cleanNumber) == 7) {
+            $result = Bijac::when($day > 3, function ($query) {
+                return $query->doesntHave('ocrMatches');
+            })
+                ->whereBetween('bijac_date', $dateRange)
+                ->where(function ($q) use ($cleanNumber) {
+                    // $wildcardPattern = substr($cleanNumber, 0, 5);
+                    $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$cleanNumber]);
+                    // ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern . '__']);
+
                 })
-                    ->where('plate_normal', '___,' . $cleanNumber . ',L')
-                    ->whereBetween('bijac_date', $dateRange)
-                    ->latestBetween($dateRange)
-                    ->get();
-            }
+                ->latestBetween($dateRange)
+                ->get();
 
-            // حالت ۴: فقط اعداد
-            if ($result->isEmpty()) {
-                $result = Bijac::when($day > 3, function ($query) {
-                    return $query->doesntHave('ocrMatches');
-                })
-                    ->whereRaw(
-                        "REGEXP_REPLACE(plate_normal, '[^0-9]', '') = ?",
-                        [$cleanNumber]
-                    )
-                    // ->whereNull('plate_normal')
-                    ->whereBetween('bijac_date', $dateRange)
-                    ->latestBetween($dateRange)
-                    ->get();
+            if (!$result->isEmpty()) continue;
+            // }
 
-                // $result = Bijac::where(
-                //     'plate_normal',
-                //     $cleanNumber
-                // )
-                //     ->whereBetween('bijac_date', $dateRange)
-                //     ->latestBetween($dateRange)
-                //     ->get();
-            }
+            $wildcardPattern = substr($cleanNumber, 0, 5);
+            $result = Bijac::when($day > 3, function ($query) {
+                return $query->doesntHave('ocrMatches');
+            })
+                ->whereBetween('bijac_date', $dateRange)
+                ->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern])
+                ->latestBetween($dateRange)
+                ->get();
+            // if (!$result->isEmpty()) continue;
 
-            if ($result->isEmpty() && strlen($cleanNumber) > 5) {
-                $wildcardPattern = substr($cleanNumber, 0, 5);
 
-                $result = Bijac::when($day > 3, function ($query) {
-                    return $query->doesntHave('ocrMatches');
-                })
-                    ->whereRaw(
-                        "REGEXP_REPLACE(plate_normal, '[^0-9]', '') = ?",
-                        [$wildcardPattern]
-                    )
-                    ->whereBetween('bijac_date', $dateRange)
-                    ->latestBetween($dateRange)
-                    ->get();
+            // $result = Bijac::when($day > 3, function ($query) {
+            //     return $query->doesntHave('ocrMatches');
+            // })
+            //     ->whereBetween('bijac_date', $dateRange)
+            //     ->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", ['%' . $cleanNumber . '%'])
+            //     ->latestBetween($dateRange)
+            //     ->get();
 
-                if ($result->isEmpty()) {
-                    $result = Bijac::where(
-                        'plate_normal',
-                        "LIKE",
-                        $cleanNumber
-                    )
-                        ->whereBetween('bijac_date', $dateRange)
-                        ->latestBetween($dateRange)
-                        ->get();
-                }
-            }
 
-            if ($result->isNotEmpty()) {
-                break; // اگر چیزی پیدا شد دیگر ادامه ندهیم
-            }
+            if ($result->isNotEmpty()) break; // اگر چیزی پیدا شد دیگر ادامه ندهیم
         }
 
         return $result->isNotEmpty()
@@ -174,6 +180,12 @@ class Bijac extends Base
 
     public function scopeForContainer($query, $item, $isEdited)
     {
+        try {
+            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                ->info("scopeForContainerRun for container_code : {$item->container_code}  ");
+        } catch (\Throwable $th) {
+        }
+
         if ($isEdited && !$item->container_code_edit_standard)
             return $query->whereRaw('1=0');
 
@@ -193,12 +205,10 @@ class Bijac extends Base
 
             $codesToTry = [$container_code];
 
-            // اگر isEdited=false و کد دوم موجود است
             if (!$isEdited && !empty($item->container_code_2)) {
                 $codesToTry[] = $item->container_code_standard2;
             }
 
-            // اضافه کردن 6 رقم اول از کدها
             foreach ($codesToTry as $code) {
                 $digits = substr(preg_replace('/\D/', '', $code), 0, 6);
 
@@ -220,12 +230,12 @@ class Bijac extends Base
                 $result = $queryTry->get();
 
                 if ($result->isNotEmpty()) {
-                    break; // اگر چیزی پیدا شد دیگر ادامه ندهیم
+                    break;
                 }
             }
 
             if ($result->isNotEmpty()) {
-                break; // اگر چیزی پیدا شد دیگر ادامه ندهیم
+                break;
             }
         }
 

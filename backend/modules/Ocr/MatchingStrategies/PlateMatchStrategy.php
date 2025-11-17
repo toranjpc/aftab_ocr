@@ -16,7 +16,6 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
         if (!$ocr->plate_number) return false;
 
         $plate = $ocr->plate_number;
-
         $match = $matches->where('plate_number_3', $plate)->first();
         if ($match) {
             $this->fillMatchFromOcr($match, $ocr, [

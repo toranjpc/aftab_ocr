@@ -34,8 +34,7 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
 
         $numbers = substr(preg_replace('/\D/', '', $code), 0, 6);
 
-        if (strlen($numbers) == 6)
-
+        if (strlen($numbers) == 6) {
             $match = $matches->whereNotNull('container_code_3')
                 ->filter(
                     fn($b) =>
@@ -45,6 +44,7 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
                     )
                 )
                 ->first();
+        }
 
 
         if ($match) {

@@ -42,13 +42,19 @@ Route::get('/', function () {
 //     }
 // });
 Route::get('/test', function () {
-    return;
 
     if (isset(request()->bij)) {
-        $command = new Modules\Collector\Services\CcsService();
-        $data = $command->makeRequest();
-        dd($data);
-        return response()->json($data);
+        $GcomsService = new Modules\Collector\Services\GcomsService();
+        return   $DBBijac = $GcomsService->getBijacTaki(request()->bij);
+
+
+        $bijac_number = request()->bij;
+        $DBBijac = Bijac::where("bijac_number", $bijac_number . "G")->get();
+        if ($DBBijac->isEmpty()) {
+            $GcomsService = new Modules\Collector\Services\GcomsService();
+            $DBBijac = $GcomsService->getBijacTaki(request()->bij);
+        }
+        return $DBBijac;
     }
 
 
@@ -57,9 +63,6 @@ Route::get('/test', function () {
         return  $InvoiceService->getWithReceiptNumber(request()->rec);
     }
     // return  $InvoiceService->getWithReceiptNumber('BSRCC14040163669');
-
-
-
 
     return;
 

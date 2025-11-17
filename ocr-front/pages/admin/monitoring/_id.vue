@@ -24,7 +24,7 @@
         </v-card>
         <SingleCameraWidget :gate="matchGate" :plate="true" :label="false" :matchGate="matchGate" />
 
-        <TruckListMinimal :fields="truckFields" @select="selectTruck" />
+        <TruckListMinimal :fields="truckFields" @select="selectTruck" :matchGate="matchGate" />
 
       </div>
 
@@ -32,8 +32,8 @@
         <CardWidget id="padding-low" :title="statusMessage(selectedTruck)" style="border: 2px solid white"
           :style="{ outline: '5px solid ' + statusColor(selectedTruck) }">
           <template #actions>
-            <div class="mx-1" style="width: 200px"
-              v-if="['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)">
+            <div class="mx-1" style="width: 200px">
+              <!-- v-if="['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)" -->
               <v-text-field v-model="receiptNumber" label="شماره قبض انبار" hide-details dense rounded outlined
                 append-icon="fal fa-check" @click:append="findBy({ receipt_number: receiptNumber })" />
             </div>
@@ -380,6 +380,7 @@ export default {
           id: this?.selectedTruck?.id,
         })
         .then((res) => {
+          console.log(res)
           if (res.message === 'not found') {
             this._event('alert', { text: 'موردی یافت نشد' })
           } else {
@@ -387,7 +388,9 @@ export default {
           }
           this._event('paginate')
         })
-        .catch(() => {
+        .catch((res) => {
+          console.log("error : ", res)
+
           this._event('alert', { text: 'مجدد تلاش کنید' })
         })
         .finally(() => {

@@ -64,8 +64,8 @@
             </template>
             <template #actions>
               <v-btn v-for="invoice in log.invoices" small
-                :color="selectedInvoice.id === invoice.id ? 'info' : 'primary'" class="black--text ma-1 pe-1"
-                @click="selectedInvoice = invoice" :key="invoice.id">
+                :color="(selectedInvoice.id === invoice.id || (log.invoices?.length > 0 && invoice.base)) ? 'info' : 'primary'"
+                class="black--text ma-1 pe-1" @click="selectedInvoice = invoice" :key="invoice.id">
                 {{ invoice.invoice_number }}
 
                 <input v-if="log.invoices?.length > 0" type="radio" class="ms-2" :name="'F_' + log.id"

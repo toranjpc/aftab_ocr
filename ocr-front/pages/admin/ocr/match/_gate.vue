@@ -5,7 +5,7 @@
 
     <DynamicTemplate>
       <template #header-btn>
-        <AddPlateDialog :matchGate="matchGate"/>
+        <AddPlateDialog :matchGate="matchGate" />
 
         <SseBtn :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number'${matchGate}`" />
       </template>
@@ -22,6 +22,8 @@
         </v-tooltip>
         <div v-else v-html="plateShow(item.plate_number, item)">
         </div>
+
+        {{ item.plate_number }}
       </template>
 
       <template #item.container_code="item">

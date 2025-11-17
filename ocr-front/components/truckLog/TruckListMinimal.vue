@@ -33,9 +33,11 @@
       </v-btn>
 
       <div class="d-flex flex-row align-center justify-center">
-        <v-btn color="transparent" elevation="0" small @click="_event('showDialogChoosPlate')">
+        <AddPlateDialog :matchGate="matchGate"/>
+
+        <!-- <v-btn color="transparent" elevation="0" small @click="_event('showDialogChoosPlate')">
           افزودن پلاک دستی
-        </v-btn>
+        </v-btn> -->
       </div>
 
       <v-btn
@@ -88,6 +90,7 @@ import truckHelpers from '@/helpers/truckHelper.js'
 export default {
   props: {
     fields: { default: () => [] },
+    matchGate: { type: [String, Number], default: '' }
   },
 
   data() {

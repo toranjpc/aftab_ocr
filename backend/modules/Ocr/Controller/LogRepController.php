@@ -69,6 +69,7 @@ class LogRepController extends Controller
                 COUNT(CASE WHEN plate_type = "iran" THEN 1 END) AS `iran`,
                 COUNT(CASE WHEN plate_type = "afghan" THEN 1 END) AS `afghan`,
                 COUNT(CASE WHEN plate_type = "iran-regular" THEN 1 END) AS `regular`,
+                COUNT(CASE WHEN gate_number = 1 THEN 1 END) AS `gate_1`,
                 COUNT(CASE WHEN gate_number = 2 THEN 1 END) AS `gate_2`,
                 COUNT(CASE WHEN gate_number = 3 THEN 1 END) AS `gate_3`,
                 COUNT(CASE WHEN gate_number = 4 THEN 1 END) AS `gate_4`,
@@ -87,12 +88,34 @@ class LogRepController extends Controller
     {
         // ساخت زیرکوئری اولیه از ocr_logs به همراه JOIN های لازم
         $subQuery = OcrMatch::query()
-		    ->leftJoin('bijacables', function ($join) {
+            ->leftJoin('bijacables', function ($join) {
                 $join->on('ocr_matches.id', '=', 'bijacables.bijacable_id')
                     ->where('bijacables.bijacable_type', '=', 'Modules\Ocr\Models\OcrMatch');
             })
             ->leftJoin('bijacs', 'bijacables.bijac_id', '=', 'bijacs.id')
             ->filter(); // فرض می‌کنیم scope filter() دارید
+
+        // if ($request->has('date_filter')) {
+        //     $now = now();
+
+        //     switch ($request->input('date_filter')) {
+        //         case 'today':
+        //             $subQuery->whereDate('ocr_logs.created_at', $now->toDateString());
+        //             break;
+
+        //         case 'this_week':
+        //             $subQuery->whereBetween('ocr_logs.created_at', [$now->startOfWeek(), $now->endOfWeek()]);
+        //             break;
+
+        //         case 'this_month':
+        //             $subQuery->whereBetween('ocr_logs.created_at', [$now->startOfMonth(), $now->endOfMonth()]);
+        //             break;
+
+        //         case 'last_hour':
+        //             $subQuery->where('ocr_logs.created_at', '>=', $now->subHour());
+        //             break;
+        //     }
+        // }
 
         // اعمال شرط‌های _has و _doesnt_have
         if ($request->has('_has')) {

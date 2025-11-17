@@ -15,11 +15,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 use App\Models\Log;
+use Illuminate\Support\Facades\Log as info;
 
 class OcrMatchController extends Controller
 {
     public function getList(Request $request)
     {
+        $id = time();
+        $startTime = microtime(true);
+
         $ocrMatches = OcrMatch::with([
             'bijacs' => function ($query) {
                 $query->withCount('ocrMatches')
@@ -43,16 +47,21 @@ class OcrMatchController extends Controller
             ->paginate($request->itemPerPage ?? 15);
 
         $customTariff = config('ocr.custom_tariff');
-        $ocrMatches->map(function ($ocr) use ($customTariff) {
+        if ($request->gate == 2) info::info("{$id}_Operation took vasat " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+
+        $ocrMatches->map(function ($ocr) use ($customTariff, $request, $id, $startTime) {
             $ocr->append('invoice');
             $ocr->append('invoices');
             $ocr['total_vehicles'] = 0;
             $ocr['ocr_vehicles'] = 0;
 
             $bijac = $ocr->bijacs->sortByDesc('bijac_date')->first();
+            if ($request->gate == 2) info::info("{$id}_Operation took for bijac " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+
             if ($bijac && $bijac->receipt_number) {
                 // $bijacs = Bijac::where('receipt_number', $bijac->receipt_number)->select("id", "receipt_number", "plate_normal")->get();
                 $bijacs = $bijac->allbijacs;
+
                 $bijacIds = $bijacs->pluck('id');
 
                 // $ocr['total_vehicles'] = $bijacs->count();
@@ -70,6 +79,7 @@ class OcrMatchController extends Controller
                 //     ->whereIn('bijac_id', $bijacIds)
                 //     ->distinct('bijac_id')
                 //     ->count('bijac_id');
+                if ($request->gate == 2) info::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
                 $ocr['ocr_vehicles'] = DB::table('bijacables')
                     ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
                     ->where('bijacable_type', OcrMatch::class)
@@ -78,12 +88,15 @@ class OcrMatchController extends Controller
                         $query->select(DB::raw(1))
                             ->from('ocr_matches')
                             ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
-                            ->where('ocr_matches.log_time', '<=', $ocr->log_time);
+                            ->where('ocr_matches.log_time', '<=', $ocr->log_time ?? now());
                     })
                     ->groupBy('bijac_id')
                     ->distinct()
                     ->get()
                     ->count();
+
+                if ($request->gate == 2) info::info("{$id}_Operation took for ocr_vehicles " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+
 
                 if ($bijac->type == 'ccs' && $ocr->invoice) { //کانتینر
                     // $Invoicebase = $ocr->invoicebase;
@@ -107,7 +120,7 @@ class OcrMatchController extends Controller
                     // در محاسبه زیر وزن بار ماشین در حال ورود وارد نمیشود، چون وزن کشی بعدا انجام میشود
                     $ocr['outed_weight'] = round(
                         GcomsOutData::where('customNb', $ocr->invoice->kutazh)
-                            ->where('created_at', '<=', $ocr->log_time)
+                            ->where('created_at', '<=', $ocr->log_time ?? now())
                             ->sum('weight') / 1000,
                         2
                     );
@@ -117,6 +130,7 @@ class OcrMatchController extends Controller
             return $ocr;
         });
 
+        if ($request->gate == 2) info::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
         return response(
             [
                 'message' => 'ok',
@@ -262,7 +276,8 @@ class OcrMatchController extends Controller
         $bijac = $ocr->bijacs
             ->sortByDesc('bijac_date')
             ->first();
-
+        $log_time = $ocr->log_time;
+        if (empty($ocr->log_time)) $log_time = now();
         $ocrMatches = [];
 
         if ($bijac && $bijac->receipt_number) {
@@ -278,7 +293,7 @@ class OcrMatchController extends Controller
                         $query->where('receipt_number', $bijac->receipt_number);
                     }
                 )
-                ->where('log_time', '<=', $ocr->log_time)
+                ->where('log_time', '<=', $log_time)
                 ->get()
                 ->append('invoices');
         }

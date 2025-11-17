@@ -38,7 +38,7 @@ class ProcessOcrLog implements ShouldQueue
 
         try {
             $ocr = OcrLog::findOrFail($this->ocrId);
-            $limit = config('ocr.last_matches_limit');
+            $limit = config('ocr.last_matches_limit', 10);
 
             $matches = OcrMatch::where('ocr_log_id', '<', $ocr->id)
                 // ->orderBy('created_at', 'desc')
@@ -52,15 +52,18 @@ class ProcessOcrLog implements ShouldQueue
             ];
 
             foreach ($strategies as $strategy) {
+                // try {
+                //     if (!empty($ocr->plate_number)) {
+                //         log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $ocr->gate_number . ".log"),])
+                //             ->info("ProcessOcrLog for plate_number : {$ocr->plate_number}  ");
+                //     } elseif (!empty($ocr->container_code)) {
+                //         log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $ocr->gate_number . ".log"),])
+                //             ->info("ProcessOcrLog for container_code : {$ocr->container_code}  ");
+                //     }
+                // } catch (\Throwable $th) {
+                //     //throw $th;
+                // }
                 if ($strategy->match($ocr, $matches, $bijacService)) break;
-            }
-
-            try {
-                if ($ocr->gate_number == 3) {
-                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog"),])
-                        ->info("ProcessOcrLog ({$ocr->id}) down by palte : {$ocr->plate_number}  ");
-                }
-            } catch (\Throwable $th) {
             }
         } finally {
             $lock->release();
