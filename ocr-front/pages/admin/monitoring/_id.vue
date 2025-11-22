@@ -40,7 +40,8 @@
             </div>
 
 
-            <div class="mx-1" style="width: 200px" v-if="selectedTruck.match_status.includes('_nok')">
+            <div class="mx-1" style="width: 200px"
+              v-if="selectedTruck.match_status && selectedTruck.match_status.includes('_nok')">
               <v-text-field v-model="receiptNumber" label="شماره قبض انبار" hide-details dense rounded outlined
                 append-icon="fal fa-check" @click:append="findBy({ receipt_number: receiptNumber })" />
             </div>
@@ -81,13 +82,15 @@
 
 
             <div v-if="selectedTruck.plate_number" class="px-4">
-              <EditBtn v-if="['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)"
+              <EditBtn
+                v-if="selectedTruck.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)"
                 :editItem="selectedTruck" :fields="plateFields(selectedTruck)" @update="reloadMainData" />
               <div v-html="plateShow(selectedTruck.plate_number, selectedTruck)"></div>
             </div>
 
             <div v-if="selectedTruck.container_code" class="px-4">
-              <EditBtn v-if="['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)"
+              <EditBtn
+                v-if="selectedTruck.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)"
                 :editItem="selectedTruck" :fields="containerFields(selectedTruck)" @update="reloadMainData" />
               <div style="transform: scale(0.7)" v-html="containerCodeShow(selectedTruck.container_code, selectedTruck)
                 "></div>

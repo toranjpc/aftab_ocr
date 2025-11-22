@@ -215,7 +215,7 @@ class OcrMatchController extends Controller
             ], 200);
         } catch (\Throwable $e) {
             return $e;
-            Log::error('update_customCheck error: ' . $e->getMessage(), [
+            \Log::error('update_customCheck error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
 
@@ -245,7 +245,7 @@ class OcrMatchController extends Controller
                 'message' => 'Base invoice بروزرسانی شد.',
             ]);
         } catch (\Throwable $e) {
-            Log::error('❌ خطا در addBaseInvoice:', ['error' => $e->getMessage()]);
+            \Log::error('❌ خطا در addBaseInvoice:', ['error' => $e->getMessage()]);
             // return response()->json([
             //     'message' => 'خطا در بروزرسانی Base invoice',
             //     'error' => $e->getMessage(),

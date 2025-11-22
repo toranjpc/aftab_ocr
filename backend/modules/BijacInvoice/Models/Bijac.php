@@ -79,6 +79,7 @@ class Bijac extends Base
         $plate_number = $PlateService->normalizePlate($plate_number);
 
         $cleanNumber = preg_replace('/\D/', '', $plate_number);
+        $threshold = config('ocr.field_thresholds.plate_number', 1);
 
         if (strlen($cleanNumber) < 3) {
             return $query->whereRaw('1=0');
@@ -123,6 +124,7 @@ class Bijac extends Base
             $result = clone $resultBase;
             $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number . "%"])
                 ->get();
+            $result = $this->levenPlace($result, $cleanNumber, $threshold);
             if (!$result->isEmpty()) continue;
 
 
@@ -151,10 +153,9 @@ class Bijac extends Base
 
             $wildcardPattern = substr($cleanNumber, 0, 5);
             $result = clone $resultBase;
-            $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern])
+            $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern . "%"])
                 ->get();
-            // if (!$result->isEmpty()) continue;
-
+            $result = $this->levenPlace($result, $cleanNumber, $threshold);
 
             // $result = clone $resultBase;
             // $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", ['%' . $cleanNumber . '%'])
@@ -237,6 +238,16 @@ class Bijac extends Base
             }
         }
 
+        return $result;
+    }
+
+
+    private function levenPlace($result, $place, $threshold = 1)
+    {
+        $result = $result->filter(function ($res) use ($place, $threshold) {
+            $lev = levenshtein($place, $res->plate_number);
+            if ($lev < $threshold) return true;
+        });
         return $result;
     }
 }
