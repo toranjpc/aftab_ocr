@@ -91,13 +91,25 @@ class Bijac extends Base
                 $item->created_at,
             ];
 
-            $result = Bijac::when($day > 3, function ($query) {
-                return $query->doesntHave('ocrMatches');
-            })
-                ->whereBetween('bijac_date', $dateRange)
-                // ->where('plate_normal', $plate_number)
-                ->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number])
-                ->latestBetween($dateRange)
+
+
+
+            $resultBase = Bijac::whereBetween('bijac_date', $dateRange)
+                // when($day >= 3, function ($query) {
+                //     return $query->doesntHave('ocrMatches');
+                // })
+                ->where(function ($query) {
+                    $query->where('bijac_date', '>=', now()->subHours(12))
+                        ->orWhere(function ($q) {
+                            $q->where('bijac_date', '<', now()->subHours(12))
+                                ->doesntHave('ocrMatches');
+                        });
+                })
+                ->latestBetween($dateRange);
+
+
+            $result = clone $resultBase;
+            $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number])
                 ->get();
 
             try {
@@ -108,65 +120,44 @@ class Bijac extends Base
 
             if (!$result->isEmpty()) continue;
 
-            $result = Bijac::when($day > 3, function ($query) {
-                return $query->doesntHave('ocrMatches');
-            })
-                ->whereBetween('bijac_date', $dateRange)
-                // ->where('plate_normal', $plate_number)
-                ->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number . "%"])
-                ->latestBetween($dateRange)
+            $result = clone $resultBase;
+            $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number . "%"])
                 ->get();
             if (!$result->isEmpty()) continue;
 
 
             if (strlen($cleanNumber) <= 4) {
-                $result = Bijac::when($day > 3, function ($query) {
-                    return $query->doesntHave('ocrMatches');
+                $result = clone $resultBase;
+                $result = $result->where(function ($q) use ($cleanNumber) {
+                    $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber . '_']);
+                    $q->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber]);
                 })
-                    ->whereBetween('bijac_date', $dateRange)
-                    ->where(function ($q) use ($cleanNumber) {
-                        $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber . '_']);
-                        $q->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber]);
-                    })
-                    ->latestBetween($dateRange)
                     ->get();
                 if (!$result->isEmpty()) continue;
             }
 
             // if (strlen($cleanNumber) == 7) {
-            $result = Bijac::when($day > 3, function ($query) {
-                return $query->doesntHave('ocrMatches');
-            })
-                ->whereBetween('bijac_date', $dateRange)
-                ->where(function ($q) use ($cleanNumber) {
-                    // $wildcardPattern = substr($cleanNumber, 0, 5);
-                    $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$cleanNumber]);
-                    // ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern . '__']);
+            $result = clone $resultBase;
+            $result = $result->where(function ($q) use ($cleanNumber) {
+                // $wildcardPattern = substr($cleanNumber, 0, 5);
+                $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$cleanNumber]);
+                // ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern . '__']);
 
-                })
-                ->latestBetween($dateRange)
+            })
                 ->get();
 
             if (!$result->isEmpty()) continue;
             // }
 
             $wildcardPattern = substr($cleanNumber, 0, 5);
-            $result = Bijac::when($day > 3, function ($query) {
-                return $query->doesntHave('ocrMatches');
-            })
-                ->whereBetween('bijac_date', $dateRange)
-                ->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern])
-                ->latestBetween($dateRange)
+            $result = clone $resultBase;
+            $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern])
                 ->get();
             // if (!$result->isEmpty()) continue;
 
 
-            // $result = Bijac::when($day > 3, function ($query) {
-            //     return $query->doesntHave('ocrMatches');
-            // })
-            //     ->whereBetween('bijac_date', $dateRange)
-            //     ->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", ['%' . $cleanNumber . '%'])
-            //     ->latestBetween($dateRange)
+            // $result = clone $resultBase;
+            // $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", ['%' . $cleanNumber . '%'])
             //     ->get();
 
 
@@ -220,11 +211,18 @@ class Bijac extends Base
             $result = collect();
 
             foreach ($codesToTry as $code) {
-                $queryTry = Bijac::when($day > 3, function ($query) {
-                    return $query->doesntHave('ocrMatches');
-                })
+                $queryTry = Bijac::whereBetween('bijac_date', $dateRange)
+                    // when($day >= 3, function ($query) {
+                    //     return $query->doesntHave('ocrMatches');
+                    // })
+                    ->where(function ($query) {
+                        $query->where('bijac_date', '>=', now()->subHours(12))
+                            ->orWhere(function ($q) {
+                                $q->where('bijac_date', '<', now()->subHours(12))
+                                    ->doesntHave('ocrMatches');
+                            });
+                    })
                     ->where('container_number', 'LIKE', "%{$code}%")
-                    ->whereBetween('bijac_date', $dateRange)
                     ->latestBetween($dateRange);
 
                 $result = $queryTry->get();

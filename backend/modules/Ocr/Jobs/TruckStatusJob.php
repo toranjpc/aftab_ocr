@@ -60,6 +60,10 @@ class TruckStatusJob implements ShouldQueue
                 $match = OcrMatch::with(["bijacs" => function ($query) {
                     $query->with('invoices');
                 }])->find($this->log);
+            }
+
+            if (str_contains($match->match_status, '_Creq')) {
+                $noInvoice = '_Creq';
             } elseif (str_contains($match->match_status, '_req')) {
                 $noInvoice = '_req';
             }
@@ -115,20 +119,20 @@ class TruckStatusJob implements ShouldQueue
                 $bijac = $match->bijacs->first();
                 if ($bijac->type === 'gcoms') {
                     return $match->forceFill([
-                        'match_status' => 'gcoms_nok'
+                        'match_status' => 'gcoms_nok' . $noInvoice
                     ])->save();
                 } else {
                     if ($match->plate_number && $match->container_code)
                         return $match->forceFill([
-                            'match_status' => 'ccs_nok'
+                            'match_status' => 'ccs_nok' . $noInvoice
                         ])->save();
                     else if ($match->plate_number)
                         return $match->forceFill([
-                            'match_status' => 'plate_ccs_nok'
+                            'match_status' => 'plate_ccs_nok' . $noInvoice
                         ])->save();
                     else
                         return $match->forceFill([
-                            'match_status' => 'container_ccs_nok'
+                            'match_status' => 'container_ccs_nok' . $noInvoice
                         ])->save();
                 }
             } else {
@@ -146,11 +150,11 @@ class TruckStatusJob implements ShouldQueue
 
                 if ($match->plate_number)
                     return $match->forceFill([
-                        'match_status' => 'plate_without_bijac'
+                        'match_status' => 'plate_without_bijac' . $noInvoice
                     ])->save();
                 else
                     return $match->forceFill([
-                        'match_status' => 'container_without_bijac'
+                        'match_status' => 'container_without_bijac' . $noInvoice
                     ])->save();
             }
         }
@@ -162,19 +166,10 @@ class TruckStatusJob implements ShouldQueue
         }
     }
 
-    public  function MiladiConvertor($data1)
-    {
-        $miladiDate = null;
-        if ($data1 && !empty(trim($data1))) {
-            $jalaliDate = Verta::parse($data1);
-            $miladiDate = $jalaliDate->formatGregorian('Y-m-d H:i:s');
-        }
-        return $miladiDate;
-    }
     public function noInvoice($log, $match, $forAll = true)
     {
         log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
-            ->info("noInvoice run match id : {$match->id} ");
+            ->info("noInvoice run match:{$match->plate_number} id : {$match->id} ");
         // return;
         if (!cache()->get('truckstatus_reran_' . $log)) {
             cache()->put('truckstatus_reran_' . $log, true, 60);
@@ -211,37 +206,42 @@ class TruckStatusJob implements ShouldQueue
                         $invoiceService = $invoiceService[0];
                         if ($invoiceService && !isset($invoiceService['InvoiceNumber'])) continue;
 
+                        $saveinvoice = new InvoiceService();
+                        $saveinvoice->save_invoice($invoiceService);
+                        /*
                         $customerUpdating = [];
-                        $customerFields = [
-                            "title" => "GoodsOwnerName",
-                            "shenase_meli" => "GoodsOwnerNationalID",
-                            "postal_code" => "GoodsOwnerPostalCode",
-                            // "shenase_meli" => "GoodsOwnerEconommicCode",
-                        ];
-                        foreach ($customerFields as $key => $field) {
-                            $customerUpdating[$key] = $invoiceService[$field] ?? null;
-                        }
-                        $customer = Customer::updateOrCreate(
-                            ['shenase_meli' => $invoiceService["GoodsOwnerNationalID"]],
-                            $customerUpdating
-                        );
+                            $customerFields = [
+                                "title" => "GoodsOwnerName",
+                                "shenase_meli" => "GoodsOwnerNationalID",
+                                "postal_code" => "GoodsOwnerPostalCode",
+                                // "shenase_meli" => "GoodsOwnerEconommicCode",
+                            ];
+                            foreach ($customerFields as $key => $field) {
+                                $customerUpdating[$key] = $invoiceService[$field] ?? null;
+                            }
+                            $customer = Customer::updateOrCreate(
+                                ['shenase_meli' => $invoiceService["GoodsOwnerNationalID"]],
+                                $customerUpdating
+                            );
 
-                        $fildes = [];
-                        $fildes["source_invoice_id"] = time();
-                        $fildes['customer_id'] = $customer->id;
-                        $fildes["invoice_number"] = $invoiceService['InvoiceNumber'];
-                        $fildes["receipt_number"] = $invoiceService['ReceiptNumber'];
-                        $fildes["pay_date"] =  $this->MiladiConvertor($invoiceService['InvoiceDate']);
-                        $fildes["pay_trace"] = $invoiceService['PayRequestTraceNo'];
-                        $fildes["amount"] = $invoiceService['ParkingCost'];
-                        $fildes["weight"] = $invoiceService['Weight'];
-                        $fildes["tax"] = $invoiceService['Total'] - $invoiceService['ParkingCost'];
-                        $fildes["kutazh"] = null;
-                        $fildes["number"] = null;
-                        $fildes["request_date"] = now();
+                            $fildes = [];
+                            $fildes["source_invoice_id"] = time();
+                            $fildes['customer_id'] = $customer->id;
+                            $fildes["invoice_number"] = $invoiceService['InvoiceNumber'];
+                            $fildes["receipt_number"] = $invoiceService['ReceiptNumber'];
+                            $fildes["pay_date"] =  $this->MiladiConvertor($invoiceService['InvoiceDate']);
+                            $fildes["pay_trace"] = $invoiceService['PayRequestTraceNo'];
+                            $fildes["amount"] = $invoiceService['ParkingCost'];
+                            $fildes["weight"] = $invoiceService['Weight'];
+                            $fildes["tax"] = $invoiceService['Total'] - $invoiceService['ParkingCost'];
+                            $fildes["kutazh"] = null;
+                            $fildes["number"] = null;
+                            $fildes["request_date"] = now();
 
-                        Invoice::create($fildes);
-                        Log::error("DONED : {$value->receipt_number} - {$value->id}");
+                            Invoice::create($fildes);
+                        */
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
+                            ->info("[TruckStatusJob] down noInvoice match:{$match->plate_number} id : {$match->id} ");
                         break;
                     }
 
@@ -251,9 +251,8 @@ class TruckStatusJob implements ShouldQueue
                 //     $query->with('invoices');
                 // }])->find($log);
             } catch (\Throwable $e) {
-                // Log::error("❌ [TruckStatusJob] Error during noInvoice for receipt_number = " . $e->getMessage());
                 log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
-                    ->info("❌ [TruckStatusJob] Error during noInvoice _ match id : {$match->id} ");
+                    ->info("❌ [TruckStatusJob] Error during noInvoice match:{$match->plate_number} id : {$match->id} ");
             }
             // return $match;
         }

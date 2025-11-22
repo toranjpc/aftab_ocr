@@ -3,11 +3,13 @@
 namespace Modules\Collector\Services;
 
 use Carbon\Carbon;
+use Hamcrest\Core\IsTypeOf;
 use Modules\Gcoms\Models\GcomsData;
 use Illuminate\Support\Facades\Http;
 use Modules\Gcoms\Models\GcomsBijac;
 use Modules\Collector\Services\CustomerService;
 use Modules\BijacInvoice\Models\Bijac;
+use SimpleXMLElement;
 
 class GcomsService
 {
@@ -69,7 +71,7 @@ class GcomsService
         $body = str_replace('i:nil="true"', '', $body);
         $body = str_replace('xmlns:d5p1="http://schemas.datacontract.org/2004/07/System.Collections.Generic"', '', $body);
         try {
-            $xml = new \SimpleXMLElement(html_entity_decode($body));
+            $xml = new SimpleXMLElement(html_entity_decode($body));
         } catch (\Exception $e) {
             $xml = [];
         }
@@ -214,6 +216,74 @@ class GcomsService
 
     static function makeStandardBijacs($body)
     {
+        $body = preg_replace('/(\r?\n|\r|\t)+/', '', $body);
+        $externalNamespaces = [
+            'soapenv' => 'http://schemas.xmlsoap.org/soap/envelope/',
+            'd4p1'    => 'http://schemas.datacontract.org/2004/07/Massan.Models.Core',
+            'i'       => 'http://www.w3.org/2001/XMLSchema-instance',
+            'tem'     => 'http://tempuri.org/'
+        ];
+
+        $xml = simplexml_load_string($body);
+        if ($xml === false) return ['error' => 'Failed to load main SOAP body string.'];
+
+        foreach ($externalNamespaces as $prefix => $uri)
+            $xml->registerXPathNamespace($prefix, $uri);
+
+        $responseTextNode = $xml->xpath('//d4p1:ResponseText');
+        if (empty($responseTextNode))
+            return ['error' => 'ResponseText Node Not Found'];
+
+        $internalXmlString = (string)$responseTextNode[0];
+
+        $internalXml = simplexml_load_string($internalXmlString);
+        if ($internalXml === false)
+            return ['error' => 'Failed to parse internal XML string.'];
+
+        $internalNamespaces = [
+            's' => 'http://schemas.xmlsoap.org/soap/envelope/',
+            'a' => 'http://schemas.datacontract.org/2004/07/TransporterGateWay.Models'
+        ];
+        foreach ($internalNamespaces as $prefix => $uri)
+            $internalXml->registerXPathNamespace($prefix, $uri);
+
+        $gatePassNodes = $internalXml->xpath('//a:GetGatePass_Aftab');
+        if (empty($gatePassNodes))
+            return ['error' => 'No <a:GetGatePass_Aftab> nodes found'];
+
+        $result = [];
+        foreach ($gatePassNodes as $node) {
+            // $entry = [];
+            foreach ($node->children('http://schemas.datacontract.org/2004/07/TransporterGateWay.Models') as $child) {
+                $result[$child->getName()] = trim((string)$child);
+            }
+            // $result[] = $entry;
+        }
+
+        if (!isset($result['Travel'])) return [];
+        $cleanPlate = preg_replace('/ایران/i', '',  $result['Travel']);
+        $cleanPlate = preg_replace('/[\s\-\_]/', '', $cleanPlate);
+        $cleanPlate = str_replace('ع', 'ein', $cleanPlate);
+        if (preg_match('/^(\d{2})(\d{3})(ein)(\d{2})$/', $cleanPlate, $matches)) {
+            // $matches[1] = کد شهر (47)
+            // $matches[2] = اعداد میانی (458)
+            // $matches[3] = حرف (ein)
+            // $matches[4] = عدد نهایی (79)
+
+            $codeCity     = $matches[1];
+            $middleNumber = $matches[2];
+            $letter       = $matches[3];
+            $finalNumber  = $matches[4];
+
+            $reorderedPlate = $finalNumber . $letter . $middleNumber . $codeCity;
+
+            $result['Travel'] = $reorderedPlate;
+        } else {
+            // $result['Travel'] = "Error: Plate format did not match expected structure.";
+        }
+        return $result;
+
+
         $body = str_replace("\n", '', $body);
         $body = str_replace("\t", '', $body);
         $body = str_replace('&lt;', '<', $body);
@@ -224,9 +294,9 @@ class GcomsService
         $body = str_replace('d5p1:', '', $body);
 
         $body = str_replace('i:nil="true"', '', $body);
-        return   $body = str_replace('xmlns:d5p1="http://schemas.datacontract.org/2004/07/System.Collections.Generic"', '', $body);
+        $body = str_replace('xmlns:d5p1="http://schemas.datacontract.org/2004/07/System.Collections.Generic"', '', $body);
         try {
-            $xml = new \SimpleXMLElement(html_entity_decode($body));
+            $xml = new SimpleXMLElement(html_entity_decode($body));
         } catch (\Exception $e) {
             $xml = [];
         }
@@ -306,10 +376,9 @@ class GcomsService
             ->withBody($payload, "text/xml")
             ->retry(3, 100)
             ->post($url);
+        $response = $http->body();
 
-        return  $response = $http->body();
-
-        $data = static::makeStandardBijacs($response);
+        return $data = static::makeStandardBijacs($response);
 
         static::storeBijacs($data);
 

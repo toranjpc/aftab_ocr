@@ -3,6 +3,10 @@
 namespace Modules\BijacInvoice\Services;
 
 use Illuminate\Support\Facades\Http;
+use Modules\BijacInvoice\Models\Invoice;
+use Modules\BijacInvoice\Models\Customer;
+use Hekmatinasser\Verta\Facades\Verta;
+use Modules\Auth\Controllers\AuthController;
 
 class InvoiceService
 {
@@ -124,5 +128,53 @@ class InvoiceService
             ->toArray();
 
         return $data;
+    }
+
+    function save_invoice($invoiceService)
+    {
+        if ($invoiceService && !isset($invoiceService['InvoiceNumber'])) return;
+
+        $customerUpdating = [];
+        $customerFields = [
+            "title" => "GoodsOwnerName",
+            "shenase_meli" => "GoodsOwnerNationalID",
+            "postal_code" => "GoodsOwnerPostalCode",
+            // "shenase_meli" => "GoodsOwnerEconommicCode",
+        ];
+        foreach ($customerFields as $key => $field) {
+            $customerUpdating[$key] = $invoiceService[$field] ?? null;
+        }
+        $customer = Customer::updateOrCreate(
+            ['shenase_meli' => $invoiceService["GoodsOwnerNationalID"]],
+            $customerUpdating
+        );
+
+        $fildes = [];
+        $fildes["source_invoice_id"] = time();
+        $fildes['customer_id'] = $customer->id;
+        $fildes["invoice_number"] = $invoiceService['InvoiceNumber'];
+        $fildes["receipt_number"] = $invoiceService['ReceiptNumber'];
+        $fildes["pay_date"] =  $this->MiladiConvertor($invoiceService['InvoiceDate']);
+        $fildes["pay_trace"] = $invoiceService['PayRequestTraceNo'];
+        $fildes["amount"] = $invoiceService['ParkingCost'];
+        $fildes["weight"] = $invoiceService['Weight'];
+        $fildes["tax"] = $invoiceService['Total'] - $invoiceService['ParkingCost'];
+        $fildes["kutazh"] = null;
+        $fildes["number"] = null;
+        $fildes["request_date"] = now();
+
+        $Invoice = Invoice::create($fildes);
+        $AuthController = new AuthController();
+        $AuthController->savelog($Invoice);
+    }
+
+    function MiladiConvertor($data1)
+    {
+        $miladiDate = null;
+        if ($data1 && !empty(trim($data1))) {
+            $jalaliDate = Verta::parse($data1);
+            $miladiDate = $jalaliDate->formatGregorian('Y-m-d H:i:s');
+        }
+        return $miladiDate;
     }
 }

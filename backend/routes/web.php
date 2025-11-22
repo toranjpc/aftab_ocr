@@ -13,6 +13,7 @@ use modules\Auth\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Modules\Sse\Models\SSE;
 
 //حذف
 Route::get('/', function () {
@@ -43,9 +44,29 @@ Route::get('/', function () {
 // });
 Route::get('/test', function () {
 
+    // SSE::create([
+    //     // 'message' => ['data' => $item->toArray()],
+    //     'message' => ['data' => 53308],
+    //     'event' => 'ocr-match',
+    //     'model' => OcrMatch::class,
+    //     'receiver_id' => 2,
+    // ]);
+
+    // return;
     if (isset(request()->bij)) {
+        $id = time();
+        $startTime = microtime(true);
+        log::info($id . " 1- start : " . microtime(true) - $startTime);
+        $CcsService = new Modules\Collector\Services\CcsService();
+        $DBBijac = $CcsService->getByReceipt(request()->bij);
+        log::info($id . " 5- end code : " . microtime(true) - $startTime);
+        return  $DBBijac; //['Travel'];
+
+
         $GcomsService = new Modules\Collector\Services\GcomsService();
-        return   $DBBijac = $GcomsService->getBijacTaki(request()->bij);
+        $DBBijac = $GcomsService->getBijacTaki(request()->bij);
+        return  $DBBijac; //['Travel'];
+
 
 
         $bijac_number = request()->bij;

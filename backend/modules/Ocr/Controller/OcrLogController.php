@@ -50,10 +50,10 @@ class OcrLogController extends Controller
 
         $plate = false;
         if (isset($request->plate_number)) {
-            $plate = $this->checkPlateIsDuplicate([
+            $plate = $this->checkPlateIsDuplicate(
                 $request->plate_number,
                 $request->gate_number,
-            ]);
+            );
 
             if ($plate) {
                 if ($plate->ocr_accuracy >= $request->ocr_accuracy) {
@@ -77,10 +77,10 @@ class OcrLogController extends Controller
         $container = false;
         if (isset($request->container_code)) {
 
-            $container = $this->checkIsDuplicateContainer([
+            $container = $this->checkIsDuplicateContainer(
                 $request->container_code,
                 $request->gate_number,
-            ]);
+            );
 
             if ($container) {
                 if ($container->ocr_accuracy >= $request->ocr_accuracy) {
@@ -214,15 +214,14 @@ class OcrLogController extends Controller
         return TruckLog::create($request->all());
     }
 
-    private function checkPlateIsDuplicate($data)
+    public function checkPlateIsDuplicate($input, $gate, $lastSixPlate = null)
     {
-        [$input, $gate] = $data;
+        // [$input, $gate] = $data;
         $threshold = config('ocr.field_thresholds.plate_number', 1);
 
-        $lastSixPlate = OcrBuffer::getBuffer($gate);
+        if (!$lastSixPlate) $lastSixPlate = OcrBuffer::getBuffer($gate);
 
         $closest = false;
-
         if ($input) {
             foreach ($lastSixPlate as $key => $plate) {
                 if ($plate->plate_number) {
@@ -300,15 +299,15 @@ class OcrLogController extends Controller
         return $closest;
     }
 
-    private function checkIsDuplicateContainer($data)
+    public function checkIsDuplicateContainer($input, $gate, $lastSix = null)
     {
         function extractDigits($string)
         {
             preg_match_all('/\d+/', $string, $matches);
             return implode('', $matches[0]);
         }
-        [$input, $gate] = $data;
-        $lastSix = OcrBuffer::getBuffer($gate, 'container');
+        // [$input, $gate] = $data;
+        if (!$lastSix) $lastSix = OcrBuffer::getBuffer($gate, 'container');
         $threshold = config('ocr.field_thresholds.container_code', config('ocr.levenshtein_threshold'));
 
         $closest = false;

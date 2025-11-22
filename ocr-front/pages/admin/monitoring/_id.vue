@@ -32,16 +32,17 @@
         <CardWidget id="padding-low" :title="statusMessage(selectedTruck)" style="border: 2px solid white"
           :style="{ outline: '5px solid ' + statusColor(selectedTruck) }">
           <template #actions>
-            <div class="mx-1" style="width: 200px">
-              <!-- v-if="['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)" -->
-              <v-text-field v-model="receiptNumber" label="شماره قبض انبار" hide-details dense rounded outlined
-                append-icon="fal fa-check" @click:append="findBy({ receipt_number: receiptNumber })" />
-            </div>
 
             <div class="mx-1" style="width: 200px"
               v-if="['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)">
               <v-text-field v-model="bijac" label="شماره بیجک" hide-details dense rounded outlined
                 append-icon="fal fa-check" @click:append="findBy({ bijac_number: bijac })" />
+            </div>
+
+
+            <div class="mx-1" style="width: 200px" v-if="selectedTruck.match_status.includes('_nok')">
+              <v-text-field v-model="receiptNumber" label="شماره قبض انبار" hide-details dense rounded outlined
+                append-icon="fal fa-check" @click:append="findBy({ receipt_number: receiptNumber })" />
             </div>
 
 
@@ -369,7 +370,8 @@ export default {
     },
 
     reloadMainData() {
-      this._event('paginate')
+      this.$majra.reload()
+      // this._event('paginate')
     },
 
     findBy(params) {
@@ -383,7 +385,10 @@ export default {
           console.log(res)
           if (res.message === 'not found') {
             this._event('alert', { text: 'موردی یافت نشد' })
-          } else {
+          } else if (res.message === "bijac_has_invoice") {
+            this._event('alert', { text: 'فاکتور قبلا ثبت شده است' })
+          }
+          else {
             this._event('alert', { text: 'در حال لود مجدد' })
           }
           this._event('paginate')
@@ -394,8 +399,8 @@ export default {
           this._event('alert', { text: 'مجدد تلاش کنید' })
         })
         .finally(() => {
-          this.bijac = ''
-          this.receiptNumber = ''
+          // this.bijac = ''
+          // this.receiptNumber = ''
           this._event('loading', false)
         })
     },

@@ -3,19 +3,15 @@ const DEFAULT_TYPE = 'iran';
 
 export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = null) {
   try {
-    // اگر هیچ ورودی‌ای نیست، خروجی خالی بده
     if (!v && !v2) return '';
-
-    // normalize نوع
     if (type === 'iran-regular') type = 'iran';
 
-    // اگر افغان یا شرایط خاص بود از تابع افغان استفاده کن
+    // console.log(v + " -> " + v2)
     if (type === 'afghan' || v2?.includes("L") || (v2 && v2.length < 5)) {
       return afghan(v, edit, v2);
     }
 
-    // اگر v2 شامل 5 رقم بود، اون رو اصلاح کن (ein اضافه می‌کنیم)
-    if (v2 && (v2.match(/\d/g) || []).length == 5) {
+    if (v2 && (v2.match(/\d/g) || []).length === 5) {
       const digits = v2.replace(/\D/g, '');
       const part1 = digits.substring(0, 2);
       let part2 = digits.substring(2);
@@ -23,37 +19,15 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
       v2 = part1 + 'ein' + part2;
     }
 
-    // تابع هایلایت اختلافات با رنگ قرمز
-    function highlightDifferences(str, ref) {
-      if (!ref) return str;
-      if (!str) return ref;
-      let out = '';
-      for (let i = 0; i < str.length; i++) {
-        const char = str[i];
-        const refChar = ref[i] ?? null;
-        if (refChar && refChar !== '?' && char !== refChar) {
-          out += `<span style="color:red">${refChar}</span>`; // اختلاف قرمز
-        } else {
-          out += char; // بقیه عادی
-        }
-      }
-      return out;
-    }
-
     const plate = v ?? v2;
 
-    // تبدیل کد حروف به فارسی
     const st = converto(plate.substring(2, plate.length - 5));
-
-    // بخش وسط (ein) با استایل
     const ein = `<span style="height: 17px; margin-bottom: 3px; font-size: 14px; margin-right:3px; margin-left:4px">${st}</span>`;
 
-    // سه بخش پلاک با مقایسه v و v2 و هایلایت اختلافات
     const part1 = highlightDifferences(v?.substring(0, 2) ?? '', v2?.substring(0, 2) ?? '');
     const part2 = highlightDifferences(v?.substring(v.length - 5, v.length - 2) ?? '', v2?.substring(v2.length - 5, v2.length - 2) ?? '');
     const part3 = highlightDifferences(v?.substring(v.length - 2) ?? '', v2?.substring(v2.length - 2) ?? '');
 
-    // خروجی html با استایل
     return `
       <span style="
         background-image: url(/img/${pickImage(edit, st, !v && v2)});
@@ -89,13 +63,60 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
       </span>
     `;
   } catch (e) {
-    console.error('Error formatting plate:', e);
+    // console.error('Error formatting plate:', e);
     return '';
   }
 }
 
+function highlightDifferences(str, ref) {
+  if (!ref) return str;
+  if (!str) return ref;
+  let out = '';
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    const refChar = ref[i] ?? null;
+    if (refChar && refChar !== '?' && char !== refChar) {
+      out += `<span style="color:red">${refChar}</span>`;
+    } else {
+      out += char;
+    }
+  }
+  return out;
+}
+
 // تابع تبدیل کد به کاراکتر فارسی
 export function converto(t) {
+  const $data = {
+    'ein': 'ع',
+    'ع': 'ein',
+    'ta': 'ط',
+    'ط': 'ta',
+    'n': 'ن',
+    'ن': 'n',
+    'alef': 'الف',
+    'لف': 'alef',
+    'v': 'و',
+    'و': 'v',
+    'sad': 'ص',
+    'ص': 'sad',
+    'q': 'ق',
+    'ق': 'q',
+    'l': 'ل',
+    'ل': 'l',
+    's': 'س',
+    'س': 's',
+    'y': 'ی',
+    'ی': 'y',
+    'h': 'ه',
+    'ه': 'h',
+    'd': 'د',
+    'د': 'd',
+    'm': 'م',
+    'م': 'm',
+    'b': 'ب',
+    'ب': 'b',
+  };
+  return $data[t] ?? t
   switch (t) {
     case 'ein': return 'ع';
     case 'ta': return 'ط';

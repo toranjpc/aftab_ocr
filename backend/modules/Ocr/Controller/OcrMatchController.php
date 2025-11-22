@@ -14,8 +14,8 @@ use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
-use App\Models\Log;
-use Illuminate\Support\Facades\Log as info;
+use Illuminate\Support\Facades\Log;
+use Modules\Auth\Controllers\AuthController;
 
 class OcrMatchController extends Controller
 {
@@ -47,7 +47,7 @@ class OcrMatchController extends Controller
             ->paginate($request->itemPerPage ?? 15);
 
         $customTariff = config('ocr.custom_tariff');
-        if ($request->gate == 2) info::info("{$id}_Operation took vasat " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+        // if ($request->gate == 2) log::info("{$id}_Operation took vasat " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
         $ocrMatches->map(function ($ocr) use ($customTariff, $request, $id, $startTime) {
             $ocr->append('invoice');
@@ -56,7 +56,7 @@ class OcrMatchController extends Controller
             $ocr['ocr_vehicles'] = 0;
 
             $bijac = $ocr->bijacs->sortByDesc('bijac_date')->first();
-            if ($request->gate == 2) info::info("{$id}_Operation took for bijac " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+            // if ($request->gate == 2) log::info("{$id}_Operation took for bijac " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
             if ($bijac && $bijac->receipt_number) {
                 // $bijacs = Bijac::where('receipt_number', $bijac->receipt_number)->select("id", "receipt_number", "plate_normal")->get();
@@ -79,7 +79,7 @@ class OcrMatchController extends Controller
                 //     ->whereIn('bijac_id', $bijacIds)
                 //     ->distinct('bijac_id')
                 //     ->count('bijac_id');
-                if ($request->gate == 2) info::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                // if ($request->gate == 2) log::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
                 $ocr['ocr_vehicles'] = DB::table('bijacables')
                     ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
                     ->where('bijacable_type', OcrMatch::class)
@@ -95,7 +95,7 @@ class OcrMatchController extends Controller
                     ->get()
                     ->count();
 
-                if ($request->gate == 2) info::info("{$id}_Operation took for ocr_vehicles " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                // if ($request->gate == 2) log::info("{$id}_Operation took for ocr_vehicles (" . $ocr['ocr_vehicles'] . ") " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
 
                 if ($bijac->type == 'ccs' && $ocr->invoice) { //کانتینر
@@ -130,7 +130,7 @@ class OcrMatchController extends Controller
             return $ocr;
         });
 
-        if ($request->gate == 2) info::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+        // if ($request->gate == 2) log::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
         return response(
             [
                 'message' => 'ok',
@@ -204,23 +204,8 @@ class OcrMatchController extends Controller
     public function update_customCheck(Request $request, OcrMatch $ocrMatch)
     {
         try {
-            $user = auth('api')->user();
-            $data = [
-                "user_id"    => $user->id,
-                "table_name" => 'OcrMatch',
-                "table_id"   => $ocrMatch->id,
-                "log_type"   => "checked",
-            ];
-            Log::updateOrCreate(
-                $data,
-                [
-                    ...$data,
-                    "log_date" => now(),
-                    "data"     => json_encode([
-                        "ip" => $request->ip()
-                    ]),
-                ]
-            );
+            $AuthController = new AuthController();
+            $AuthController->savelog($ocrMatch, "checked", "تایید دستی بدون بیجک ها (موارد افلاین)");
 
             return response()->json([
                 'message' => 'با موفقیت تایید شد!',
@@ -230,7 +215,7 @@ class OcrMatchController extends Controller
             ], 200);
         } catch (\Throwable $e) {
             return $e;
-            \Log::error('update_customCheck error: ' . $e->getMessage(), [
+            Log::error('update_customCheck error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
 
@@ -260,7 +245,7 @@ class OcrMatchController extends Controller
                 'message' => 'Base invoice بروزرسانی شد.',
             ]);
         } catch (\Throwable $e) {
-            \Log::error('❌ خطا در addBaseInvoice:', ['error' => $e->getMessage()]);
+            Log::error('❌ خطا در addBaseInvoice:', ['error' => $e->getMessage()]);
             // return response()->json([
             //     'message' => 'خطا در بروزرسانی Base invoice',
             //     'error' => $e->getMessage(),

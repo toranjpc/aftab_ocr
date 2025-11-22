@@ -7,7 +7,7 @@
       <template #header-btn>
         <AddPlateDialog :matchGate="matchGate" />
 
-        <SseBtn :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number'${matchGate}`" />
+        <SseBtn :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number${matchGate}`" />
       </template>
 
       <template #item.plate_number="item">
@@ -23,7 +23,7 @@
         <div v-else v-html="plateShow(item.plate_number, item)">
         </div>
 
-        {{ item.plate_number }}
+
       </template>
 
       <template #item.container_code="item">
@@ -66,6 +66,7 @@
                   :color="item.total_tu === 0 ? '#d2d2d2' : item.total_tu < item.ocr_tu ? 'red' : '#bbb210'"
                   :class="{ 'animate__animated animate__heartBeat animate__infinite': item.total_tu < item.ocr_tu }"
                   rounded></v-progress-linear>
+
                 <strong class="mt-2">{{ item.total_tu }}</strong>
               </div>
             </v-card-text>
@@ -410,19 +411,23 @@ export default {
         req = ' - موردی';
         status = status.replace('_req', '');
       }
+      if (status.includes('_Creq')) {
+        req = ' - تایید دستی بیجک';
+        status = status.replace('_Creq', '');
+      }
 
       let list = {
         // bad_match_nok: ['دو فاکتور متفاوت', 'purple'],
         gcoms_ok: ['فاکتور' + req, 'cyan'],
-        gcoms_nok: ['بدون فاکتور', 'red'],
+        gcoms_nok: ['بدون فاکتور' + req, 'red'],
         ccs_ok: ['فاکتور' + req, 'green darken-4'],
-        ccs_nok: ['بدون فاکتور', 'red'],
-        container_without_bijac: ['بدون بیجک', 'orange'],
+        ccs_nok: ['بدون فاکتور' + req, 'red'],
+        container_without_bijac: ['بدون بیجک' + req, 'orange'],
         plate_without_bijac: ['بدون بیجک', 'orange'],
         container_ccs_ok: ['فاکتور (کانتینر)' + req, 'green'],
-        container_ccs_nok: ['بدون فاکتور', 'red'],
+        container_ccs_nok: ['بدون فاکتور' + req, 'red'],
         plate_ccs_ok: ['فاکتور (پلاک)' + req, 'green'],
-        plate_ccs_nok: ['بدون فاکتور', 'red'],
+        plate_ccs_nok: ['بدون فاکتور' + req, 'red'],
       }
       if (ifFalse) {
         list['container_without_bijac'] = ['بیجک تأیید شده', 'success']

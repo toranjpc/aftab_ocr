@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Log as userLog;
 
 class AuthController extends Controller
 {
@@ -21,7 +22,7 @@ class AuthController extends Controller
     public function login()
     {
         $rules = ['captcha' => 'required|captcha_api:' . request('key') . ',flat'];
-        if (!empty(request('nocapt'))) $rules = [];//حذف
+        if (!empty(request('nocapt'))) $rules = []; //حذف
 
         $validator = validator()->make(request()->all(), $rules);
 
@@ -156,5 +157,27 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'کلمه عبور با موفقیت تغییر یافت.'
         ], Response::HTTP_OK);
+    }
+
+
+
+    public function savelog($table, $action = 'create', $des = '')
+    {
+        if (!$table->id) return;
+        $user = auth('api')->user();
+        if (!$user) return;
+
+        $data = [
+            "user_id"    => $user->id,
+            "table_name" => $table->getTable(),
+            "table_id"   => $table->id,
+            "log_type"   => $action,
+            "log_date" => now(),
+            "data"     => json_encode([
+                "ip" => request()->ip(),
+                "des" => $des
+            ]),
+        ];
+        userLog::create($data);
     }
 }

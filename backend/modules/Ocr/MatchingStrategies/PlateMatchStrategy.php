@@ -226,7 +226,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
             }
         }
 
-        if (!$bijac)
+        if (!$bijac) {
             foreach ($matches->whereNotNull('plate_number_3')->take(3) as $match) {
                 if (
                     $this->isSimilarPlate(
@@ -245,6 +245,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
                     return true;
                 }
             }
+        }
 
         $this->createOrUpdateMatch($ocr, $bijac, $bijacs);
         return true;
