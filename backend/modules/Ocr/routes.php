@@ -54,5 +54,6 @@ Route::get('/ocr-match/addBaseInvoice/54654/{ocrMatch}', function ($ocrMatch) {
 Route::post('/truck-log', [OcrLogController::class, 'store2']);
 
 Route::post('/log/rip', [LogRepController::class, 'index']);
+Route::post('/log/gateCounter', [LogRepController::class, 'gateCounter']);
 
 Route::post('/check-by', [GateController::class, 'checkBy']);

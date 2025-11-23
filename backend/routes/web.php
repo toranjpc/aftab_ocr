@@ -14,8 +14,11 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Modules\Sse\Models\SSE;
+use Modules\Ocr\Controller\LogRepController;
 
 //حذف
+Route::get('/log/rip0', [LogRepController::class, 'gateCounter']);
+
 Route::get('/', function () {
     return url()->current();
     // if (!auth()->check()) {
@@ -54,12 +57,12 @@ Route::get('/test', function () {
 
     // return;
     if (isset(request()->bij)) {
-        $id = time();
-        $startTime = microtime(true);
-        log::info($id . " 1- start : " . microtime(true) - $startTime);
+        // $id = time();
+        // $startTime = microtime(true);
+        // log::info($id . " 1- start : " . microtime(true) - $startTime);
         $CcsService = new Modules\Collector\Services\CcsService();
         $DBBijac = $CcsService->getByReceipt(request()->bij);
-        log::info($id . " 5- end code : " . microtime(true) - $startTime);
+        // log::info($id . " 5- end code : " . microtime(true) - $startTime);
         return  $DBBijac; //['Travel'];
 
 

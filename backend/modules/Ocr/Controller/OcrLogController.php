@@ -16,6 +16,7 @@ use App\Models\Log as reqlog;
 
 use Modules\Traffic\Controller\TrafficController;
 use Modules\Traffic\Requests\TrafficRequest;
+use Modules\Auth\Controllers\AuthController;
 
 class OcrLogController extends Controller
 {
@@ -175,6 +176,11 @@ class OcrLogController extends Controller
             ProcessOcrLog::dispatch(
                 $ocrLog->id
             );
+
+            if (!empty($request->fromFront)) {
+                $AuthController = new AuthController();
+                $AuthController->savelog($ocrLog, "OcrLog", "ثبت پلاک از نگهبانی");
+            }
 
             try {
                 // if ($ocrLog->gate_number == 3) {

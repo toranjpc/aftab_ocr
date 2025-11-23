@@ -14,12 +14,23 @@
             <i class="fa fa-refresh text-gray" style="color: gray"></i>
           </v-btn>
 
-          <div class="d-flex flex-column justify-center mt-1">
-            <span class="font-weight-bold">
-              {{ movement }}
-            </span>
-            <span>کل تردد ساعت پیش</span>
-            {{ gettime() }}
+          <div class="d-flex flex-column justify-center mt-1" style="width: 100%;">
+
+            <table class="my-4">
+              <thead>
+                <th>کل تردد های گیت</th>
+                <th>تردد های این گیت</th>
+                <th>تردد های این ساعت</th>
+              </thead>
+              <tbody>
+                <td>{{ gate_collection }}</td>
+                <td>{{ gate_count }}</td>
+                <td>{{ gate_count_last_hour }}</td>
+              </tbody>
+            </table>
+
+            <!-- <span>کل تردد ساعت پیش</span>
+            {{ gettime() }} -->
           </div>
         </v-card>
         <SingleCameraWidget :gate="matchGate" :plate="true" :label="false" :matchGate="matchGate" />
@@ -174,6 +185,14 @@ export default {
     return {
       bijac: '',
       movement: 0,
+      groupGate: 0,
+      thisGate: 0,
+      last_hour: 0,
+
+      gate_count: 0,
+      gate_count_last_hour: 0,
+      gate_collection: 0,
+
       comp: 'div',
       truckFields,
       bijacFields,
@@ -208,6 +227,9 @@ export default {
         if (!this.autoRefresh) return
 
         this.selectedTruck = latestTruck
+
+        this.getMoves()
+
       },
     },
   },
@@ -247,16 +269,9 @@ export default {
     getSafe,
     ...truckHelpers,
     gettime() {
-      // دریافت زمان فعلی
       const now = new Date()
-
-      // دریافت ساعت فعلی
       const currentHour = now.getHours()
-
-      // محاسبه ساعت قبلی
       const previousHour = currentHour === 0 ? 23 : currentHour - 1 // اگر ساعت 0 باشد، ساعت قبلی 23 است
-
-      // برگرداندن بازه‌ی زمانی به صورت رشته
       return `${previousHour}-${currentHour}`
     },
 
@@ -265,10 +280,16 @@ export default {
 
       this.$axios
         .$post(
-          `/log/rip?_with=bijacs,bijacs.invoice&gate_number=${this.matchGate}&filters[log_time][$between][0]=${s}&filters[log_time][$between][1]=${e}&filters[plate_number][$notNull]&disable_all=true`
+          `/log/gateCounter?&gate_number=${this.matchGate}`
         )
         .then((res) => {
-          this.movement = res.counts.all
+          const east_ = [2, 3, 4];
+          console.log(res)
+          // this.movement = res.all
+          this.gate_count = res.gate_count
+          this.gate_count_last_hour = res.gate_count_last_hour
+          this.gate_collection = res.gate_collection
+
         })
         .catch((error) => {
           console.error('خطا در دریافت داده‌ها:', error)

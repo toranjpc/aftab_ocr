@@ -166,15 +166,15 @@ class CcsService
 
     public function getByReceipt($cargoId)
     {
-        $id = time();
-        $startTime = microtime(true);
+        // $id = time();
+        // $startTime = microtime(true);
 
-        log::info($id . " 2- start request : " . microtime(true) - $startTime);
+        // log::info($id . " 2- start request : " . microtime(true) - $startTime);
         $data = $this->makeRequest($cargoId);
 
-        log::info($id . " 3- request down (" . strlen($data) . "kb) : " . microtime(true) - $startTime);
+        // log::info($id . " 3- request down (" . strlen($data) . "kb) : " . microtime(true) - $startTime);
         $normal = $this->normalize($data);
-        log::info($id . " 4- normalize down : " . microtime(true) - $startTime);
+        // log::info($id . " 4- normalize down : " . microtime(true) - $startTime);
         return $normal;
         dd($normal);
     }
