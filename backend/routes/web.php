@@ -17,8 +17,6 @@ use Modules\Sse\Models\SSE;
 use Modules\Ocr\Controller\LogRepController;
 
 //حذف
-Route::get('/log/rip0', [LogRepController::class, 'gateCounter']);
-
 Route::get('/', function () {
     return url()->current();
     // if (!auth()->check()) {

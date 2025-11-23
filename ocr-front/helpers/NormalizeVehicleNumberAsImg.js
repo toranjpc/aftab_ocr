@@ -5,13 +5,44 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
   try {
     if (!v && !v2) return '';
     if (type === 'iran-regular') type = 'iran';
+    console.log(v, v2);
+    if (!isValidIran(v, v2) && !isValidAfghan(v, v2)) {
+      // return `<span>${v ?? v2}</span>`;
+      return `
+      <span style="
+        background-image: url(/img/${pickImage(edit, st, !v && v2)});
+        background-size: contain;
+        padding-left: 15px;
+        font-weight: bold;
+        max-width: fit-content;
+        font-size: 16px;
+        padding-top: 9px;
+        padding-bottom: 8px;
+        padding-right: 30px;
+        background-position: center;
+        position: relative;
+        min-width: 120px;
+      " class="d-flex flex-row-reverse align-center" style="justify-content: flex-end">
+        <span style="margin-top: 2px; padding-right: 2px;">
+         ${v ?? v2}
+        </span>
+      </span>
+    `;
+
+    }
 
     // console.log(v + " -> " + v2)
     if (type === 'afghan' || v2?.includes("L") || (v2 && v2.length < 5)) {
       return afghan(v, edit, v2);
     }
 
-    if (v2 && (v2.match(/\d/g) || []).length === 5) {
+    if (v && (v.match(/\d/g) || []).length === 5) {
+      const digits = v.replace(/\D/g, '');
+      const part1 = digits.substring(0, 2);
+      let part2 = digits.substring(2);
+      part2 = part2.padEnd(5, "?");
+      v = part1 + 'ein' + part2;
+    } else if (v2 && (v2.match(/\d/g) || []).length === 5) {
       const digits = v2.replace(/\D/g, '');
       const part1 = digits.substring(0, 2);
       let part2 = digits.substring(2);
@@ -66,6 +97,18 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
     // console.error('Error formatting plate:', e);
     return '';
   }
+}
+
+function isValidIran(v, v2) {
+  const p = v ?? v2 ?? "";
+  const cleaned = p.replace(/\s/g, "");
+
+  return /^(\d{2}[a-zA-Z]+?\d{5})$/.test(cleaned) || /^\d{7}$/.test(cleaned) || /^\d{5}$/.test(cleaned);
+}
+
+function isValidAfghan(v, v2) {
+  const p = v2 ?? v ?? "";
+  return /^[A-Z]{3},\d{1,5},[A-Z]$/.test(p); // مثلاً: KBL,12345,L
 }
 
 function highlightDifferences(str, ref) {
