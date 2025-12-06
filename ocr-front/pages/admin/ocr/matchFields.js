@@ -1,6 +1,6 @@
 import { get as getSafe } from 'lodash'
 
-const url = process.env.baseURL.replace("api/","")
+const url = process.env.baseURL.replace("api/", "")
 
 export default function (val) {
   return [
@@ -102,24 +102,30 @@ export default function (val) {
     {
       title: 'کالای خطرناک',
       field: 'IMDG',
-      type: 'text',
-      inList(_, form) {
-        let imdg = getSafe(form, 'IMDG')
+      type: 'select',
+      // inList(_, form) {
+      //   let imdg = getSafe(form, 'IMDG')
 
-        if (imdg > 0)
-          return (
-            `<div class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--small red">
-             خطرناک
-          </div>`
-          )
+      //   if (imdg > 0)
+      //     return (
+      //       `<div class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--small red">
+      //        خطرناک
+      //     </div>`
+      //     )
 
-        return (
-          `<div class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--small green">
-             غیر خطرناک
-          </div>`
-        )
-      },
+      //   return (
+      //     `<div class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--small green">
+      //        غیر خطرناک
+      //     </div>`
+      //   )
+      // },
       isHeader: true,
+      values: [
+        { text: 'خطرناک (AI)', value: 'danger_AI' },
+        { text: 'خطرناک (بیجک)', value: 'danger_Bijac' },
+        { text: 'غیر خطرناک (AI)', value: 'no_danger_AI' },
+        { text: 'غیر خطرناک (بیجک)', value: 'no_danger_Bijac' },
+      ],
     },
     {
       title: 'پلمپ',

@@ -19,7 +19,7 @@ use Modules\Ocr\Controller\LogRepController;
 
 //حذف
 Route::get('/', function () {
-    return url()->current();
+    return now();
     // if (!auth()->check()) {
     //     $user = User::first();
     //     // $user->password = bcrypt("0012300123");

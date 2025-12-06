@@ -16,7 +16,10 @@
         {{ item.plate_number_3 }} -->
         <EditBtn :editItem="item" :fields="plateFields(item)" @item-updated="handleItemUpdated(item)"
           v-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
-        <v-tooltip v-if="item.plate_number" top>
+        <div v-if="item.plate_number && item.match_status.includes('_Creq')"
+          v-html="plateShow(item.plate_number, item, 0, 1)">
+        </div>
+        <v-tooltip v-else-if="item.plate_number" top>
           <template v-slot:activator="{ on, attrs }">
             <div v-bind="attrs" v-on="on" v-html="plateShow(item.plate_number, item)">
             </div>
@@ -85,7 +88,7 @@
           <tr>
             <td>AI</td>
             <td colspan="2">
-              <div v-if="item.IMDG > 0"
+              <div v-if="item.IMDG > 0 || (matchGate != 1 && item.bijacs?.length > 0 && isDangerous(item))"
                 class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default danger">
                 خطرناک</div>
               <div v-else class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default cyan">غیرخطرناک
@@ -386,7 +389,7 @@ export default {
       return '-'
     },
 
-    plateShow(v, form, noplace) {
+    plateShow(v, form, noplace, justThis = 0) {
 
       let concat = ''
 
@@ -406,7 +409,18 @@ export default {
       //     !!form.plate_image_url
       //   ) + concat
       // )
-
+      if (justThis) {
+        return (
+          NormalizeVehicleNumberAsImg(
+            form.plate_number,
+            form.plate_type,
+            0,
+            form.plate_number,
+            0,
+            0
+          ) + concat
+        )
+      }
       return (
         NormalizeVehicleNumberAsImg(
           form.plate_number_edit || v,

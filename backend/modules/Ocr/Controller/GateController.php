@@ -28,6 +28,7 @@ class GateController extends Controller
     {
         try {
             //    return request();
+            $bijstatus = '';
             $params = request('params');
             $ocrMatch = OcrMatch::with('bijacs')->find(request('id'));
 
@@ -35,7 +36,6 @@ class GateController extends Controller
                 $AuthController = new AuthController();
                 $AuthController->savelog($ocrMatch, "serachBijac", "جست و جو برای بیجک");
 
-                $bijstatus = '';
                 $bijac = Bijac::selectRaw("id , container_number , plate_normal , plate_normal as plate_number , bijac_date , receipt_number")->where($params)->get();
                 if ($bijac->isEmpty()) $bijstatus = '_Creq ';
 
@@ -108,9 +108,6 @@ class GateController extends Controller
                 'model' => OcrMatch::class,
                 'receiver_id' => $ocrMatch->gate_number,
             ]);
-            if (!isset($params['receipt_number'])) {
-                return ['message' => 'success'];
-            }
 
             if (isset($receipt_number) or isset($params['receipt_number'])) {
                 if (isset($params['receipt_number'])) {
@@ -135,6 +132,7 @@ class GateController extends Controller
                         }
                     }
                 }
+
                 // if ($ocrMatch->bijac_has_invoice)  return ['message' => 'bijac_has_invoice'];
                 $QU = Invoice::select("*")
                     ->where('receipt_number', "LIKE", $receipt_number)
@@ -158,9 +156,11 @@ class GateController extends Controller
                         }
                     }
                 }
-
                 if (!$DBfactor->isEmpty()) {
-                    $bijacIds = Bijac::where('receipt_number', $receipt_number)->pluck('id');
+                    $bijacs = Bijac::where('receipt_number', $receipt_number)->get();
+
+                    $bijacIds = $bijacs->pluck('id');
+                    $bijac    = $bijacs->first();
 
                     if ($bijacIds->isEmpty()) {
                         $bijac = Bijac::create([
@@ -185,8 +185,14 @@ class GateController extends Controller
                         $bijacIds = $bijacIds->toArray();
                     }
 
+                    $bijstatus = '_Creq ';
                     $ocrMatch->bijacs()->sync($bijacIds);
+                    $ocrMatch->plate_number_3 = $bijac->plate_normal;
+                    $ocrMatch->container_code_3 = str_replace(' ', '', $bijac->container_number);
+                    $ocrMatch->match_status =  $ocrMatch->match_status . $bijstatus;
+                    $ocrMatch->saveQuietly();
                 } else {
+
                     SSE::create([
                         // 'message' => ['data' => $item->toArray()],
                         'message' => ['data' => $ocrMatch->id],

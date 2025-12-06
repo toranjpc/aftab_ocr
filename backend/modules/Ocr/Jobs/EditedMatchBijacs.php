@@ -161,11 +161,12 @@ class EditedMatchBijacs
                     'seal' => $similar->seal ?? $match->seal
                 ]);
 
-                if (!$similar->plate_number_3) {
-                    $similar->bijacs()->sync($bijacs->pluck('id'));
-                    // Bijac::whereIn('id', $bijacs->pluck('id')->toArray())
-                    //     ->increment('revoke_number');
-                }
+                $similar->bijacs()->sync($bijacs->pluck('id'));
+                // if (!$similar->plate_number_3) {
+                // $similar->bijacs()->sync($bijacs->pluck('id'));
+                // Bijac::whereIn('id', $bijacs->pluck('id')->toArray())
+                //     ->increment('revoke_number');
+                // }
 
                 $match->delete();
             } else {

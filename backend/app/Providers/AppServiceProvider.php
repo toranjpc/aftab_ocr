@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Models\Province;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,7 +30,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-            Schema::defaultStringLength(120);
+        Carbon::serializeUsing(function ($carbon) {
+            return $carbon->setTimezone(config('app.timezone'))->toDateTimeString();
+        });
+        Schema::defaultStringLength(120);
 
         $mapModels = [
             'Model.City' => City::class,

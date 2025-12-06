@@ -25,7 +25,39 @@ class OcrMatchController extends Controller
     {
         $id = time();
         $startTime = microtime(true);
+        /*
+        فیلتر کالای خطرناک
+        $danger = $request->IMDG ?? null;
+        $dangerFilter = function ($q) use ($danger) {
+            if ($danger === "danger_Bijac") {
+                $q->where('dangerous_code', '!=', 0);
+            } elseif ($danger === "no_danger_Bijac") {
+                $q->where('dangerous_code', 0);
+            }
+        };
+        $isDangerFiltered = in_array($danger, ["danger_Bijac", "no_danger_Bijac"]);
 
+        $ocrMatches = OcrMatch::query()
+            ->when($isDangerFiltered, function ($q) use ($dangerFilter) {
+                $q->whereHas('bijacs', $dangerFilter);
+            })
+            ->with([
+                'bijacs' =>  fn($query) =>
+                $query->withCount('ocrMatches')
+                    ->with('invoices')
+                    ->with('allbijacs')
+                    ->when($isDangerFiltered, $dangerFilter),
+                "isCustomCheck",
+                "isSerachBijac"
+            ]);
+        if (in_array($danger, ["danger_AI", "no_danger_AI"])) {
+            if ($danger === "danger_AI") {
+                $ocrMatches->where('IMDG', '!=', 0);
+            } elseif ($danger === "no_danger_AI") {
+                $ocrMatches->where('IMDG', 0);
+            }
+        }
+        */
         $ocrMatches = OcrMatch::with([
             'bijacs' => function ($query) {
                 $query->withCount('ocrMatches')
