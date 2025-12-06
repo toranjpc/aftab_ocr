@@ -2,6 +2,7 @@
 
 namespace Modules\BijacInvoice\Services;
 
+use Illuminate\Support\Facades\Log;
 use Modules\BijacInvoice\Models\Bijac;
 
 class BijacSearchService

@@ -17,6 +17,8 @@ abstract class MatchBase
     protected function isSimilarPlate($plate1, $plate2): bool
     {
         $threshold = config('ocr.field_thresholds.plate_number', config('ocr.levenshtein_threshold'));
+        // $threshold = 26;
+        // $threshold = 21;
 
         return $this->compare($plate1, $plate2, $threshold, 'similar_text');
     }
@@ -32,11 +34,11 @@ abstract class MatchBase
 
         if ($method === 'similar_text') {
             similar_text($val1, $val2, $percent);
-            return (100 - $percent) < $threshold;
+            return (100 - $percent) <= $threshold;
         }
 
         // default = levenshtein
-        return levenshtein($val1, $val2) < $threshold;
+        return levenshtein($val1, $val2) <= $threshold;
     }
 
     /**

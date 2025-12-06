@@ -76,11 +76,16 @@ class BijacFetchService
         $lastSync = cache('bijacs_last_sync_time') ?:
             Bijac::max('bijac_date') ?:
             now()->subDays(5)->toDateTimeString();
+        // $bijacs = $this->client->fetchBijacs($lastSync)['data'] ?? [];
+        // $invoices = collect($bijacs)->pluck('invoices')->collapse();
 
-        $bijacs = $this->client
-            ->fetchBijacs($lastSync)['data'] ?? [];
+        $response = $this->client->fetchBijacs($lastSync);
+        $bijacs = $response['data'] ?? [];
+        // $invoices = collect($bijacs)->pluck('invoices')->collapse();
+        $invoices = collect($response['invoices'] ?? []); //گرفتن همه فاکتور ها
 
-        $invoices = collect($bijacs)->pluck('invoices')->collapse();
+
+
         // $customers = $invoices->pluck('customer')->filter()->unique('id');
 
         // if ($customers->count()) {
@@ -102,8 +107,10 @@ class BijacFetchService
 
         try {
             log::build(['driver' => 'single', 'path' => storage_path("logs/fetchBijacs.log"),])
-                ->info("bijacs fetched _ count : " . count($bijacs) . "_ invoice count : {$invoices->count()}  ");
+                ->info("updated 2 bijacs fetched _ count : " . count($bijacs) . "_ invoice count : {$invoices->count()}  ");
         } catch (\Throwable $th) {
+            log::build(['driver' => 'single', 'path' => storage_path("logs/fetchBijacs.log"),])
+                ->info("updated 2 bijacs fetch unsuccessful  ");
             //throw $th;
         }
 

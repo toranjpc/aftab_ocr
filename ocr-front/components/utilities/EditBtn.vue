@@ -57,6 +57,7 @@ export default {
         const res = await this.$axios.$patch('/ocr-match/' + this.form.id, {
           OcrMatch: this.form,
         })
+        console.log(res)
 
         this.$emit('item-updated', res.data)
 

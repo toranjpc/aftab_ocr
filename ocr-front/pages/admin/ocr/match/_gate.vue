@@ -5,12 +5,15 @@
 
     <DynamicTemplate>
       <template #header-btn>
-        <AddPlateDialog :matchGate="matchGate" />
+        <AddPlateDialog :matchGate="matchGate" :page.sync="page" />
 
         <SseBtn :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number${matchGate}`" />
       </template>
 
       <template #item.plate_number="item">
+        <!-- {{ item.id }}
+        <br>
+        {{ item.plate_number_3 }} -->
         <EditBtn :editItem="item" :fields="plateFields(item)" @item-updated="handleItemUpdated(item)"
           v-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
         <v-tooltip v-if="item.plate_number" top>
@@ -20,10 +23,8 @@
           </template>
           <span>{{ item.plate_number }}</span>
         </v-tooltip>
-        <div v-else v-html="plateShow(item.plate_number, item)">
+        <div v-else v-html="plateShow(item.plate_number_3, item, 1)">
         </div>
-
-
       </template>
 
       <template #item.container_code="item">
@@ -35,7 +36,7 @@
           </template>
           <span style="direction:ltr">{{ item.container_code }}</span>
         </v-tooltip>
-        <div v-else v-html="containerCodeShow(item.container_code, item)"></div>
+        <div v-else v-html="containerCodeShow(item.container_code, item, 1)"></div>
       </template>
 
       <template #item.weight_customNb="item">
@@ -77,6 +78,38 @@
       <template #item.ocr_bijac="item">
         <VehicleCounterCard :item="item" />
       </template>
+
+      <template #item.IMDG="item" class="d-flex gap-0">
+
+        <table class="p-0 m-0">
+          <tr>
+            <td>AI</td>
+            <td colspan="2">
+              <div v-if="item.IMDG > 0"
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default danger">
+                خطرناک</div>
+              <div v-else class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default cyan">غیرخطرناک
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="">بیجک
+              <span hidden>{{ item.id }}</span>
+            </td>
+            <td colspan="2">
+              <div v-if="item.bijacs?.length > 0 && isDangerous(item)"
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default danger">خطرناک</div>
+              <div v-else-if="item.bijacs?.length > 0"
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default cyan">غیرخطرناک
+              </div>
+              <div v-else class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default orange">فاقد اطلاعات
+              </div>
+            </td>
+          </tr>
+        </table>
+
+      </template>
+
 
       <template #item.ocr_tu="item">
         <div v-if="item.type != 'gcoms' && item.invoice" style="direction: ltr;">
@@ -181,6 +214,7 @@ export default {
   layout: 'dashboard',
 
   data: () => ({
+    page: 1,
     dialog: false,
     gateId: 1,
     lastTruck: {},
@@ -326,7 +360,7 @@ export default {
     containerCodeShow(v, form) {
 
       let concat = ''
-
+      // console.log(v)
       // if (form.container_code_2 && form.container_code_2 != v && !form.container_code_3)
       //   concat = '</br>' + NormalizeContainerCodeAsImg(form.container_code_2, '#2957a4', form.container_code_3)
 
@@ -352,7 +386,7 @@ export default {
       return '-'
     },
 
-    plateShow(v, form) {
+    plateShow(v, form, noplace) {
 
       let concat = ''
 
@@ -378,7 +412,9 @@ export default {
           form.plate_number_edit || v,
           form.plate_type,
           !!form.plate_number_edit,
-          form.plate_number_3
+          form.plate_number_3,
+          (!form.plate_number && form.plate_number_3),
+          noplace
         ) + concat
       )
     },
@@ -397,6 +433,24 @@ export default {
         }
       },
       */
+
+    isDangerous(item) {
+
+      if (!item.bijacs?.length) return 0;
+      const dangerous = item.bijacs.some(bijac => {
+        return bijac.dangerous_code != null && bijac.dangerous_code != "0";
+      });
+      return dangerous ? 1 : 0;
+
+      const im = Boolean(item.IMDG);
+      console.log(bij, im)
+
+      // var allert = ''
+      // if (bij != im) allert = '(مغایرت وضعیت)';
+
+      return bij ? 'خطرناک' : 'غیرخطرناک'
+    },
+
 
     renderBTN(status, ifFalse = false) {
       if (!status) {

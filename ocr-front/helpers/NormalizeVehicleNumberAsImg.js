@@ -1,16 +1,17 @@
 // نوع دیفالت برای پلاک
 const DEFAULT_TYPE = 'iran';
 
-export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = null) {
+export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = null, noplace = 0) {
   try {
     if (!v && !v2) return '';
     if (type === 'iran-regular') type = 'iran';
-    console.log(v, v2);
-    if (!isValidIran(v, v2) && !isValidAfghan(v, v2)) {
-      // return `<span>${v ?? v2}</span>`;
+    // console.log(v, v2);
+    const plate = (!isValidIran(v, v2) && !isValidAfghan(v, v2)) ? v2 : v;
+    if (!isValidIran(plate, v2) && !isValidAfghan(plate, v2)) {
+      // return `<span>${plate}</span>`;
       return `
       <span style="
-        background-image: url(/img/${pickImage(edit, st, !v && v2)});
+        background-image: url(/img/${pickImage(0, 0, 0, 1)});
         background-size: contain;
         padding-left: 15px;
         font-weight: bold;
@@ -24,7 +25,7 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
         min-width: 120px;
       " class="d-flex flex-row-reverse align-center" style="justify-content: flex-end">
         <span style="margin-top: 2px; padding-right: 2px;">
-         ${v ?? v2}
+         ${v2 ?? v}
         </span>
       </span>
     `;
@@ -50,18 +51,34 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
       v2 = part1 + 'ein' + part2;
     }
 
-    const plate = v ?? v2;
 
-    const st = converto(plate.substring(2, plate.length - 5));
+    // const st = converto(plate.substring(2, plate.length - 5));
+    // const sub = plate.substring(2, plate.length - 5);
+    const sub = v.substring(2, v.length - 5);
+    const isAlpha = /^[A-Za-z]+$/.test(sub);
+    let st;
+    if (isAlpha) {
+      st = converto(sub);
+    } else {
+      st = "ع";
+    }
+
     const ein = `<span style="height: 17px; margin-bottom: 3px; font-size: 14px; margin-right:3px; margin-left:4px">${st}</span>`;
 
-    const part1 = highlightDifferences(v?.substring(0, 2) ?? '', v2?.substring(0, 2) ?? '');
-    const part2 = highlightDifferences(v?.substring(v.length - 5, v.length - 2) ?? '', v2?.substring(v2.length - 5, v2.length - 2) ?? '');
-    const part3 = highlightDifferences(v?.substring(v.length - 2) ?? '', v2?.substring(v2.length - 2) ?? '');
-
+    let part1 = highlightDifferences(v?.substring(0, 2) ?? '', v2?.substring(0, 2) ?? '');
+    let part2 = highlightDifferences(v?.substring(v.length - 5, v.length - 2) ?? '', v2?.substring(v2.length - 5, v2.length - 2) ?? '');
+    let part3 = highlightDifferences(v?.substring(v.length - 2) ?? '', v2?.substring(v2.length - 2) ?? '');
+    // var part1 = highlightDifferences(v2?.substring(0, 2) ?? '', v?.substring(0, 2) ?? '');
+    // var part2 = highlightDifferences(v2?.substring(v2.length - 5, v2.length - 2) ?? '', v?.substring(v.length - 5, v.length - 2) ?? '');
+    // var part3 = highlightDifferences(v2?.substring(v2.length - 2) ?? '', v?.substring(v.length - 2) ?? '');
+    if (noplace) {
+      part1 = v?.substring(0, 2) ?? ''
+      part2 = v?.substring(v.length - 5, v.length - 2) ?? ''
+      part3 = v?.substring(v.length - 2) ?? ''
+    }
     return `
       <span style="
-        background-image: url(/img/${pickImage(edit, st, !v && v2)});
+        background-image: url(/img/${pickImage(edit, st, (noplace || (!v && v2)))});
         background-size: contain;
         padding-left: 15px;
         font-weight: bold;
@@ -94,7 +111,7 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
       </span>
     `;
   } catch (e) {
-    // console.error('Error formatting plate:', e);
+    console.error('Error formatting plate:', e);
     return '';
   }
 }
@@ -180,7 +197,8 @@ export function converto(t) {
 }
 
 // تابع انتخاب تصویر پس‌زمینه بسته به وضعیت
-export function pickImage(edit, st, miss) {
+export function pickImage(edit, st, miss, Kham = false) {
+  if (Kham) return 'kham.png';
   if (miss) return 'pelakCyan.png';
   if (edit) return 'pelakGreen.png';
   if (st === 'ع') return 'pelak.png';

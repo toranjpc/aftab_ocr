@@ -29,7 +29,7 @@ class CreateBijacsTable extends Migration
             $table->string('bijac_number')->nullable();
             $table->string('vehicles_type')->nullable();
             $table->string('exit_permission_iD', 50)->nullable();
-            $table->enum('type', ['gcoms', 'ccs'])->default('ccs');
+            $table->enum('type', ['gcoms', 'ccs','aftab'])->default('ccs');
             // $table->boolean('revoke_receipt')->default(false);
             $table->tinyInteger('revoke_number')->default(0);
             $table->timestamps();

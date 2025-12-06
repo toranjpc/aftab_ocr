@@ -45,6 +45,14 @@ class OcrMatch extends Base
         'data' => 'array'
     ];
 
+    public function isSerachBijac()
+    {
+        return $this->hasOne(Log::class, 'table_id')
+            ->select("user_id", "table_id")
+            ->where('table_name', 'ocr_matches')
+            ->where('log_type', 'serachBijac');
+    }
+
     public function isCustomCheck()
     {
         return $this->hasOne(Log::class, 'table_id')

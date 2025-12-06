@@ -57,7 +57,8 @@ class OcrLogController extends Controller
             );
 
             if ($plate) {
-                if ($plate->ocr_accuracy >= $request->ocr_accuracy) {
+                // if ($plate->ocr_accuracy >= $request->ocr_accuracy) {5/9/1404 بررسی شود
+                if (0.9 >= $request->ocr_accuracy) {
 
                     OcrLog::where('id', $plate->id)->where('gate_number', $request->gate_number)->update([
                         'plate_number_2' => $request->plate_number,
@@ -84,7 +85,9 @@ class OcrLogController extends Controller
             );
 
             if ($container) {
-                if ($container->ocr_accuracy >= $request->ocr_accuracy) {
+                // if ($container->ocr_accuracy >= $request->ocr_accuracy) {5/9/1404 بررسی شود
+                if (0.9 >= $request->ocr_accuracy) {
+
                     OcrLog::where('id', $container->id)->where('gate_number', $request->gate_number)->update([
                         'container_code_2' => $request->container_code,
                     ]);
@@ -183,20 +186,14 @@ class OcrLogController extends Controller
             }
 
             try {
-                // if ($ocrLog->gate_number == 3) {
-                try {
-                    if (isset($request->plate_number)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
-                            ->info("OcrLogController ({$ocrLog->id}) created from palte : {$request->plate_number}  ");
-                    } elseif (isset($request->container_code)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
-                            ->info("OcrLogController ({$ocrLog->id}) created from continer : {$request->container_code}  ");
-                    }
-                } catch (\Throwable $th) {
-                    //throw $th;
-                }
 
-                // }
+                if (isset($request->plate_number)) {
+                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                        ->info("OcrLogController ({$ocrLog->id}) created from palte : {$request->plate_number}  ");
+                } elseif (isset($request->container_code)) {
+                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $request->gate_number . ".log"),])
+                        ->info("OcrLogController ({$ocrLog->id}) created from continer : {$request->container_code}  ");
+                }
             } catch (\Throwable $th) {
                 //throw $th;
             }
@@ -220,42 +217,45 @@ class OcrLogController extends Controller
         return TruckLog::create($request->all());
     }
 
-    public function checkPlateIsDuplicate($input, $gate, $lastSixPlate = null)
+    public function checkPlateIsDuplicate($input, $gate, $lastSixPlates = null)
     {
         // [$input, $gate] = $data;
         $threshold = config('ocr.field_thresholds.plate_number', 1);
 
-        if (!$lastSixPlate) $lastSixPlate = OcrBuffer::getBuffer($gate);
+        if (!$lastSixPlates) $lastSixPlates = OcrBuffer::getBuffer($gate);
 
         $closest = false;
         if ($input) {
-            foreach ($lastSixPlate as $key => $plate) {
-                if ($plate->plate_number) {
-                    $lev = levenshtein($input, $plate->plate_number);
-                    // if ($lev == 0) return $plate;
-                    if ($lev < $threshold) {
+            foreach ($lastSixPlates as $key => $lastSixPlate) {
+                $plate = $lastSixPlate->plate_number ?? $lastSixPlate->plate_number_3;
+                if (!empty($lastSixPlate->plate_number_edit)) $plate = $lastSixPlate->plate_number_edit;
+
+                if ($plate) {
+                    $lev = levenshtein($input, $plate);
+                    if ($lev == 0) return $lastSixPlate;
+                    if ($lev <= $threshold) {
 
                         try {
                             log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $gate . ".log"),])
-                                ->info("checkPlateIsDuplicate : {$input} - {$plate->plate_number}  ");
+                                ->info("checkPlateIsDuplicate : {$input} - {$plate}  ");
                         } catch (\Throwable $th) {
                             //throw $th;
                         }
 
 
-                        return $plate;
+                        return $lastSixPlate;
                     }
 
                     if (
                         $key < 4
                         //  &&
                         // strlen($input) >= 4 &&
-                        // strlen($plate->plate_number) >= 4
+                        // strlen($plate) >= 4
                     ) {
                         $input_substr = $input;
-                        $plate_number_substr = $plate->plate_number;
+                        $plate_number_substr = $plate;
                         // $input_substr = substr($input, 0, 4);
-                        // $plate_number_substr = substr($plate->plate_number, 0, 4);
+                        // $plate_number_substr = substr($plate, 0, 4);
                         if (
                             str_contains($input_substr, $plate_number_substr) ||
                             str_contains($plate_number_substr, $input_substr)
@@ -263,20 +263,20 @@ class OcrLogController extends Controller
 
                             try {
                                 log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $gate . ".log"),])
-                                    ->info("checkPlateIsDuplicate : {$input} - {$plate->plate_number}  ");
+                                    ->info("checkPlateIsDuplicate : {$input} - {$plate}  ");
                             } catch (\Throwable $th) {
                                 //throw $th;
                             }
 
 
-                            return $plate;
-                            $closest = $plate;
+                            // return $lastSixPlate;
+                            $closest = $lastSixPlate;
                         }
 
                         $input_substr = preg_replace('/\D/', '', $input);
-                        $plate_number_substr = preg_replace('/\D/', '', $plate->plate_number);
+                        $plate_number_substr = preg_replace('/\D/', '', $plate);
                         // $input_substr = substr(preg_replace('/\D/', '', $input), 0, 4);
-                        // $plate_number_substr = substr(preg_replace('/\D/', '', $plate->plate_number), 0, 4);
+                        // $plate_number_substr = substr(preg_replace('/\D/', '', $plate), 0, 4);
                         if (
                             str_contains($input_substr, $plate_number_substr) ||
                             str_contains($plate_number_substr, $input_substr)
@@ -284,19 +284,19 @@ class OcrLogController extends Controller
 
                             try {
                                 log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $gate . ".log"),])
-                                    ->info("checkPlateIsDuplicate : {$input} - {$plate->plate_number}  ");
+                                    ->info("checkPlateIsDuplicate : {$input} - {$plate}  ");
                             } catch (\Throwable $th) {
                                 //throw $th;
                             }
 
 
-                            return $plate;
-                            $closest = $plate;
+                            return $lastSixPlate;
+                            $closest = $lastSixPlate;
                         }
 
                         // $lev = levenshtein($input_substr, $plate_number_substr);
-                        // if ($lev < $threshold) {
-                        //     return $plate;
+                        // if ($lev <= $threshold) {
+                        //     return $lastSixPlate;
                         // }
                     }
                 }
@@ -329,7 +329,7 @@ class OcrLogController extends Controller
                     if ($lev == 0)
                         return $container;
 
-                    if ($lev < $threshold) {
+                    if ($lev <= $threshold) {
                         $closest = $container;
                     }
                 }

@@ -1,4 +1,4 @@
-export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff') {
+export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff', nocontiner = 0) {
   try {
     if (v || v2) {
       const regex = /^([A-Za-z]{0,4})(\d{0,6})(\d{0,1})(.*)$/
@@ -16,7 +16,6 @@ export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff') {
         numbers = split[1] || "";
         singleDigit = split[2] || "";
         remaining = split[3] || "";
-
         // letters = letters.padEnd(4, '?').slice(0, 4);
 
         // numbers = numbers.padEnd(6, '?').slice(0, 6);
@@ -45,7 +44,6 @@ export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff') {
       // singleDigit = singleDigit || '?';
 
       if (v && v2 && v2 !== '') {
-
         let highlightedLetters = ""
         let highlightedNumbers = ""
 
@@ -68,9 +66,10 @@ export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff') {
           const charj = numbers[j] || '*'
           const charj2 = numbers2[j] || '*'
           if (charj !== charj2)
-            highlightedNumbers += `<span style="color:${diffColor}">${charj2}</span>`
+            highlightedNumbers += `<span style="color:${diffColor}">${charj}</span>`
           else
-            highlightedNumbers += charj
+            highlightedNumbers += charj2
+          // console.log(numbers[j], numbers, highlightedNumbers)
         }
 
         letters = highlightedLetters
@@ -79,8 +78,8 @@ export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff') {
         // const isSingleDigitDiff = singleDigit !== (singleDigit2 || '?')
         const isSingleDigitDiff = singleDigit !== (singleDigit2 || '*')
         singleDigit = isSingleDigitDiff
-          ? `<span style="color:${diffColor}">${singleDigit2}</span>`
-          : singleDigit
+          ? `<span style="color:${diffColor}">${singleDigit}</span>`
+          : singleDigit2
       }
 
       return (

@@ -32,13 +32,29 @@ class GateController extends Controller
             $ocrMatch = OcrMatch::with('bijacs')->find(request('id'));
 
             if (isset($params['bijac_number'])) {
+                $AuthController = new AuthController();
+                $AuthController->savelog($ocrMatch, "serachBijac", "جست و جو برای بیجک");
+
                 $bijstatus = '';
                 $bijac = Bijac::selectRaw("id , container_number , plate_normal , plate_normal as plate_number , bijac_date , receipt_number")->where($params)->get();
                 if ($bijac->isEmpty()) $bijstatus = '_Creq ';
 
-                if ($bijac->isEmpty()) $bijac = $this->bijakrequest($params);
-                if ($bijac->isEmpty()) $bijac = $this->bijakrequest($params, "ccs");
-                if ($bijac->isEmpty()) return ['message' => 'not found'];
+                if ($bijac->isEmpty()) {
+                    $bijac = $this->bijakrequest($params);
+                }
+                if (empty($bijac->first())) {
+                    $bijac = $this->bijakrequest($params, "ccs");
+                }
+                if (empty($bijac->first())) {
+                    SSE::create([
+                        // 'message' => ['data' => $item->toArray()],
+                        'message' => ['data' => $ocrMatch->id],
+                        'event' => 'ocr-match',
+                        'model' => OcrMatch::class,
+                        'receiver_id' => $ocrMatch->gate_number,
+                    ]);
+                    return ['message' => 'not found'];
+                }
 
                 $controller = new OcrLogController();
                 $check = $controller->checkPlateIsDuplicate(
@@ -66,7 +82,7 @@ class GateController extends Controller
                 //     // return ['message' => 'not found'];
                 // }
 
-                
+
                 if (isset($check->plate_normal)) {
                     $ocrMatch->bijacs()->sync([$check->id]);
                     $ocrMatch->plate_number_3 = $check->plate_normal;
@@ -78,18 +94,56 @@ class GateController extends Controller
                     $AuthController->savelog($ocrMatch, "mache", "ثبت بیجک دستی");
                 }
                 $receipt_number = $check->receipt_number;
-            }
-            if (isset($receipt_number) or isset($params['receipt_number'])) {
-                // if ($ocrMatch->bijac_has_invoice)  return ['message' => 'bijac_has_invoice'];
-                if (isset($params['receipt_number'])) $receipt_number = $params['receipt_number'];
 
+
+                TruckStatusJob::dispatch($ocrMatch->id, 'plate');
+                if (!!$ocrMatch->container_code_image_url) {
+                    TruckStatusJob::dispatch($ocrMatch->id, 'container');
+                }
+            }
+            SSE::create([
+                // 'message' => ['data' => $item->toArray()],
+                'message' => ['data' => $ocrMatch->id],
+                'event' => 'ocr-match',
+                'model' => OcrMatch::class,
+                'receiver_id' => $ocrMatch->gate_number,
+            ]);
+            if (!isset($params['receipt_number'])) {
+                return ['message' => 'success'];
+            }
+
+            if (isset($receipt_number) or isset($params['receipt_number'])) {
+                if (isset($params['receipt_number'])) {
+                    $receipt_number = $params['receipt_number'];
+
+                    $ocrMatch = OcrMatch::with('bijacs')->find(request('id'));
+                    if (!isset($ocrMatch->id)) {
+                        return ['message' => 'err'];
+                    } else if ($ocrMatch->bijacs->isNotEmpty()) {
+                        $result = $ocrMatch->bijacs->filter(function ($res) use ($receipt_number) {
+                            if ($res->receipt_number == $receipt_number) return true;
+                        });
+                        if ($result->isEmpty()) {
+                            SSE::create([
+                                // 'message' => ['data' => $item->toArray()],
+                                'message' => ['data' => $ocrMatch->id],
+                                'event' => 'ocr-match',
+                                'model' => OcrMatch::class,
+                                'receiver_id' => $ocrMatch->gate_number,
+                            ]);
+                            return ['message' => 'receipt_number is wrong'];
+                        }
+                    }
+                }
+                // if ($ocrMatch->bijac_has_invoice)  return ['message' => 'bijac_has_invoice'];
                 $QU = Invoice::select("*")
-                    ->where('receipt_number', $receipt_number)
+                    ->where('receipt_number', "LIKE", $receipt_number)
                     ->with(["bijacs" => function ($q) {
                         $q->with("ocrMatches");
                     }]);
                 $DBfactor = clone $QU;
                 $DBfactor = $DBfactor->get();
+
                 if ($DBfactor->isEmpty()) {
                     $InvoiceService = new InvoiceService();
                     $APIfactor = $InvoiceService->getWithReceiptNumber($receipt_number);
@@ -98,14 +152,60 @@ class GateController extends Controller
                         if (isset($APIfactor['InvoiceNumber'])) {
                             $saveinvoice = new InvoiceService();
                             $saveinvoice->save_invoice($APIfactor);
-                            // $DBfactor = clone $QU;
-                            // $DBfactor = $DBfactor->get();
+
+                            $DBfactor = clone $QU;
+                            $DBfactor = $DBfactor->get();
                         }
                     }
                 }
+
+                if (!$DBfactor->isEmpty()) {
+                    $bijacIds = Bijac::where('receipt_number', $receipt_number)->pluck('id');
+
+                    if ($bijacIds->isEmpty()) {
+                        $bijac = Bijac::create([
+                            "source_bijac_id" => time() . rand(0, 9999),
+                            "plate" => $ocrMatch->plate_number,
+                            "plate_normal" => $ocrMatch->plate_number,
+                            "dangerous_code" => 0,
+                            "receipt_number" => $receipt_number,
+                            // "bijac_number" => "aftabB-" . preg_replace('/\D/', '', $receipt_number),
+                            "bijac_number" => jdate()->format("ydmHis"),
+                            "gross_weight" => 0,
+                            "bijac_date" => now(),
+                            "container_size" =>  $ocrMatch->container_size,
+                            "container_number" => $ocrMatch->container_code,
+                            "is_single_carry" => 0,
+                            "exit_permission_iD" => 0,
+                            "type" => "aftab",
+                        ]);
+
+                        $bijacIds = [$bijac->id];
+                    } else {
+                        $bijacIds = $bijacIds->toArray();
+                    }
+
+                    $ocrMatch->bijacs()->sync($bijacIds);
+                } else {
+                    SSE::create([
+                        // 'message' => ['data' => $item->toArray()],
+                        'message' => ['data' => $ocrMatch->id],
+                        'event' => 'ocr-match',
+                        'model' => OcrMatch::class,
+                        'receiver_id' => $ocrMatch->gate_number,
+                    ]);
+                    return ['message' => 'not found'];
+                }
+
+
+                TruckStatusJob::dispatch($ocrMatch->id, 'plate');
+                if (!!$ocrMatch->container_code_image_url) {
+                    TruckStatusJob::dispatch($ocrMatch->id, 'container');
+                }
             }
 
-            /*
+            //BSRCC14040177207
+            // 1404021755
             SSE::create([
                 // 'message' => ['data' => $item->toArray()],
                 'message' => ['data' => $ocrMatch->id],
@@ -113,12 +213,7 @@ class GateController extends Controller
                 'model' => OcrMatch::class,
                 'receiver_id' => $ocrMatch->gate_number,
             ]);
-            */
 
-            TruckStatusJob::dispatch($ocrMatch->id, 'plate');
-            if (!!$ocrMatch->container_code_image_url) {
-                TruckStatusJob::dispatch($ocrMatch->id, 'container');
-            }
 
             return ['message' => 'success'];
         } catch (\Throwable $th) {
@@ -129,61 +224,69 @@ class GateController extends Controller
     private function bijakrequest($params, $type = "Gcoms")
     {
         $bijac = [];
-        if (isset($params['bijac_number'])) {
-            if ($type == "Gcoms") {
-                $GcomsService = new GcomsService();
-                $DBBijac = $GcomsService->getBijacTaki($params['bijac_number']);
-                if (!empty($DBBijac) && isset($DBBijac['Travel'])) {
-                    $bijac = Bijac::create([
-                        "source_bijac_id" => time(),
-                        "plate" => $DBBijac['Travel'],
-                        "plate_normal" => $DBBijac['Travel'],
-                        "dangerous_code" => ($DBBijac['Dangerous'] == 'true') ? 1 : 0,
-                        "receipt_number" => "BSRGCBI" . $DBBijac['StoreReceiptSerial'],
-                        "bijac_number" => $DBBijac['GatePassSerial'],
-                        "gross_weight" => $DBBijac['GrossWeight'],
-                        "is_single_carry" => 0,
-                        "pack_number" => $DBBijac['PackNB'],
-                        "bijac_date" => $DBBijac['GatePassDate'],
-                        "vehicles_type" => $DBBijac['VehiclesTypeDec'],
-                        "type" => "gcoms",
-                    ]);
-                    $AuthController = new AuthController();
-                    $AuthController->savelog($bijac);
-                }
-                $bijac = collect([$bijac]);
-            } else if ($type == 'ccs') {
-                $CcsService = new CcsService();
-                $bijac = $CcsService->getByReceipt($params['bijac_number']);
-                if (!empty($bijac)) {
-                    $bijacs = [];
-                    $time = time();
-                    foreach ($bijac as $key => $value) {
-                        if (!isset($value['VehicleNumber'])) continue;
-                        $bijac_ =    Bijac::create([
-                            "source_bijac_id" => $time + $key,
-                            "plate" => $value['VehicleNumber'],
-                            "plate_normal" => $value['VehicleNumber'],
-                            "dangerous_code" => ($value['HazardousCode'] == 'true') ? 1 : 0,
-                            "receipt_number" => $value['ReceiptNumber'],
-                            "bijac_number" => $value['ExitPermissionNumber'],
-                            "gross_weight" => $value['Weight'],
-                            "container_size" => $value['ContainerSize'],
-                            "container_number" => $value['ContainerNumber'],
-                            "is_single_carry" => ($value['IsSingleCarry'] == 'true') ? 1 : 0,
-                            "exit_permission_iD" => $value['ExitPermissionID'],
-                            "type" => "ccs",
-
-                            // "bijac_date" => $DBBijac['GatePassDate'],
+        try {
+            if (isset($params['bijac_number'])) {
+                if ($type == "Gcoms") {
+                    $GcomsService = new GcomsService();
+                    $DBBijac = $GcomsService->getBijacTaki($params['bijac_number']);
+                    if (!empty($DBBijac) && isset($DBBijac['Travel'])) {
+                        $bijac_1 = Bijac::create([
+                            "source_bijac_id" => time(),
+                            "plate" => $DBBijac['Travel'],
+                            "plate_normal" => $DBBijac['Travel'],
+                            "dangerous_code" => ($DBBijac['Dangerous'] == 'true') ? 1 : 0,
+                            "receipt_number" => "BSRGCBI" . $DBBijac['StoreReceiptSerial'],
+                            "bijac_number" => $DBBijac['GatePassSerial'],
+                            "gross_weight" => $DBBijac['GrossWeight'],
+                            "is_single_carry" => 0,
+                            "bijac_date" => now(),
+                            "pack_number" => $DBBijac['PackNB'],
+                            "bijac_date" => $DBBijac['GatePassDate'],
+                            "vehicles_type" => $DBBijac['VehiclesTypeDec'],
+                            "type" => "gcoms",
                         ]);
                         $AuthController = new AuthController();
-                        $AuthController->savelog($bijac_);
-                        $bijacs[] = $bijac_;
+                        $AuthController->savelog($bijac_1);
+                        $bijac = [$bijac_1];
                     }
-                    $bijac = collect($bijacs);
+                } else if ($type == 'ccs') {
+                    $CcsService = new CcsService();
+                    $bijac_ = $CcsService->getByReceipt($params['bijac_number']);
+                    if (!empty($bijac_)) {
+                        $bijacs = [];
+                        $time = time();
+                        foreach ($bijac_ as $key => $value) {
+                            if (!isset($value['VehicleNumber'])) continue;
+                            $bijac_ = Bijac::create([
+                                "source_bijac_id" => $time + $key,
+                                "plate" => $value['VehicleNumber'],
+                                "plate_normal" => $value['VehicleNumber'],
+                                "dangerous_code" => ($value['HazardousCode'] == 'true') ? 1 : 0,
+                                "receipt_number" => $value['ReceiptNumber'],
+                                "bijac_number" => $value['ExitPermissionNumber'],
+                                "gross_weight" => $value['Weight'],
+                                "bijac_date" => now(),
+                                "container_size" => $value['ContainerSize'],
+                                "container_number" => $value['ContainerNumber'],
+                                "is_single_carry" => ($value['IsSingleCarry'] == 'true') ? 1 : 0,
+                                "exit_permission_iD" => $value['ExitPermissionID'],
+                                "type" => "ccs",
+
+                                // "bijac_date" => $DBBijac['GatePassDate'],
+                            ]);
+                            $AuthController = new AuthController();
+                            $AuthController->savelog($bijac_);
+                            $bijacs[] = $bijac_;
+                        }
+                        $bijac = $bijacs;
+                    }
                 }
             }
+            return collect($bijac);
+            //code...
+        } catch (\Throwable $th) {
+            return collect($bijac);
+            throw $th;
         }
-        return $bijac;
     }
 }

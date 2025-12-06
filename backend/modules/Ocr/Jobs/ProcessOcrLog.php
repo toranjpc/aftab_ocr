@@ -40,11 +40,32 @@ class ProcessOcrLog implements ShouldQueue
             $ocr = OcrLog::findOrFail($this->ocrId);
             $limit = config('ocr.last_matches_limit', 10);
 
-            $matches = OcrMatch::where('ocr_log_id', '<', $ocr->id)
-                // ->orderBy('created_at', 'desc')
+            // $matches = OcrMatch::where('ocr_log_id', '<', $ocr->id)
+            //     // ->orderBy('created_at', 'desc')
+            //     ->orderBy('ocr_log_id', 'desc')
+            //     ->take($limit)
+            //     ->get();
+
+            $currentId = $ocr->id;
+            $count = 10;
+            $prevMatches = OcrMatch::where('ocr_log_id', '<', $currentId)
                 ->orderBy('ocr_log_id', 'desc')
-                ->take($limit)
+                ->take($count)
                 ->get();
+            $nextMatches = OcrMatch::where('ocr_log_id', '>', $currentId)
+                ->orderBy('ocr_log_id', 'asc')
+                ->take($count)
+                ->get();
+            $matches = collect($prevMatches)
+                ->merge($nextMatches)
+                ->sortByDesc('ocr_log_id');
+
+            try {
+                // log::build(['driver' => 'single', 'path' => storage_path("logs/ProcessOcrLog.log"),])
+                //     ->info("ProcessOcrLog ({$ocr->id}) : " . json_encode($matches));
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
 
             $strategies = [
                 new PlateMatchStrategy(),

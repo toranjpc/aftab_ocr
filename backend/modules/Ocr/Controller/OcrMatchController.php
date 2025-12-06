@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Auth\Controllers\AuthController;
+use Modules\Ocr\Jobs\ProcessOcrLog;
+use Modules\Ocr\Jobs\EditedMatchBijacs;
 
 class OcrMatchController extends Controller
 {
@@ -31,8 +33,13 @@ class OcrMatchController extends Controller
                     ->with('allbijacs')
                 ;
             },
-            "isCustomCheck"
+            "isCustomCheck",
+            "isSerachBijac"
         ]);
+        if (!empty($request->findThis)) {
+            $ocrMatches->where('id', $request->findThis);
+        }
+
         if (!empty($request->gate)) {
             $ocrMatches->where('gate_number', $request->gate);
         } else {
@@ -47,7 +54,7 @@ class OcrMatchController extends Controller
             ->paginate($request->itemPerPage ?? 15);
 
         $customTariff = config('ocr.custom_tariff');
-        // if ($request->gate == 2) log::info("{$id}_Operation took vasat " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+        // logCheck -> log::info("{$id}_Operation took vasat " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
         $ocrMatches->map(function ($ocr) use ($customTariff, $request, $id, $startTime) {
             $ocr->append('invoice');
@@ -56,7 +63,7 @@ class OcrMatchController extends Controller
             $ocr['ocr_vehicles'] = 0;
 
             $bijac = $ocr->bijacs->sortByDesc('bijac_date')->first();
-            // if ($request->gate == 2) log::info("{$id}_Operation took for bijac " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+            // logCheck -> log::info("{$id}_Operation took for bijac " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
             if ($bijac && $bijac->receipt_number) {
                 // $bijacs = Bijac::where('receipt_number', $bijac->receipt_number)->select("id", "receipt_number", "plate_normal")->get();
@@ -79,7 +86,7 @@ class OcrMatchController extends Controller
                 //     ->whereIn('bijac_id', $bijacIds)
                 //     ->distinct('bijac_id')
                 //     ->count('bijac_id');
-                // if ($request->gate == 2) log::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                // logCheck -> log::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
                 $ocr['ocr_vehicles'] = DB::table('bijacables')
                     ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
                     ->where('bijacable_type', OcrMatch::class)
@@ -95,7 +102,7 @@ class OcrMatchController extends Controller
                     ->get()
                     ->count();
 
-                // if ($request->gate == 2) log::info("{$id}_Operation took for ocr_vehicles (" . $ocr['ocr_vehicles'] . ") " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                // logCheck -> log::info("{$id}_Operation took for ocr_vehicles (" . $ocr['ocr_vehicles'] . ") " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
 
                 if ($bijac->type == 'ccs' && $ocr->invoice) { //کانتینر
@@ -130,7 +137,7 @@ class OcrMatchController extends Controller
             return $ocr;
         });
 
-        // if ($request->gate == 2) log::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+        // logCheck -> log::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
         return response(
             [
                 'message' => 'ok',
@@ -153,9 +160,10 @@ class OcrMatchController extends Controller
                 'message' => 'این فیلد قابل ویرایش نیست.'
             ], 422);
         }
+        $ocrId = $ocrMatch->ocr_log_id;
 
-
-        if ($plate_number_edit = data_get($request, 'OcrMatch.plate_number_edit', null)) {
+        $plate_number_edit = data_get($request, 'OcrMatch.plate_number_edit', null);
+        if ($plate_number_edit) {
 
             if ($this->checkPlateIsDuplicate([
                 $plate_number_edit,
@@ -168,11 +176,13 @@ class OcrMatchController extends Controller
             }
 
             $request->merge([
+                'plate_number_3' =>  $plate_number_edit,
                 'plate_number_edit' =>  $plate_number_edit
             ]);
         }
 
-        if ($container_code_edit = data_get($request, 'OcrMatch.container_code_edit', null)) {
+        $container_code_edit = data_get($request, 'OcrMatch.container_code_edit', null);
+        if ($container_code_edit) {
 
             if ($this->checkIsDuplicateContainer([
                 $container_code_edit,
@@ -184,19 +194,28 @@ class OcrMatchController extends Controller
                 ], 422);
             }
             $request->merge([
+                'container_code_3' =>  str_replace(' ', '', $container_code_edit),
                 'container_code_edit' =>  str_replace(' ', '', $container_code_edit)
             ]);
         }
 
         if ($plate_number_edit || $container_code_edit) {
             $ocrMatch->update($request->only([
+                // 'plate_number_3',
                 'plate_number_edit',
+                // 'container_code_3',
                 'container_code_edit'
             ]));
+            // ProcessOcrLog::dispatch(
+            //     $ocrId,
+            // );
+
+            // $ocrMatch =  $ocrMatch->fresh() ? $ocrMatch->fresh()->load('bijacs')->append('invoice') : null;
+            // EditedMatchBijacs::dispatch($ocrMatch->id);
 
             return response()->json([
                 'message' => 'با موفقیت ویرایش شد!',
-                'data' => $ocrMatch->fresh() ? $ocrMatch->fresh()->load('bijacs')->append('invoice') : null,
+                'data' => $ocrMatch,
             ], 200);
         }
     }
