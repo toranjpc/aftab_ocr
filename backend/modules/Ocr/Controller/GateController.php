@@ -135,6 +135,10 @@ class GateController extends Controller
 
                 // if ($ocrMatch->bijac_has_invoice)  return ['message' => 'bijac_has_invoice'];
                 $QU = Invoice::select("*")
+                    ->where(function ($q) {
+                        $q->where("invoice_number", "NOT LIKE", "AFTAB_CE%")
+                            ->where("receipt_number", "NOT LIKE", "AFTAB_CE%");
+                    })
                     ->where('receipt_number', "LIKE", $receipt_number)
                     ->with(["bijacs" => function ($q) {
                         $q->with("ocrMatches");
@@ -294,5 +298,54 @@ class GateController extends Controller
             return collect($bijac);
             throw $th;
         }
+    }
+
+    public function findAftabInvoice()
+    {
+        $OcrMatch = OcrMatch::select('id')->with(['bijacs' => function ($q) {
+            $q->select('id');
+        }])->find(request('selectedTruckBase', 0));
+        if (!isset($OcrMatch->id) || $OcrMatch->bijacs->isNotEmpty()) return ['status' => 'error', 'reload' => 1, 'message' => 'برای این پلاک قبلا بیجک ثبت شده است'];
+
+        $customTariff = config('ocr.custom_tariff');
+        $invoicenumber = preg_replace('/\D/', '', request('data', 0));
+        $Invoice = Invoice::select("id", "amount", "receipt_number")->where(function ($q) use ($invoicenumber) {
+            $q->where("invoice_number", "LIKE", "AFTAB_CE" . $invoicenumber)
+                ->orWhere("receipt_number", "LIKE", "AFTAB_CE" . $invoicenumber);
+        })
+            ->with("bijacs")
+            ->first();
+        if (!isset($Invoice->id)) return ['status' => 'error', 'message' => 'فاکتور یافت نشد'];
+
+        $Invoice->Tariff = $customTariff;
+
+        return $Invoice;
+    }
+    public function addbijac()
+    {
+        $OcrMatch = OcrMatch::with('bijacs')->find(request('selectedTruckBase', 0));
+        if (!isset($OcrMatch->id) || $OcrMatch->bijacs->isNotEmpty()) return ['status' => 'error', 'message' => 'قبلا ثبت شده است'];
+        $Invoice = Invoice::find(request('id', 0));
+        if (!isset($Invoice->id))  return ['status' => 'error', 'message' => 'فاکتور یافت نشد'];
+
+        $DATA = [
+            "source_bijac_id" => time(),
+            "plate" => $OcrMatch->plate_number,
+            "plate_normal" => $OcrMatch->plate_number,
+            "receipt_number" => $Invoice->receipt_number,
+            "container_size" => request('tu', 1),
+            "bijac_date" => now(),
+            "bijac_number" => $Invoice->receipt_number,
+            "type" => "aftab",
+        ];
+        $Bijac = Bijac::create($DATA);
+        $OcrMatch->bijacs()->sync([$Bijac->id]);
+
+        TruckStatusJob::dispatch($OcrMatch->id, 'plate');
+        if (!!$OcrMatch->container_code_image_url) {
+            TruckStatusJob::dispatch($OcrMatch->id, 'container');
+        }
+
+        return ['status' => 'success', 'message' => 'با موفقیت ثبت شد'];
     }
 }

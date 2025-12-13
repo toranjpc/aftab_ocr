@@ -50,9 +50,17 @@
             :style="{ outline: '5px solid ' + statusColor(selectedTruckBase) }">
             <template #actions>
               <div class="d-flex">
+
+                <div class="flex-1" style="">
+                  <v-btn
+                    v-if="['container_without_bijac', 'plate_without_bijac', 'plate_without_bijac_Creq'].includes(selectedTruckBase.match_status)"
+                    small class="" color="success mr-1" @click="fatabInvoiceCheck = true">
+                    کانتینر خالی
+                  </v-btn>
+                </div>
+
                 <div class="d-flex flex-1" style="width: 200px"
                   v-if="!selectedTruckBase.bijacs.length && ['container_without_bijac', 'plate_without_bijac', 'plate_without_bijac_Creq'].includes(selectedTruckBase.match_status)">
-
                   <div class="flex-1" style="">
                     <v-text-field v-model="bijac" label="شماره بیجک" hide-details dense rounded outlined
                       append-icon="fal fa-check"
@@ -159,6 +167,37 @@
             </v-card-text>
           </CardWidget>
         </div>
+
+
+        <template>
+          <v-dialog v-model="fatabInvoiceCheck" max-width="400">
+            <v-card>
+              <v-card-title class="headline">تأیید قیمت کانتینر</v-card-title>
+
+              <v-card-text>
+                <v-text-field v-model="invoiceAftab" label="شماره فاکتور/قبض انبار" hide-details="auto" dense rounded
+                  outlined append-icon="fal fa-check" :error="aftabError" :error-messages="aftabErrorMessage"
+                  @click:append="searchInvoiceAftab(invoiceAftab)" />
+              </v-card-text>
+
+              <v-card-text v-html="empinvoicetext"></v-card-text>
+
+              <v-card-actions class="d-flex justify-space-between px-4 pb-4">
+                <v-btn v-if="fatabInvoiceCheck20tu" vlarge color="primary" class="flex-grow-1 mr-2"
+                  style="font-size: 1.5em;" @click="selectContainer('_20Feet')">
+                  20Tu
+                </v-btn>
+
+                <v-btn v-if="fatabInvoiceCheck40tu" large color="success" class="flex-grow-1 ml-2"
+                  style="font-size: 1.5em;" @click="selectContainer('_40Feet')">
+                  40Tu
+                </v-btn>
+              </v-card-actions>
+
+            </v-card>
+          </v-dialog>
+        </template>
+
 
         <CardWidget id="padding-low" :title="statusMessage(selectedTruck)" style="border: 2px solid white"
           :style="{ outline: '5px solid ' + statusColor(selectedTruck) }">
@@ -334,6 +373,16 @@ export default {
       page: 1,
       prefixes: ['BSRCC', 'BSRGCBI'],
       prefix: 'BSRCC',
+
+      invoiceAftab: '',
+      fatabInvoiceCheck: false,
+      fatabInvoiceCheck20tu: false,
+      fatabInvoiceCheck40tu: false,
+      aftabError: false,
+      aftabErrorMessage: '',
+      findInvoice: 0,
+      empinvoicetext: '',
+
     }
   },
   mounted() {
@@ -419,6 +468,15 @@ export default {
 
     clearSelectedTruck() {
       this.selectedTruckBase = {}; // کارت مخفی می‌شود
+
+      this.invoiceAftab = ''
+      this.fatabInvoiceCheck = false
+      this.fatabInvoiceCheck20tu = false
+      this.fatabInvoiceCheck40tu = false
+      this.aftabError = false
+      this.aftabErrorMessage = ''
+      this.findInvoice = 0
+      this.empinvoicetext = ''
     },
 
     getMoves() {
@@ -610,7 +668,7 @@ export default {
     selectTruck(truck) {
       this.selectedTruckBase = truck;
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      // console.log(this.selectedTruckBase.is_serach_bijac)
+      console.log(this.selectedTruckBase)
       if (truck.bijacs.length === 0) {
         this._event('alert', { text: 'بیجکی یافت نشد' })
       } else {
@@ -664,6 +722,127 @@ export default {
 
       }
     },
+
+    async searchInvoiceAftab(data = 0) {
+      this.findInvoice = 0
+      this.fatabInvoiceCheck20tu = false
+      this.fatabInvoiceCheck40tu = false
+      if (!data) return false
+
+      this._event('loading')
+      this.empinvoicetext = ''
+      await this.$axios
+        .$post('/findAftabInvoice', {
+          data,
+          selectedTruckBase: this.selectedTruckBase.id,
+        })
+        .then((res) => {
+          console.log(res)
+          if (res && res.status && res.status == 'error') {
+            this._event('loading', false)
+            this._event('alert', { text: res.message })
+            this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
+                <p style="text-align: center;font-size: 1.5em;color: red;">${res.message}</p>          
+                </div>`;
+
+            if (res.reload && res.reload == 1) {
+              this.$store.dispatch('dynamic/get', {
+                page: this.page,
+                key: 'OcrMatch',
+              })
+              setTimeout(() => {
+                this.fatabInvoiceCheck = false
+              }, 1000);
+            }
+            return false
+          }
+          if (!res || !res.id) {
+            this._event('loading', false)
+            this._event('alert', { text: 'خطایی رخ داده !!!' })
+            this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
+                  <p style="text-align: center;font-size: 1.5em;color: red;">خطایی رخ داده !!! !!!</p>          
+                  <p style="text-align: center;color: red;">لطفا با پشتیبانی تماس بگیرید</p>          
+                  </div>`
+            return false
+          }
+          var downedTu = 0;
+          res.bijacs.forEach(item => {
+            downedTu++
+            if (item.container_size && item.container_size == "_40Feet") {
+              downedTu++
+            }
+          })
+          var totalTu = Math.ceil(res.amount / res.Tariff)
+          const mandeTu = totalTu - downedTu
+          if (mandeTu == 0) {
+            this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
+            <p style="text-align: center;font-size: 1.5em;color: red;">تعداد ثبت شده : ${downedTu} TU</p>          
+            <p>تعداد مجاز برای این فاکتور عبور نموده اند</p>     
+            </div>`
+
+            return false
+          }
+
+          this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
+          <p style="text-align: center;font-size: 1.5em;color: red;">تعداد ثبت شده : ${downedTu} TU</p>          
+          <p style="text-align: center;font-size: 1.5em;color: green;">تعداد مانده : ${mandeTu} TU</p>     
+          <p>سایز کانتینر را انتخاب نمایید</p>     
+          </div>`
+
+          this.findInvoice = res.id
+          if (mandeTu >= 1) this.fatabInvoiceCheck20tu = true
+          if (mandeTu >= 2) this.fatabInvoiceCheck40tu = true
+
+        }).catch((data) => {
+          console.log(data)
+          this._event('loading', false)
+        }).finally(() => {
+          this._event('loading', false)
+
+        })
+
+    },
+    async selectContainer(data) {
+      console.log(data, this.findInvoice)
+      this._event('loading')
+      await this.$axios
+        .$post('/findAftabInvoice/addbijac', {
+          tu: data,
+          id: this.findInvoice,
+          selectedTruckBase: this.selectedTruckBase.id,
+        })
+        .then((res) => {
+          console.log(res)
+          if (res && res.status && res.status == 'error') {
+            this._event('alert', { text: res.message })
+            this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
+                <p style="text-align: center;font-size: 1.5em;color: red;">${res.message}</p>          
+                </div>`;
+            setTimeout(() => {
+              this.fatabInvoiceCheck = false
+            }, 1000);
+          }
+
+          this.$store.dispatch('dynamic/get', {
+            page: this.page,
+            key: 'OcrMatch',
+          })
+          this._event('alert', { text: "درحال لود مجدد ..." })
+        }).catch((data) => {
+          console.log(data)
+        }).finally(() => {
+          this._event('loading', false)
+          this.invoiceAftab = ''
+          this.fatabInvoiceCheck = false
+          this.fatabInvoiceCheck20tu = false
+          this.fatabInvoiceCheck40tu = false
+          this.aftabError = false
+          this.aftabErrorMessage = ''
+          this.findInvoice = 0
+          this.empinvoicetext = ''
+        })
+    }
+
 
   },
 }

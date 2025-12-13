@@ -57,3 +57,5 @@ Route::post('/log/rip', [LogRepController::class, 'index']);
 Route::post('/log/gateCounter', [LogRepController::class, 'gateCounter']);
 
 Route::post('/check-by', [GateController::class, 'checkBy']);
+Route::post('/findAftabInvoice', [GateController::class, 'findAftabInvoice']);
+Route::post('/findAftabInvoice/addbijac', [GateController::class, 'addbijac']);

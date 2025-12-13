@@ -78,15 +78,16 @@ export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff', noco
         // const isSingleDigitDiff = singleDigit !== (singleDigit2 || '?')
         const isSingleDigitDiff = singleDigit !== (singleDigit2 || '*')
         singleDigit = isSingleDigitDiff
-          ? `<span style="color:${diffColor}">${singleDigit}</span>`
-          : singleDigit2
+          ? `<span style="color:${diffColor}">${singleDigit2}</span>`
+          : singleDigit
       }
 
       return (
         `<div style="border-radius: 4px; min-width: 138px;min-height: 53px;background-size: contain; display:flex;flex-direction: row-reverse;width: fit-content;text-align: left; font-family: sans-serif !important; font-weight: bold;padding: 2px; padding-top: 8px; padding-left: 11px; padding-bottom: 0px; color: #ffcc29; background: ${color};"><span style="direction:ltr">` +
         letters +
         '  ' +
-        `</span><div style="margin: 0px 6px 0 11px;display:flex;flex-direction:column;width: fit-content;text-align: left;"><span style="direction:ltr">` +
+        `</span>
+        <div style="margin: 0px 6px 0 11px;display:flex;flex-direction:column;width: fit-content;text-align: left;"><span style="direction:ltr">` +
         numbers +
         `</span><span>` +
         remaining +

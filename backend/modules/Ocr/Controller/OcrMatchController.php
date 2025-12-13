@@ -97,44 +97,61 @@ class OcrMatchController extends Controller
             $bijac = $ocr->bijacs->sortByDesc('bijac_date')->first();
             // logCheck -> log::info("{$id}_Operation took for bijac " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
-            if ($bijac && $bijac->receipt_number) {
+            // if ($bijac && $bijac->receipt_number) {//موقتا برای محاسبه نشدن مادرتخصصی ها
+            if ($bijac && $bijac->receipt_number && $bijac->is_single_carry == 0) {
+
                 // $bijacs = Bijac::where('receipt_number', $bijac->receipt_number)->select("id", "receipt_number", "plate_normal")->get();
                 $bijacs = $bijac->allbijacs;
 
                 $bijacIds = $bijacs->pluck('id');
 
                 // $ocr['total_vehicles'] = $bijacs->count();
-                $ocr['total_vehicles'] = $bijacs->pluck('plate_normal')->unique()->count();
+                if (str_starts_with($bijac->receipt_number, "AFTAB_CE")) {
+                    $invoice_ = $bijac->invoice;
+                    $totalTu = ceil($invoice_->amount / $customTariff);
+                    $downedTu = 0;
+                    foreach ($invoice_->bijacs as $item) {
+                        $downedTu++;
 
+                        if (!empty($item->container_size) && $item->container_size == "_40Feet") {
+                            $downedTu++;
+                        }
+                    }
+                    // $mandeTu = $totalTu - $downedTu;
+                    $ocr['total_vehicles'] = $totalTu;
+                    $ocr['ocr_vehicles'] = $downedTu;
+                } else {
+                    $ocr['total_vehicles'] = $bijacs->pluck('plate_normal')->unique()->count();
 
-                // $ocr['ocr_vehicles'] = DB::table('bijacables')
-                //     ->where('bijacable_type', OcrMatch::class)
-                //     ->whereExists(function ($query) use ($ocr) {
-                //         $query->select(DB::raw(1))
-                //             ->from('ocr_matches')
-                //             ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
-                //             ->where('ocr_matches.log_time', '<=', $ocr->log_time);
-                //     })
-                //     ->whereIn('bijac_id', $bijacIds)
-                //     ->distinct('bijac_id')
-                //     ->count('bijac_id');
-                // logCheck -> log::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
-                $ocr['ocr_vehicles'] = DB::table('bijacables')
-                    ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
-                    ->where('bijacable_type', OcrMatch::class)
-                    ->whereIn('bijac_id', $bijacIds)
-                    ->whereExists(function ($query) use ($ocr) {
-                        $query->select(DB::raw(1))
-                            ->from('ocr_matches')
-                            ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
-                            ->where('ocr_matches.log_time', '<=', $ocr->log_time ?? now());
-                    })
-                    ->groupBy('bijac_id')
-                    ->distinct()
-                    ->get()
-                    ->count();
+                    // $ocr['ocr_vehicles'] = DB::table('bijacables')
+                    //     ->where('bijacable_type', OcrMatch::class)
+                    //     ->whereExists(function ($query) use ($ocr) {
+                    //         $query->select(DB::raw(1))
+                    //             ->from('ocr_matches')
+                    //             ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
+                    //             ->where('ocr_matches.log_time', '<=', $ocr->log_time);
+                    //     })
+                    //     ->whereIn('bijac_id', $bijacIds)
+                    //     ->distinct('bijac_id')
+                    //     ->count('bijac_id');
+                    // logCheck -> log::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                    $ocr['ocr_vehicles'] = DB::table('bijacables')
+                        ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
+                        ->where('bijacable_type', OcrMatch::class)
+                        ->whereIn('bijac_id', $bijacIds)
+                        ->whereExists(function ($query) use ($ocr) {
+                            $query->select(DB::raw(1))
+                                ->from('ocr_matches')
+                                ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
+                                ->where('ocr_matches.log_time', '<=', $ocr->log_time ?? now());
+                        })
+                        ->groupBy('bijac_id')
+                        ->distinct()
+                        ->get()
+                        ->count();
 
-                // logCheck -> log::info("{$id}_Operation took for ocr_vehicles (" . $ocr['ocr_vehicles'] . ") " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                    // logCheck -> log::info("{$id}_Operation took for ocr_vehicles (" . $ocr['ocr_vehicles'] . ") " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                }
 
 
                 if ($bijac->type == 'ccs' && $ocr->invoice) { //کانتینر

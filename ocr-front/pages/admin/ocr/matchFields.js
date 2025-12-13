@@ -180,15 +180,19 @@ export default function (val) {
       values: [
         // { text: 'دو فاکتور متفاوت', value: 'bad_match_nok' },
         { text: 'کانتینر بدون فاکتور', value: 'container_ccs_nok' },
+        { text: 'کانتینر بدون فاکتور (موردی)', value: 'container_ccs_nok_req' },
         { text: 'فاکتور (کانتینر)', value: 'container_ccs_ok' },
         { text: 'کانتینر بدون بیجک', value: 'container_without_bijac' },
         { text: 'پلاک بدون بیجک', value: 'plate_without_bijac' },
         { text: 'فاکتور فله', value: 'gcoms_ok' },
         { text: 'فله بدون فاکتور', value: 'gcoms_nok' },
+        { text: 'فله بدون فاکتور (موردی)', value: 'gcoms_nok_req' },
         { text: 'پلاک بدون فاکتور', value: 'plate_ccs_nok' },
+        { text: 'پلاک بدون فاکتور (موردی)', value: 'plate_ccs_nok_req' },
         { text: 'فاکتور (پلاک)', value: 'plate_ccs_ok' },
         { text: 'فاکتور (ccs)', value: 'ccs_ok' },
         { text: 'بدون فاکتور (css)', value: 'ccs_nok' },
+        { text: 'بدون فاکتور (css) (موردی)', value: 'ccs_nok_req' },
       ],
 
       // inList(data) {

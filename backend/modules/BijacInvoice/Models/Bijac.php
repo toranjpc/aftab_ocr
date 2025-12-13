@@ -93,6 +93,7 @@ class Bijac extends Base
                 (clone $item->created_at)->subHours($day),
                 $item->created_at,
             ];
+            $dateRange_ = (clone $item->created_at)->subHours($day);
 
             $resultBase = Bijac::when($day > 12, function ($q) {
                 return $q->doesntHave('ocrMatches');
@@ -103,8 +104,8 @@ class Bijac extends Base
                     fn($q) => $q->orderBy('bijac_date', 'asc'),
                     fn($q) => $q->orderBy('bijac_date', 'desc')
                 )
-
-                ->whereBetween('bijac_date', $dateRange);
+                ->where('bijac_date', '>', $dateRange_);
+            // ->whereBetween('bijac_date', $dateRange)
             // ->orderBy('bijac_date', 'desc');
             // ->where(function ($query) {
             //     $query->where('bijac_date', '>=', now()->subHours(12))
@@ -122,7 +123,7 @@ class Bijac extends Base
 
             try {
                 log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
-                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {$plate_number} date ({$item->id}) : " . json_encode($dateRange));
+                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {$plate_number} date ({$item->id}) : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
 
@@ -134,7 +135,7 @@ class Bijac extends Base
 
             try {
                 log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
-                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {$plate_number}% date : " . json_encode($dateRange));
+                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {$plate_number}% date : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
 
@@ -152,9 +153,9 @@ class Bijac extends Base
 
                 try {
                     log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
-                        ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {__{$cleanNumber}_ date : " . json_encode($dateRange));
+                        ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {__{$cleanNumber}_ date : " . json_encode($dateRange_));
                     log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
-                        ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {__{$cleanNumber} date : " . json_encode($dateRange));
+                        ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {__{$cleanNumber} date : " . json_encode($dateRange_));
                 } catch (\Throwable $th) {
                 }
 
@@ -174,7 +175,7 @@ class Bijac extends Base
 
             try {
                 log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
-                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE {$cleanNumber} date : " . json_encode($dateRange));
+                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE {$cleanNumber} date : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
 
@@ -189,7 +190,7 @@ class Bijac extends Base
 
             try {
                 log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
-                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE {$wildcardPattern} date : " . json_encode($dateRange));
+                    ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE {$wildcardPattern} date : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
 
@@ -252,8 +253,9 @@ class Bijac extends Base
                 (clone $item->created_at)->subHours($day),
                 $item->created_at,
             ];
+            $dateRange_ = (clone $item->created_at)->subHours($day);
 
-            $container_code = str_replace([' ', '_', '-'], '', $container_code);
+            $container_code = substr(str_replace([' ', '_', '-'], '', $container_code), 0, 11); //BXAU2035845
             $codesToTry = [$container_code];
 
             if (!$isEdited && !empty($item->container_code_2)) {
@@ -281,7 +283,8 @@ class Bijac extends Base
                         fn($q) => $q->orderBy('bijac_date', 'asc'),
                         fn($q) => $q->orderBy('bijac_date', 'desc')
                     )
-                    ->whereBetween('bijac_date', $dateRange)
+                    ->where('bijac_date', '>', $dateRange_)
+                    // ->whereBetween('bijac_date', $dateRange)
                     // ->orderBy('bijac_date', 'desc')
                     // $queryTry = Bijac::whereBetween('bijac_date', $dateRange)
                     //     // when($day >= 3, function ($query) {

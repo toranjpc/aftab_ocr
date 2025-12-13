@@ -44,7 +44,7 @@
               </v-btn>
             </td>
             <td>
-              {{ props.item.id }}
+              <!-- {{ props.item.id }} -->
               <v-btn small :color="renderBTN(props.item).color" dark @click="_event('ccs.dialog', props.item)">
                 {{ renderBTN(props.item).text }}
               </v-btn>
