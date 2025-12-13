@@ -68,7 +68,7 @@
                 class="black--text ma-1 pe-1" @click="selectedInvoice = invoice" :key="invoice.id">
                 {{ invoice.invoice_number }}
 
-                <input v-if="log.invoices?.length > 0" type="radio" class="ms-2" :name="'F_' + log.id"
+                <input v-if="log.invoices?.length > 1" type="radio" class="ms-2" :name="'F_' + log.id"
                   :value="invoice.id" :checked="invoice.base" @change="onInvoiceSelect(invoice)" />
               </v-btn>
 
@@ -379,6 +379,14 @@ export default {
           // log_id: this.log.id,
           invoice_id: invoice.id,
         })
+
+
+        this.$store.dispatch('dynamic/get', {
+          page: this.page,
+          key: 'OcrMatch',
+        })
+        this.dialog = false
+
 
         // console.log(invoice.id)
         console.log('✅ پاسخ سرور:', response.data)

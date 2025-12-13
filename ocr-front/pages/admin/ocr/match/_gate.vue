@@ -467,16 +467,6 @@ export default {
 
 
     renderBTN(item, ifFalse = false) {
-      var is_single_carry = "";
-      if (item && item.bijacs && item.bijacs.length) {
-        for (let c = 0; c < item.bijacs.length; c++) {
-          if (item.bijacs[c].is_single_carry != 0) {
-            is_single_carry = "(مادر تخصصی)"
-            break
-          }
-        }
-      }
-
       var status = item.match_status
       if (!status) {
         return {
@@ -484,6 +474,19 @@ export default {
           color: 'grey'
         }
       }
+
+      if (item && item.bijacs && item.bijacs.length) {
+        for (let c = 0; c < item.bijacs.length; c++) {
+          if (item.bijacs[c].is_single_carry == 1) {// && status.includes('_nok')
+            return {
+              text: "بدون فاکتور (مادر تخصصی)",
+              color: "red"
+            }
+            break
+          }
+        }
+      }
+
 
       var req = ''
       if (status.includes('_req')) {
@@ -498,15 +501,15 @@ export default {
       let list = {
         // bad_match_nok: ['دو فاکتور متفاوت', 'purple'],
         gcoms_ok: ['فاکتور' + req, 'cyan'],
-        gcoms_nok: ['بدون فاکتور' + req + is_single_carry, 'red'],
+        gcoms_nok: ['بدون فاکتور' + req, 'red'],
         ccs_ok: ['فاکتور' + req, 'green darken-4'],
-        ccs_nok: ['بدون فاکتور' + req + is_single_carry, 'red'],
+        ccs_nok: ['بدون فاکتور' + req, 'red'],
         container_without_bijac: ['بدون بیجک' + req, 'orange'],
         plate_without_bijac: ['بدون بیجک', 'orange'],
         container_ccs_ok: ['فاکتور (کانتینر)' + req, 'green'],
-        container_ccs_nok: ['بدون فاکتور' + req + is_single_carry, 'red'],
+        container_ccs_nok: ['بدون فاکتور' + req, 'red'],
         plate_ccs_ok: ['فاکتور (پلاک)' + req, 'green'],
-        plate_ccs_nok: ['بدون فاکتور' + req + is_single_carry, 'red'],
+        plate_ccs_nok: ['بدون فاکتور' + req, 'red'],
       }
       if (ifFalse) {
         list['container_without_bijac'] = ['بیجک تأیید شده', 'success']
@@ -532,16 +535,18 @@ export default {
       }
       try {
         this._event('loading')
+        this._event('autoRefresh', false)
+        this.confirmationDialog = false;
 
         const res = await this.$axios.$post('/ocr-match/customCheck/' + this.itemIdToConfirm, {
           OcrMatch: this.form,
         })
+        // console.log(res)
         // this.$emit('item-updated', res.data)
 
         this.$set(this.localConfirmed, this.itemIdToConfirm, true)
 
         this._event('loading', false)
-        this.confirmationDialog = false;
 
         this._event("alert", {
           text: 'تغییرات با موفقیت ذخیره شد',

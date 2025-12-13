@@ -57,7 +57,7 @@ class OcrMatch extends Base
     {
         return $this->hasOne(Log::class, 'table_id')
             ->select("user_id", "table_id")
-            ->where('table_name', 'OcrMatch')
+            ->where('table_name', 'ocr_matches')
             ->where('log_type', 'checked');
     }
 

@@ -19,6 +19,8 @@ use Modules\Auth\Controllers\AuthController;
 use Modules\Ocr\Jobs\ProcessOcrLog;
 use Modules\Ocr\Jobs\EditedMatchBijacs;
 
+use function PHPUnit\Framework\isNull;
+
 class OcrMatchController extends Controller
 {
     public function getList(Request $request)
@@ -106,17 +108,18 @@ class OcrMatchController extends Controller
                 $bijacIds = $bijacs->pluck('id');
 
                 // $ocr['total_vehicles'] = $bijacs->count();
-                if (str_starts_with($bijac->receipt_number, "AFTAB_CE")) {
+                if (isset($ocr->isSerachBijac->user_id)) {
+                    // if (str_starts_with($bijac->receipt_number, "AFTAB_CE")) {
                     $invoice_ = $bijac->invoice;
                     $totalTu = ceil($invoice_->amount / $customTariff);
-                    $downedTu = 0;
-                    foreach ($invoice_->bijacs as $item) {
-                        $downedTu++;
+                    $downedTu = $invoice_->bijacs->count() ?? 0;
+                    // foreach ($invoice_->bijacs as $item) {
+                    //     $downedTu++;
 
-                        if (!empty($item->container_size) && $item->container_size == "_40Feet") {
-                            $downedTu++;
-                        }
-                    }
+                    //     if (!empty($item->container_size) && $item->container_size == "_40Feet") {
+                    //         $downedTu++;
+                    //     }
+                    // }
                     // $mandeTu = $totalTu - $downedTu;
                     $ocr['total_vehicles'] = $totalTu;
                     $ocr['ocr_vehicles'] = $downedTu;
