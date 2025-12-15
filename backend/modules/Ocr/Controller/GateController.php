@@ -310,8 +310,8 @@ class GateController extends Controller
         $customTariff = config('ocr.custom_tariff');
         $invoicenumber = preg_replace('/\D/', '', request('data', 0));
         $Invoice = Invoice::select("id", "amount", "receipt_number")->where(function ($q) use ($invoicenumber) {
-            $q->where("invoice_number", "LIKE", "AFTAB_CE" . $invoicenumber)
-                ->orWhere("receipt_number", "LIKE", "AFTAB_CE" . $invoicenumber);
+            $q->where("invoice_number", "LIKE", "AFTAB_CE_" . $invoicenumber)
+                ->orWhere("receipt_number", "LIKE", "AFTAB_CE_" . $invoicenumber);
         })
             ->with("bijacs")
             ->first();

@@ -108,12 +108,13 @@ Route::get('/test', function () {
             if (!empty(request()->ccs)) {
                 $CcsService = new Modules\Collector\Services\CcsService();
                 $DBBijac = $CcsService->getByReceipt(request()->bij);
-                return  $DBBijac;
+                if ($DBBijac) return  $DBBijac;
             }
 
 
             $GcomsService = new Modules\Collector\Services\GcomsService();
             $DBBijac = $GcomsService->getBijacTaki(request()->bij);
+
             return  $DBBijac;
 
 
