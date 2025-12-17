@@ -31,6 +31,7 @@ class TruckStatusJob implements ShouldQueue
 
     public function handle()
     {
+
         $match = OcrMatch::with(["bijacs" => function ($query) {
             $query->with('invoices');
         }])->find($this->log);

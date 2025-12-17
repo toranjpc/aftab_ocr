@@ -13,6 +13,7 @@ use Modules\Ocr\OcrBuffer;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Auth\Controllers\AuthController;
@@ -108,7 +109,10 @@ class OcrMatchController extends Controller
                 $bijacIds = $bijacs->pluck('id');
 
                 // $ocr['total_vehicles'] = $bijacs->count();
-                if (isset($ocr->isSerachBijac->user_id)) {
+                if (
+                    $bijac->invoice &&
+                    Str::startsWith($bijac->invoice?->invoice_number ?? '', 'AFTAB_C')
+                ) {
                     // if (str_starts_with($bijac->receipt_number, "AFTAB_CE")) {
                     $invoice_ = $bijac->invoice;
                     $totalTu = ceil($invoice_->amount / $customTariff);

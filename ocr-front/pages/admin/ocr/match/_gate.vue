@@ -15,8 +15,8 @@
         <br>
         {{ item.plate_number_3 }} -->
         <EditBtn :editItem="item" :fields="plateFields(item)" @item-updated="handleItemUpdated(item)"
-          v-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
-        <div v-if="item.plate_number && item.match_status.includes('_Creq')"
+          v-if="item.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
+        <div v-if="item.match_status && item.plate_number && item.match_status.includes('_Creq')"
           v-html="plateShow(item.plate_number, item, 0, 1)">
         </div>
         <v-tooltip v-else-if="item.plate_number" top>
@@ -32,7 +32,7 @@
 
       <template #item.container_code="item">
         <EditBtn :editItem="item" :fields="containerFields(item)" @item-updated="handleItemUpdated(item)"
-          v-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
+          v-if="item.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
         <v-tooltip v-if="item.container_code" top>
           <template v-slot:activator="{ on, attrs }">
             <div v-bind="attrs" v-on="on" v-html="containerCodeShow(item.container_code, item)"></div>
@@ -138,7 +138,7 @@
           </v-btn>
 
           <v-btn small class="" color="orange mr-1" title=" تایید بیجک / فاکتور" @click="customCheck_confirm(item.id)"
-            v-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status) && !item.is_custom_check && !localConfirmed[item.id]">
+            v-if="item.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(item.match_status) && !item.is_custom_check && !localConfirmed[item.id]">
             <v-icon class="" color="white">
               far fa-check
             </v-icon>

@@ -30,50 +30,50 @@ class EditedMatchBijacs
         $match = OcrMatch::findOrFail($this->matchId);
 
         /*
-        if (!in_array($match->match_status, [
-            'container_without_bijac',
-            'no_bijac',
-            'gcoms_nok',
-            'miss_container_ccs_nok',
+            if (!in_array($match->match_status, [
+                'container_without_bijac',
+                'no_bijac',
+                'gcoms_nok',
+                'miss_container_ccs_nok',
 
 
-            // "gcoms_ok",
-            // "ccs_ok",
-            // "plate_ccs_ok",
-            // "container_ccs_ok",
-            "gcoms_nok",
-            "ccs_nok",
-            "plate_ccs_nok",
-            "container_ccs_nok",
-            "plate_without_bijac",
-            "container_without_bijac",
-            "gcoms_nok_req",
-            "ccs_nok_req",
-            "plate_ccs_nok_req",
-            "container_ccs_nok_req",
-            "plate_without_bijac_req",
-            "container_without_bijac_req",
-            "gcoms_nok_Creq",
-            "ccs_nok_Creq",
-            "plate_ccs_nok_Creq",
-            "container_ccs_nok_Creq",
-            "plate_without_bijac_Creq",
-            "container_without_bijac_Creq",
+                // "gcoms_ok",
+                // "ccs_ok",
+                // "plate_ccs_ok",
+                // "container_ccs_ok",
+                "gcoms_nok",
+                "ccs_nok",
+                "plate_ccs_nok",
+                "container_ccs_nok",
+                "plate_without_bijac",
+                "container_without_bijac",
+                "gcoms_nok_req",
+                "ccs_nok_req",
+                "plate_ccs_nok_req",
+                "container_ccs_nok_req",
+                "plate_without_bijac_req",
+                "container_without_bijac_req",
+                "gcoms_nok_Creq",
+                "ccs_nok_Creq",
+                "plate_ccs_nok_Creq",
+                "container_ccs_nok_Creq",
+                "plate_without_bijac_Creq",
+                "container_without_bijac_Creq",
 
-        ]))
-            return;
-        */
+            ]))
+                return;
+            */
         /*
-        $text = $match->match_status;
-        $keywords = ['_without', '_nok', 'no_bijac'];
-        $found = false;
-        foreach ($keywords as $word) {
-            if (str_contains($text, $word)) {
-                $found = true;
-                break;
+            $text = $match->match_status;
+            $keywords = ['_without', '_nok', 'no_bijac'];
+            $found = false;
+            foreach ($keywords as $word) {
+                if (str_contains($text, $word)) {
+                    $found = true;
+                    break;
+                }
             }
-        }
-        if (!$found) return;
+            if (!$found) return;
         */
 
 
@@ -128,9 +128,10 @@ class EditedMatchBijacs
                 $query->whereBetween('id', [$match->id - 5, $match->id + 5]);
                 $query->where('id', "!=", $match->id);
             })
+                ->where('gate_number', $match->gate_number)
                 ->where(function ($query) use ($plate) {
                     $query->where('plate_number_3', $plate)
-                        ->orWhere('plate_number', 'LIKE', '%' . preg_replace('/\D/', '', $plate) . '%');
+                        ->orWhere('plate_number', 'LIKE', preg_replace('/\D/', '', $plate) . '%');
                 })
                 ->orderByRaw('CASE WHEN plate_number_3 = ? THEN 0 ELSE 1 END', [$plate])
                 ->orderByRaw('CAST(id AS SIGNED) - ?', [$match->id])

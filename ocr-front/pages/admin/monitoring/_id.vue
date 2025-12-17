@@ -172,7 +172,7 @@
         <template>
           <v-dialog v-model="fatabInvoiceCheck" max-width="400">
             <v-card>
-              <v-card-title class="headline">تأیید قیمت کانتینر</v-card-title>
+              <v-card-title class="headline">ثبت کانتینر خالی</v-card-title>
 
               <v-card-text>
                 <v-text-field v-model="invoiceAftab" label="شماره فاکتور/قبض انبار" hide-details="auto" dense rounded
@@ -467,7 +467,7 @@ export default {
     },
 
     clearSelectedTruck() {
-      this.selectedTruckBase = {}; // کارت مخفی می‌شود
+      this.selectedTruckBase = {};
 
       this.invoiceAftab = ''
       this.fatabInvoiceCheck = false
@@ -785,7 +785,7 @@ export default {
 
           this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
           <p style="text-align: center;font-size: 1.5em;color: red;">تعداد ثبت شده : ${downedTu} TU</p>          
-          <p style="text-align: center;font-size: 1.5em;color: green;">تعداد مانده : ${mandeTu} TU</p>     
+          <p style="text-align: center;font-size: 1.5em;color: green;">تعداد مجاز : ${totalTu} TU</p>     
           <p>سایز کانتینر را انتخاب نمایید</p>     
           </div>`
 
@@ -828,18 +828,33 @@ export default {
             key: 'OcrMatch',
           })
           this._event('alert', { text: "درحال لود مجدد ..." })
+
+          const DATA = res.DATA;
+          var downedTu = 0;
+          DATA.bijacs.forEach(item => {
+            downedTu++
+            if (item.container_size && item.container_size == "_40Feet") {
+              downedTu++
+            }
+          })
+          var totalTu = Math.ceil(DATA.amount / DATA.Tariff)
+          this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
+          <p style="text-align: center;font-size: 1.5em;color: red;">تعداد ثبت شده : ${downedTu} TU</p>          
+          <p style="text-align: center;font-size: 1.5em;color: green;">تعداد مجاز : ${totalTu} TU</p>     
+          </div>`
+
         }).catch((data) => {
           console.log(data)
         }).finally(() => {
           this._event('loading', false)
           this.invoiceAftab = ''
-          this.fatabInvoiceCheck = false
+          // this.fatabInvoiceCheck = false
           this.fatabInvoiceCheck20tu = false
           this.fatabInvoiceCheck40tu = false
           this.aftabError = false
           this.aftabErrorMessage = ''
           this.findInvoice = 0
-          this.empinvoicetext = ''
+          // this.empinvoicetext = ''
         })
     }
 

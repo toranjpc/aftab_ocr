@@ -16,9 +16,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Modules\Sse\Models\SSE;
 use Modules\Ocr\Controller\LogRepController;
+use Modules\Gcoms\Models\GcomsOutData;
 
 //حذف
 Route::get('/', function () {
+
+    return  GcomsOutData::sum('weight');
+
     return now();
     // if (!auth()->check()) {
     //     $user = User::first();
@@ -34,7 +38,9 @@ Route::get('/', function () {
 
 // php artisan schedule:run
 // php artisan queue:listen
-// php artisan queue:work --daemon --sleep=1 --tries=3
+// php artisan queue:work --queue=project_base --sleep=1 --tries=3
+// artisan queue:work --queue=project_base --sleep=1 --tries=3 --timeout=120 --max-jobs=100 --max-time=3600
+
 // php artisan optimize:clear
 
 // Route::post('/test', function () {
