@@ -101,6 +101,7 @@ class EditedMatchBijacs
                 $query->whereBetween('id', [$match->id - 5, $match->id + 5]);
                 $query->where('id', "!=", $match->id);
             })
+                ->where('gate_number', $match->gate_number)
                 ->where(function ($query) use ($containerNumber, $containerNumberBase) {
                     // $query->whereRaw("REGEXP_REPLACE(container_code_3, '[^a-zA-Z0-9]', '') LIKE ?", [$containerNumberBase]);
                     $query->where('container_code_3', $containerNumberBase);
@@ -128,10 +129,9 @@ class EditedMatchBijacs
                 $query->whereBetween('id', [$match->id - 5, $match->id + 5]);
                 $query->where('id', "!=", $match->id);
             })
-                ->where('gate_number', $match->gate_number)
                 ->where(function ($query) use ($plate) {
                     $query->where('plate_number_3', $plate)
-                        ->orWhere('plate_number', 'LIKE', preg_replace('/\D/', '', $plate) . '%');
+                        ->orWhere('plate_number', 'LIKE', '%' . preg_replace('/\D/', '', $plate) . '%');
                 })
                 ->orderByRaw('CASE WHEN plate_number_3 = ? THEN 0 ELSE 1 END', [$plate])
                 ->orderByRaw('CAST(id AS SIGNED) - ?', [$match->id])
@@ -162,14 +162,15 @@ class EditedMatchBijacs
                     'seal' => $similar->seal ?? $match->seal
                 ]);
 
-                $similar->bijacs()->sync($bijacs->pluck('id'));
-                // if (!$similar->plate_number_3) {
                 // $similar->bijacs()->sync($bijacs->pluck('id'));
-                // Bijac::whereIn('id', $bijacs->pluck('id')->toArray())
-                //     ->increment('revoke_number');
-                // }
+                if (!$similar->plate_number_3) {
+                    $similar->bijacs()->sync($bijacs->pluck('id'));
+                    // Bijac::whereIn('id', $bijacs->pluck('id')->toArray())
+                    //     ->increment('revoke_number');
+                }
 
-                $match->delete();
+                // $match->delete();
+                if (!$match->plate_number_3) $match->delete();
             } else {
                 $match->update([
                     'plate_number' => $match->plate_number ?? $similar->plate_number,
@@ -192,7 +193,8 @@ class EditedMatchBijacs
                 // Bijac::whereIn('id', $bijacs->pluck('id')->toArray())
                 //     ->increment('revoke_number');
 
-                $similar->delete();
+                // $similar->delete();
+                if (!$similar->plate_number_3) $similar->delete();
             }
 
         else {
