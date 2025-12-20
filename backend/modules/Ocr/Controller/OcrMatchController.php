@@ -193,7 +193,8 @@ class OcrMatchController extends Controller
             return $ocr;
         });
 
-        // logCheck -> log::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+        // logCheck ->
+        // log::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
         return response(
             [
                 'message' => 'ok',
@@ -221,10 +222,12 @@ class OcrMatchController extends Controller
         $plate_number_edit = data_get($request, 'OcrMatch.plate_number_edit', null);
         if ($plate_number_edit) {
 
-            if ($this->checkPlateIsDuplicate([
-                $plate_number_edit,
-                $ocrMatch->gate_number
-            ], 2, $ocrMatch->ocr_log_id)) {
+            if (
+                $this->checkPlateIsDuplicate([
+                    $plate_number_edit,
+                    $ocrMatch->gate_number
+                ], 2, $ocrMatch->ocr_log_id)
+            ) {
 
                 return response()->json([
                     'message' => 'شماره پلاک وارد شده قبلا ارسال شده است!'
@@ -232,26 +235,28 @@ class OcrMatchController extends Controller
             }
 
             $request->merge([
-                'plate_number_3' =>  $plate_number_edit,
-                'plate_number_edit' =>  $plate_number_edit
+                'plate_number_3' => $plate_number_edit,
+                'plate_number_edit' => $plate_number_edit
             ]);
         }
 
         $container_code_edit = data_get($request, 'OcrMatch.container_code_edit', null);
         if ($container_code_edit) {
 
-            if ($this->checkIsDuplicateContainer([
-                $container_code_edit,
-                $ocrMatch->gate_number
-            ], 2, $ocrMatch->ocr_log_id)) {
+            if (
+                $this->checkIsDuplicateContainer([
+                    $container_code_edit,
+                    $ocrMatch->gate_number
+                ], 2, $ocrMatch->ocr_log_id)
+            ) {
 
                 return response()->json([
                     'message' => 'شماره کانتینر وارد شده قبلا ارسال شده است!'
                 ], 422);
             }
             $request->merge([
-                'container_code_3' =>  str_replace(' ', '', $container_code_edit),
-                'container_code_edit' =>  str_replace(' ', '', $container_code_edit)
+                'container_code_3' => str_replace(' ', '', $container_code_edit),
+                'container_code_edit' => str_replace(' ', '', $container_code_edit)
             ]);
         }
 
@@ -284,7 +289,7 @@ class OcrMatchController extends Controller
 
             return response()->json([
                 'message' => 'با موفقیت تایید شد!',
-                'data'    => $ocrMatch->fresh()
+                'data' => $ocrMatch->fresh()
                     ? $ocrMatch->fresh()->load('bijacs')->append('invoice')
                     : null,
             ], 200);
@@ -337,7 +342,8 @@ class OcrMatchController extends Controller
             ->sortByDesc('bijac_date')
             ->first();
         $log_time = $ocr->log_time;
-        if (empty($ocr->log_time)) $log_time = now();
+        if (empty($ocr->log_time))
+            $log_time = now();
         $ocrMatches = [];
 
         if ($bijac && $bijac->receipt_number) {

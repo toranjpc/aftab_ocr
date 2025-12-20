@@ -71,13 +71,16 @@ class Bijac extends Base
         } catch (\Throwable $th) {
         }
 
-        if ($isEdited && !$item->plate_number_edit) return $query->whereRaw('1=0');
-        if (!$isEdited && !$item->plate_number) return $query->whereRaw('1=0');
+        if ($isEdited && !$item->plate_number_edit)
+            return $query->whereRaw('1=0');
+        if (!$isEdited && !$item->plate_number)
+            return $query->whereRaw('1=0');
 
         $plate_number = $isEdited ? $item->plate_number_edit : $item->plate_number;
-        $PlateService = new  PlateService();
+        $PlateService = new PlateService();
         $plate_number = $PlateService->normalizePlate($plate_number);
-        if ($isEdited) log::info("newcode : " . json_encode($plate_number));
+        if ($isEdited)
+            log::info("newcode : " . json_encode($plate_number));
 
 
         $cleanNumber = preg_replace('/\D/', '', $plate_number);
@@ -96,7 +99,10 @@ class Bijac extends Base
             $dateRange_ = (clone $item->created_at)->subHours($day);
 
             $resultBase = Bijac::when($day > 12, function ($q) {
-                return $q->doesntHave('ocrMatches');
+                return $q->whereDoesntHave('ocrMatches', function ($query) {
+                    $query->whereNotNull('plate_number')->where('plate_number', '!=', '');
+                });
+                // return $q->doesntHave('ocrMatches');
             })
                 // اولین در 24 ساعت قبل و اخرین در بیش از یک روز (پیشنهاد اقای ولیپور)
                 ->when(
@@ -127,7 +133,8 @@ class Bijac extends Base
             } catch (\Throwable $th) {
             }
 
-            if ($result->isNotEmpty()) break;
+            if ($result->isNotEmpty())
+                break;
 
             $result = clone $resultBase;
             $result = $result->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", [$plate_number . "%"])
@@ -140,7 +147,8 @@ class Bijac extends Base
             }
 
             $result = $this->levenPlace($result, $cleanNumber, $threshold);
-            if ($result->isNotEmpty()) break;
+            if ($result->isNotEmpty())
+                break;
 
 
             if (strlen($cleanNumber) <= 4) {
@@ -160,7 +168,8 @@ class Bijac extends Base
                 }
 
 
-                if ($result->isNotEmpty()) break;
+                if ($result->isNotEmpty())
+                    break;
             }
 
             // if (strlen($cleanNumber) == 7) {
@@ -169,7 +178,6 @@ class Bijac extends Base
                 // $wildcardPattern = substr($cleanNumber, 0, 5);
                 $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$cleanNumber]);
                 // ->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE ?", [$wildcardPattern . '__']);
-
             })
                 ->get();
 
@@ -179,7 +187,8 @@ class Bijac extends Base
             } catch (\Throwable $th) {
             }
 
-            if ($result->isNotEmpty()) break;
+            if ($result->isNotEmpty())
+                break;
             // }
 
             $wildcardPattern = substr($cleanNumber, 0, 5);
@@ -194,7 +203,8 @@ class Bijac extends Base
             } catch (\Throwable $th) {
             }
 
-            if ($result->isNotEmpty()) break;
+            if ($result->isNotEmpty())
+                break;
 
 
             /*
@@ -211,10 +221,13 @@ class Bijac extends Base
 
             $result = $this->levenPlace($result, $cleanNumber, $threshold);
             */
-            if ($result->isNotEmpty()) break; // اگر چیزی پیدا شد دیگر ادامه ندهیم
+            // if ($result->isNotEmpty())
+            //     break; // اگر چیزی پیدا شد دیگر ادامه ندهیم
         }
 
-        if ($result->isEmpty()) return $query->whereRaw('1=0');
+        if ($result->isEmpty()) {
+            return $query->whereRaw('1=0');
+        }
         $Bijac = Bijac::whereIn('id', $result->pluck('id'));
         return $Bijac;
 
@@ -245,7 +258,8 @@ class Bijac extends Base
             $item->container_code_edit :
             // $item->container_code_standard;
             $item->container_code;
-        if ($isEdited) log::info("newcode : " . json_encode($container_code));
+        if ($isEdited)
+            log::info("newcode : " . json_encode($container_code));
 
         foreach (self::SEARCH_DAY as $day) {
 
@@ -274,8 +288,11 @@ class Bijac extends Base
             $result = collect();
 
             foreach ($codesToTry as $code) {
-                $queryTry = Bijac::when($day > 12, function ($query) {
-                    return $query->doesntHave('ocrMatches');
+                $queryTry = Bijac::when($day > 12, function ($q) {
+                    return $q->whereDoesntHave('ocrMatches', function ($query) {
+                        $query->whereNotNull('container_code')->where('container_code', '!=', '');
+                    });
+                    // return $q->doesntHave('ocrMatches');
                 })
                     // اولین در 24 ساعت قبل و اخرین در بیش از یک روز (پیشنهاد اقای ولیپور)
                     ->when(
@@ -321,7 +338,7 @@ class Bijac extends Base
                     $lev = levenshtein($code, $cleanNumber);
                     if ($lev <= $threshold) {
                         $result[] = $value;
-                        continue;
+                        break;
                     }
                 }
                 $result = collect($result);
@@ -351,7 +368,8 @@ class Bijac extends Base
     {
         $result = $result->filter(function ($res) use ($place, $threshold) {
             $lev = levenshtein($place, $res->plate_normal);
-            if ($lev <= $threshold) return true;
+            if ($lev <= $threshold)
+                return true;
         });
         return $result;
     }
