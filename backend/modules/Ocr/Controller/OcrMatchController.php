@@ -13,6 +13,7 @@ use Modules\Ocr\OcrBuffer;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 use Illuminate\Support\Facades\Log;
@@ -26,51 +27,51 @@ class OcrMatchController extends Controller
 {
     public function getList(Request $request)
     {
-        $id = time();
         $startTime = microtime(true);
-        /*
-            فیلتر کالای خطرناک
-            $danger = $request->IMDG ?? null;
-            $dangerFilter = function ($q) use ($danger) {
-                if ($danger === "danger_Bijac") {
-                    $q->where('dangerous_code', '!=', 0);
-                } elseif ($danger === "no_danger_Bijac") {
-                    $q->where('dangerous_code', 0);
-                }
-            };
-            $isDangerFiltered = in_array($danger, ["danger_Bijac", "no_danger_Bijac"]);
+        $timeTok = [
+            "starts" => microtime(true) - $startTime,
+        ];
+        $logwright = 0;
 
-            $ocrMatches = OcrMatch::query()
-                ->when($isDangerFiltered, function ($q) use ($dangerFilter) {
-                    $q->whereHas('bijacs', $dangerFilter);
-                })
-                ->with([
-                    'bijacs' =>  fn($query) =>
-                    $query->withCount('ocrMatches')
-                        ->with('invoices')
-                        ->with('allbijacs')
-                        ->when($isDangerFiltered, $dangerFilter),
-                    "isCustomCheck",
-                    "isSerachBijac"
-                ]);
-            if (in_array($danger, ["danger_AI", "no_danger_AI"])) {
-                if ($danger === "danger_AI") {
-                    $ocrMatches->where('IMDG', '!=', 0);
-                } elseif ($danger === "no_danger_AI") {
-                    $ocrMatches->where('IMDG', 0);
-                }
-            }
-        */
         $ocrMatches = OcrMatch::with([
             'bijacs' => function ($query) {
                 $query->withCount('ocrMatches')
                     ->with('invoices')
                     ->with('allbijacs')
-                ;
+                    ->orderBy('bijac_date', 'desc');
             },
             "isCustomCheck",
             "isSerachBijac"
         ]);
+
+
+        $filters = $request->input('filters', []);
+        if (isset($filters['IMDG'])) {
+            $dangerStatus = $request->input('filters.IMDG.$in', []);
+            unset($filters['IMDG']);
+            $request->merge(['filters' => $filters]);
+            if (in_array('danger_Bijac', $dangerStatus)) {
+                $ocrMatches->whereHas('bijacs', function ($query) {
+                    $query->whereNotNull('dangerous_code')->where('dangerous_code', '!=', "0");
+                });
+            }
+            if (in_array('no_danger_Bijac', $dangerStatus)) {
+                $ocrMatches->whereHas('bijacs', function ($query) {
+                    $query->where('dangerous_code', "0");
+                });
+            }
+            if (in_array('danger_AI', $dangerStatus)) {
+                $ocrMatches->whereNotNull('IMDG')->where('IMDG', '>', 0);
+            }
+            if (in_array('no_danger_AI', $dangerStatus)) {
+                $ocrMatches->where('IMDG', 0);
+            }
+
+            // return $ocrMatches->select('id', 'IMDG')->paginate(5);
+        }
+        // $timeTok["after IMDG filter"] = microtime(true) - $startTime;
+
+
         if (!empty($request->findThis)) {
             $ocrMatches->where('id', $request->findThis);
         }
@@ -80,33 +81,95 @@ class OcrMatchController extends Controller
         } else {
             // $ocrMatches->where('gate_number', 0);
         }
+
+
         $ocrMatches = $ocrMatches
             // ->where('id', '233639')//حذف
             // ->whereIn('match_status', ["container_without_bijac", "plate_without_bijac"]) //حذف
             ->filter()
             ->sort()
             ->orderBy('id', 'DESC')
-            ->paginate($request->itemPerPage ?? 15);
+            ->paginate($request->itemPerPage ?? 10);
+        // $timeTok["after paginate"] = microtime(true) - $startTime;
 
         $customTariff = config('ocr.custom_tariff');
-        // logCheck -> log::info("{$id}_Operation took vasat " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
-        $ocrMatches->map(function ($ocr) use ($customTariff, $request, $id, $startTime) {
-            $ocr->append('invoice');
-            $ocr->append('invoices');
+
+
+
+        // $timeTok["before new cache"] = microtime(true) - $startTime;
+        $ocrIds = $ocrMatches->pluck('id');
+        $allInvoiceKeys = $ocrIds->map(fn($id) => "ocr:{$id}:invoice")->toArray();
+        $allInvoicesKeys = $ocrIds->map(fn($id) => "ocr:{$id}:invoices")->toArray();
+        $allCachedInvoices = Cache::many($allInvoiceKeys);
+        $allCachedInvoicesList = Cache::many($allInvoicesKeys);
+        $missingInvoiceKeys = array_filter($allInvoiceKeys, fn($key) => !isset($allCachedInvoices[$key]));
+        $missingInvoicesKeys = array_filter($allInvoicesKeys, fn($key) => !isset($allCachedInvoicesList[$key]));
+        if (!empty($missingInvoiceKeys)) {
+            foreach ($ocrMatches as $ocr) {
+                $key = "ocr:{$ocr->id}:invoice";
+                if (in_array($key, $missingInvoiceKeys)) {
+                    $invoice = $ocr->invoice;
+                    Cache::put($key, $invoice ?? "emptyData", now()->addMinutes(15));
+                    $allCachedInvoices[$key] = $invoice ?? "emptyData";
+                }
+            }
+        }
+        if (!empty($missingInvoicesKeys)) {
+            foreach ($ocrMatches as $ocr) {
+                $key = "ocr:{$ocr->id}:invoices";
+                if (in_array($key, $missingInvoicesKeys)) {
+                    $invoices = $ocr->invoices;
+                    Cache::put($key, $invoices ?? "emptyData", now()->addMinutes(15));
+                    $allCachedInvoicesList[$key] = $invoices ?? "emptyData";
+                }
+            }
+        }
+        // $timeTok["affter new cache"] = microtime(true) - $startTime;
+
+
+
+        // logCheck -> 
+        // $timeTok["before ocrMatches->map"] = microtime(true) - $startTime;
+        $ocrMatches->map(function ($ocr) use ($customTariff, $request, &$timeTok, $startTime, $allCachedInvoices, $allCachedInvoicesList) { //
+
+            // $timeTok["before append invoices and invoice"] = microtime(true) - $startTime;
+
+            // $ocr->append('invoice');
+            // $timeTok["after append invoice"] = microtime(true) - $startTime;
+            // $ocr->append('invoices');
+
+            $timeTok["map"]["before append invoices"][] = microtime(true) - $startTime;
+            $invoiceKey = "ocr:{$ocr->id}:invoice";
+            $invoicesKey = "ocr:{$ocr->id}:invoices";
+            $invoiceData = $allCachedInvoices[$invoiceKey] ?? "emptyData";
+            $ocr->setAttribute('invoice', $invoiceData === "emptyData" ? null : $invoiceData);
+            $invoicesData = $allCachedInvoicesList[$invoicesKey] ?? "emptyData";
+            $ocr->setAttribute('invoices', $invoicesData === "emptyData" ? null : $invoicesData);
+            $timeTok["map"]["affter append invoices"][] = microtime(true) - $startTime;
+
+
             $ocr['total_vehicles'] = 0;
             $ocr['ocr_vehicles'] = 0;
 
-            $bijac = $ocr->bijacs->sortByDesc('bijac_date')->first();
-            // logCheck -> log::info("{$id}_Operation took for bijac " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+            $bijac = $ocr->bijacs->first();
+            $timeTok["map"]["after first bijac"][] = microtime(true) - $startTime;
 
             // if ($bijac && $bijac->receipt_number) {//موقتا برای محاسبه نشدن مادرتخصصی ها
             if ($bijac && $bijac->receipt_number && $bijac->is_single_carry == 0) {
 
-                // $bijacs = Bijac::where('receipt_number', $bijac->receipt_number)->select("id", "receipt_number", "plate_normal")->get();
-                $bijacs = $bijac->allbijacs;
-
+                // $bijacs = $bijac->allbijacs;
+                // $timeTok["after all bijacs"] = microtime(true) - $startTime;
+                $allbijacsKey = "bijac:{$bijac->receipt_number}:allbijacs";
+                if (!Cache::has($allbijacsKey)) {
+                    $allbijacs = $bijac->allbijacs;
+                    Cache::put($allbijacsKey, $allbijacs, now()->addMinutes(15));
+                } else {
+                    $allbijacs = Cache::get($allbijacsKey);
+                }
+                $bijacs = $allbijacs;
                 $bijacIds = $bijacs->pluck('id');
+                $timeTok["map"]["after all bijacs"][] = microtime(true) - $startTime;
 
                 // $ocr['total_vehicles'] = $bijacs->count();
                 if (
@@ -115,6 +178,8 @@ class OcrMatchController extends Controller
                 ) {
                     // if (str_starts_with($bijac->receipt_number, "AFTAB_CE")) {
                     $invoice_ = $bijac->invoice;
+                    $timeTok["map"]["after find bijac invoice"][] = microtime(true) - $startTime;
+
                     $totalTu = ceil($invoice_->amount / $customTariff);
                     $downedTu = $invoice_->bijacs->count() ?? 0;
                     // foreach ($invoice_->bijacs as $item) {
@@ -127,8 +192,22 @@ class OcrMatchController extends Controller
                     // $mandeTu = $totalTu - $downedTu;
                     $ocr['total_vehicles'] = $totalTu;
                     $ocr['ocr_vehicles'] = $downedTu;
+                    $timeTok["map"]["after data finded in fatab datas"][] = microtime(true) - $startTime;
                 } else {
-                    $ocr['total_vehicles'] = $bijacs->pluck('plate_normal')->unique()->count();
+                    // $ocr['total_vehicles'] = $bijacs->pluck('plate_normal')->unique()->count();
+                    $receipt = $bijac->receipt_number;
+                    $logDate = $ocr->log_time;
+                    $totalVehiclesKey = "ocr_vehicles:bijacs_:{$receipt}:{$logDate}";
+
+                    // $totalVehiclesKey = "total_vehicles:bijacs_" . md5(implode(',', $bijacIds->toArray()));
+                    if (!Cache::has($totalVehiclesKey)) {
+                        $totalVehicles = $bijacs->pluck('plate_normal')->unique()->count();
+                        Cache::put($totalVehiclesKey, $totalVehicles, now()->addMinutes(15));
+                    } else {
+                        $totalVehicles = Cache::get($totalVehiclesKey);
+                    }
+                    $ocr['total_vehicles'] = $totalVehicles;
+                    $timeTok["map"]["after find total_vehicles usually"][] = microtime(true) - $startTime;
 
                     // $ocr['ocr_vehicles'] = DB::table('bijacables')
                     //     ->where('bijacable_type', OcrMatch::class)
@@ -141,23 +220,57 @@ class OcrMatchController extends Controller
                     //     ->whereIn('bijac_id', $bijacIds)
                     //     ->distinct('bijac_id')
                     //     ->count('bijac_id');
-                    // logCheck -> log::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
-                    $ocr['ocr_vehicles'] = DB::table('bijacables')
-                        ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
-                        ->where('bijacable_type', OcrMatch::class)
-                        ->whereIn('bijac_id', $bijacIds)
-                        ->whereExists(function ($query) use ($ocr) {
-                            $query->select(DB::raw(1))
-                                ->from('ocr_matches')
-                                ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
-                                ->where('ocr_matches.log_time', '<=', $ocr->log_time ?? now());
-                        })
-                        ->groupBy('bijac_id')
-                        ->distinct()
-                        ->get()
-                        ->count();
+                    // logCheck ->
+                    // log::info("{$id}_Operation took for allbijacs " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
 
-                    // logCheck -> log::info("{$id}_Operation took for ocr_vehicles (" . $ocr['ocr_vehicles'] . ") " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+                    // $ocr['ocr_vehicles'] = DB::table('bijacables')
+                    //     ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
+                    //     ->where('bijacable_type', OcrMatch::class)
+                    //     ->whereIn('bijac_id', $bijacIds)
+                    //     ->whereExists(function ($query) use ($ocr) {
+                    //         $query->select(DB::raw(1))
+                    //             ->from('ocr_matches')
+                    //             ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
+                    //             ->where('ocr_matches.log_time', '<=', $ocr->log_time ?? now());
+                    //     })
+                    //     ->groupBy('bijac_id')
+                    //     ->distinct()
+                    //     ->get()
+                    //     ->count();
+
+
+                    // $bijacIdsKey = md5(implode(',', $bijacIds->toArray() ?: []));
+                    // $ocrVehiclesKey = "ocr_vehicles:{$bijacIdsKey}";
+
+                    $receipt = $bijac->receipt_number;
+                    $logDate = $ocr->log_time;
+                    $ocrVehiclesKey = "ocr_vehicles:receipt:{$receipt}:{$logDate}";
+
+                    if (!Cache::has($ocrVehiclesKey)) {
+                        $ocrVehiclesCount = DB::table('bijacables')
+                            ->select(DB::raw('MIN(bijacable_id) as bijacable_id'))
+                            ->where('bijacable_type', OcrMatch::class)
+                            ->whereIn('bijac_id', $bijacIds)
+                            ->whereExists(function ($query) use ($ocr) {
+                                $query->select(DB::raw(1))
+                                    ->from('ocr_matches')
+                                    ->whereColumn('ocr_matches.id', 'bijacables.bijacable_id')
+                                    ->where('ocr_matches.log_time', '<=', $ocr->log_time ?? now());
+                            })
+                            ->groupBy('bijac_id')
+                            ->distinct()
+                            ->get()
+                            ->count();
+                        Cache::put($ocrVehiclesKey, $ocrVehiclesCount, now()->addMinutes(15));
+                    } else {
+                        $ocrVehiclesCount = Cache::get($ocrVehiclesKey);
+                    }
+                    $ocr['ocr_vehicles'] = $ocrVehiclesCount;
+                    $timeTok["map"]["after find ocr_vehicles usually"][] = microtime(true) - $startTime;
+
+
+                    // logCheck ->
+                    // log::info("{$id}_Operation took for ocr_vehicles (" . $ocr['ocr_vehicles'] . ") " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
                 }
 
 
@@ -165,36 +278,73 @@ class OcrMatchController extends Controller
                     // $Invoicebase = $ocr->invoicebase;
 
                     $ocr['total_tu'] = round($ocr->invoice->amount / $customTariff);
+                    $timeTok["map"]["after find total_tu usually"][] = microtime(true) - $startTime;
 
-                    $ocr['ocr_tu'] = Bijac::has('ocrMatches')
-                        ->whereIn('id', $bijacIds)
-                        ->selectRaw("SUM(CASE 
-                                WHEN container_size = '_20Feet' THEN 1
-                                WHEN container_size IN ('_40Feet', '_45Feet') THEN 2
-                                ELSE 0 
-                            END) as ocrTu")
-                        ->value('ocrTu');
+                    // $ocr['ocr_tu'] = Bijac::has('ocrMatches')
+                    //     ->whereIn('id', $bijacIds)
+                    //     ->selectRaw("SUM(CASE 
+                    //             WHEN container_size = '_20Feet' THEN 1
+                    //             WHEN container_size IN ('_40Feet', '_45Feet') THEN 2
+                    //             ELSE 0 
+                    //         END) as ocrTu")
+                    //     ->value('ocrTu');
+                    $ocrTuKey = "ocr_tu:bijacs_" . md5(implode(',', $bijacIds->toArray() ?: []));
+                    if (!Cache::has($ocrTuKey)) {
+                        $ocrTuValue = Bijac::has('ocrMatches')
+                            ->whereIn('id', $bijacIds)
+                            ->selectRaw("SUM(CASE 
+                                    WHEN container_size = '_20Feet' THEN 1
+                                    WHEN container_size IN ('_40Feet', '_45Feet') THEN 2
+                                    ELSE 0 
+                                END) as ocrTu")
+                            ->value('ocrTu') ?? 0;
+                        Cache::put($ocrTuKey, $ocrTuValue, now()->addMinutes(15));
+                    } else {
+                        $ocrTuValue = Cache::get($ocrTuKey);
+                    }
+                    $ocr['ocr_tu'] = $ocrTuValue;
+                    $timeTok["map"]["after find ocr_tu usually"][] = microtime(true) - $startTime;
                 }
 
                 if ($bijac->type == 'gcoms' && $ocr->invoice && $ocr->invoice->weight) { //فله
                     $ocr->type = 'gcoms';
                     $ocr['total_weight'] = $ocr->invoice->weight / 1000;
+                    $timeTok["map"]["after find total_weight usually"][] = microtime(true) - $startTime;
 
                     // در محاسبه زیر وزن بار ماشین در حال ورود وارد نمیشود، چون وزن کشی بعدا انجام میشود
-                    $ocr['outed_weight'] = round(
-                        GcomsOutData::where('customNb', $ocr->invoice->kutazh)
-                            ->where('created_at', '<=', $ocr->log_time ?? now())
-                            ->sum('weight') / 1000,
-                        2
-                    );
+                    // $ocr['outed_weight'] = round(
+                    //     GcomsOutData::where('customNb', $ocr->invoice->kutazh)
+                    //         ->where('created_at', '<=', $ocr->log_time ?? now())
+                    //         ->sum('weight') / 1000,
+                    //     2
+                    // );
+                    $customNb = $ocr->invoice->kutazh;
+                    $logTime = $ocr->log_time;
+                    $timeKey = $logTime;
+                    $outedWeightKey = "outed_weight:{$customNb}_{$timeKey}";
+                    if (!Cache::has($outedWeightKey)) {
+                        $weightSum = GcomsOutData::where('customNb', $customNb)
+                            ->where('created_at', '<=', $logTime)
+                            ->sum('weight');
+                        $outedWeightValue = round($weightSum / 1000, 2);
+                        Cache::put($outedWeightKey, $outedWeightValue, now()->addMinutes(15));
+                    } else {
+                        $outedWeightValue = Cache::get($outedWeightKey);
+                    }
+                    $ocr['outed_weight'] = $outedWeightValue;
+                    $timeTok["map"]["after find outed_weight usually"][] = microtime(true) - $startTime;
                 }
             }
 
+            // log::info("gate:{$request->gate}_Operation took : " . microtime(true) - $startTime . " ditailes :" . json_encode($timeTok));
+
             return $ocr;
         });
+        $timeTok["after ocrMatches->map"] = microtime(true) - $startTime;
 
         // logCheck ->
-        // log::info("{$id}_Operation took tamam " . microtime(true) - $startTime . " seconds in gate {$request->gate}");
+        if ($logwright)
+            log::info("gate:{$request->gate}_Operation took : " . microtime(true) - $startTime . " ditailes :" . json_encode($timeTok));
         return response(
             [
                 'message' => 'ok',

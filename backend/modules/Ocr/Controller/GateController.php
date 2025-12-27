@@ -249,7 +249,7 @@ class GateController extends Controller
                             "bijac_number" => $DBBijac['GatePassSerial'],
                             "gross_weight" => $DBBijac['GrossWeight'],
                             "is_single_carry" => 0,
-                            "bijac_date" => now(),
+                            // "bijac_date" => now(),
                             "pack_number" => $DBBijac['PackNB'],
                             "bijac_date" => $DBBijac['GatePassDate'],
                             "vehicles_type" => $DBBijac['VehiclesTypeDec'],

@@ -132,9 +132,12 @@ export default function (val) {
       field: 'seal',
       type: 'text',
       inList(_, form) {
-        return getSafe(form, 'seal')
+        let text = '-'
+        if (getSafe(form, 'seal') === 1) text = 'دارد'
+        else if (getSafe(form, 'seal') === 0) text = 'ندارد'
+        return text
       },
-      isHeader: true,
+      isHeader: val.matchGate == 1,
     },
 
     {

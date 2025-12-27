@@ -46,6 +46,8 @@ Route::get('/', function () {
 // });
 
 Route::get('/test', function () {
+    // cache()->set('Invoice_last_sync_id', 0);
+    // return cache('Invoice_last_sync_id', 0);
     try {
 
         if (isset(request()->exportfiles)) {
@@ -68,7 +70,8 @@ Route::get('/test', function () {
             $images = [];
             foreach ($item as $value) {
                 foreach ($value->bijacs as $bajac) {
-                    if (!isset($images[$bajac->dangerous_code])) $images[$bajac->dangerous_code] = [];
+                    if (!isset($images[$bajac->dangerous_code]))
+                        $images[$bajac->dangerous_code] = [];
                     $images[$bajac->dangerous_code][] = str_replace("uploaded/img/", "", $value->vehicle_image_back_url);
                 }
             }
@@ -108,14 +111,15 @@ Route::get('/test', function () {
             if (!empty(request()->ccs)) {
                 $CcsService = new Modules\Collector\Services\CcsService();
                 $DBBijac = $CcsService->getByReceipt(request()->bij);
-                if ($DBBijac) return  $DBBijac;
+                if ($DBBijac)
+                    return $DBBijac;
             }
 
 
             $GcomsService = new Modules\Collector\Services\GcomsService();
             $DBBijac = $GcomsService->getBijacTaki(request()->bij);
 
-            return  $DBBijac;
+            return $DBBijac;
 
 
 
@@ -131,26 +135,26 @@ Route::get('/test', function () {
 
         if (isset(request()->rec)) {
             $InvoiceService = new Modules\BijacInvoice\Services\InvoiceService();
-            return  $InvoiceService->getWithReceiptNumber(request()->rec);
+            return $InvoiceService->getWithReceiptNumber(request()->rec);
         }
         // return  $InvoiceService->getWithReceiptNumber('BSRCC14040163669');
 
         return;
 
         return $text = [
-            "@attributes" =>  [
+            "@attributes" => [
                 "xmlnxsd" => "http://www.w3.org/2001/XMLSchema",
                 "xmlnxsi" => "http://www.w3.org/2001/XMLSchema-instance"
             ],
-            "Body" =>  [
-                "InvokeResponse" =>  [
-                    "InvokeResult" =>  [
-                        "@attributes" =>  [
+            "Body" => [
+                "InvokeResponse" => [
+                    "InvokeResult" => [
+                        "@attributes" => [
                             "xmlnd4p1" => "http://schemas.datacontract.org/2004/07/ApiGateway.Models.Core",
                             "xmlni" => "http://www.w3.org/2001/XMLSchema-instance"
                         ],
-                        "Cookies" =>  [
-                            "@attributes" =>  [
+                        "Cookies" => [
+                            "@attributes" => [
                                 "xmlnd5p1" => "http://schemas.datacontract.org/2004/07/System.Collections.Generic"
                             ]
                         ],
@@ -162,27 +166,27 @@ Route::get('/test', function () {
                         "RequestDate" => "2025-09-15T12:09:13+03:30",
                         "RequestId" => "9137b388-d007-46be-bded-7ef744d02d19",
                         "ResponseDate" => "2025-09-15T12:09:14+03:30",
-                        "ResponseHeaders" =>  [
-                            "@attributes" =>  [
+                        "ResponseHeaders" => [
+                            "@attributes" => [
                                 "xmlnd5p1" => "http://schemas.datacontract.org/2004/07/System.Collections.Generic"
                             ],
-                            "KeyValueOfstringstring" =>  [
+                            "KeyValueOfstringstring" => [
                                 "Key" => "Content-Type",
                                 "Value" => "text/xml; charset=utf-8"
                             ]
                         ],
                         "ResponseStatusCode" => "200",
-                        "ResponseText" =>  [
-                            "Envelope" =>  [
-                                "Body" =>  [
-                                    "GetExitPermissionByNumberLimitedResponse" =>  [
-                                        "GetExitPermissionByNumberLimitedResult" =>  [
-                                            "@attributes" =>  [
+                        "ResponseText" => [
+                            "Envelope" => [
+                                "Body" => [
+                                    "GetExitPermissionByNumberLimitedResponse" => [
+                                        "GetExitPermissionByNumberLimitedResult" => [
+                                            "@attributes" => [
                                                 "xmlna" => "http://schemas.datacontract.org/2004/07/CCS.Common.DTO",
                                                 "xmlni" => "http://www.w3.org/2001/XMLSchema-instance"
                                             ],
-                                            "ExitPermissionInfoList" =>  [
-                                                "ExitPermissionLimitedInfo" =>  [
+                                            "ExitPermissionInfoList" => [
+                                                "ExitPermissionLimitedInfo" => [
                                                     "ExitPermissionID" => "6248496",
                                                     "ExitPermissionNumber" => "1404022018",
                                                     "ContainerNumber" => "MIOU 2223727",
@@ -199,7 +203,7 @@ Route::get('/test', function () {
                                 ]
                             ]
                         ],
-                        "UsedQuotaStats" =>  [
+                        "UsedQuotaStats" => [
                             "HourlyUsed" => "1",
                             "DailyUsed" => "1",
                             "MonthlyUsed" => "1"
@@ -216,7 +220,7 @@ Route::get('/test', function () {
         $code = '$array = ' . $text . ';';
 
         // اجرای eval (مراقب باشید اگر متن از منبع ناشناس است)
-        eval($code);
+        eval ($code);
 
         dd($array);
 

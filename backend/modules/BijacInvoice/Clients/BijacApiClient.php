@@ -16,7 +16,7 @@ class BijacApiClient
         $this->token = config('services.bijac.token');
     }
 
-    public function fetchBijacs($lastSync)
+    public function fetchBijacs($lastSync, $last_invoice = 0)
     {
         try {
             $response = Http::withToken($this->token)
@@ -24,7 +24,8 @@ class BijacApiClient
                     'Accept' => 'application/json',
                 ])
                 ->get("{$this->baseUrl}/updated-bijacs", [
-                    'since_updated' => $lastSync
+                    'since_updated' => $lastSync,
+                    'last_invoice' => $last_invoice
                 ]);
 
             return $response->json();

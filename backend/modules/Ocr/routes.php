@@ -13,6 +13,7 @@ use Modules\BijacInvoice\Models\Invoice;
 Route::post('/ocr-log', [OcrLogController::class, 'store']);
 // ->middleware('auth:sanctum');//بررسی شود
 
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/ocr-match/list', [OcrMatchController::class, 'getList']);
     Route::get('/ocr-match/{ocr}/items', [OcrMatchController::class, 'getGroupItems']);

@@ -7,53 +7,108 @@
       <template #header-btn>
         <AddPlateDialog :matchGate="matchGate" :page.sync="page" />
 
-        <SseBtn :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number${matchGate}`" />
+        <SseBtn
+          :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number${matchGate}`"
+        />
       </template>
 
       <template #item.plate_number="item">
         <!-- {{ item.id }}
         <br>
         {{ item.plate_number_3 }} -->
-        <EditBtn :editItem="item" :fields="plateFields(item)" @item-updated="handleItemUpdated(item)"
-          v-if="item.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
-        <div v-if="item.match_status && item.plate_number && item.match_status.includes('_Creq')"
-          v-html="plateShow(item.plate_number, item, 0, 1)">
-        </div>
+        <EditBtn
+          :editItem="item"
+          :fields="plateFields(item)"
+          @item-updated="handleItemUpdated(item)"
+          v-if="
+            item.plate_number &&
+            item.match_status &&
+            ['container_without_bijac', 'plate_without_bijac'].includes(
+              item.match_status
+            )
+          "
+        />
+        <div
+          v-if="
+            item.match_status &&
+            item.plate_number &&
+            item.match_status.includes('_Creq')
+          "
+          v-html="plateShow(item.plate_number, item, 0, 1)"
+        ></div>
         <v-tooltip v-else-if="item.plate_number" top>
           <template v-slot:activator="{ on, attrs }">
-            <div v-bind="attrs" v-on="on" v-html="plateShow(item.plate_number, item)">
-            </div>
+            <div
+              v-bind="attrs"
+              v-on="on"
+              v-html="plateShow(item.plate_number, item)"
+            ></div>
           </template>
           <span>{{ item.plate_number }}</span>
         </v-tooltip>
-        <div v-else v-html="plateShow(item.plate_number_3, item, 1)">
-        </div>
+        <div v-else v-html="plateShow(item.plate_number_3, item, 1)"></div>
       </template>
 
       <template #item.container_code="item">
-        <EditBtn :editItem="item" :fields="containerFields(item)" @item-updated="handleItemUpdated(item)"
-          v-if="item.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)" />
+        <EditBtn
+          :editItem="item"
+          :fields="containerFields(item)"
+          @item-updated="handleItemUpdated(item)"
+          v-if="
+            item.container_code &&
+            item.match_status &&
+            ['container_without_bijac', 'plate_without_bijac'].includes(
+              item.match_status
+            )
+          "
+        />
         <v-tooltip v-if="item.container_code" top>
           <template v-slot:activator="{ on, attrs }">
-            <div v-bind="attrs" v-on="on" v-html="containerCodeShow(item.container_code, item)"></div>
+            <div
+              v-bind="attrs"
+              v-on="on"
+              v-html="containerCodeShow(item.container_code, item)"
+            ></div>
           </template>
-          <span style="direction:ltr">{{ item.container_code }}</span>
+          <span style="direction: ltr">{{ item.container_code }}</span>
         </v-tooltip>
-        <div v-else v-html="containerCodeShow(item.container_code, item, 1)"></div>
+        <div
+          v-else
+          v-html="containerCodeShow(item.container_code, item, 1)"
+        ></div>
       </template>
 
       <template #item.weight_customNb="item">
         <template v-if="item.type == 'gcoms'">
-          <v-card class="ma-2" width="110" flat
-            :color="item.total_weight < item.outed_weight ? '#e9b5c859' : '#008b8b1f'">
+          <v-card
+            class="ma-2"
+            width="110"
+            flat
+            :color="
+              item.total_weight < item.outed_weight ? '#e9b5c859' : '#008b8b1f'
+            "
+          >
             <v-card-text class="text-center pa-2">
               <div class="d-flex flex-column align-center">
                 <strong class="mb-1">{{ item.outed_weight }}</strong>
 
-                <v-progress-linear :value="(item.outed_weight / item.total_weight) * 100" height="5" :reverse="true"
-                  :color="item.total_weight === 0 ? '#d2d2d2' : item.total_weight < item.outed_weight ? 'red' : '#008b8b'"
-                  :class="{ 'animate__animated animate__heartBeat animate__infinite': item.total_weight < item.outed_weight }"
-                  rounded></v-progress-linear>
+                <v-progress-linear
+                  :value="(item.outed_weight / item.total_weight) * 100"
+                  height="5"
+                  :reverse="true"
+                  :color="
+                    item.total_weight === 0
+                      ? '#d2d2d2'
+                      : item.total_weight < item.outed_weight
+                      ? 'red'
+                      : '#008b8b'
+                  "
+                  :class="{
+                    'animate__animated animate__heartBeat animate__infinite':
+                      item.total_weight < item.outed_weight,
+                  }"
+                  rounded
+                ></v-progress-linear>
                 <strong class="mt-2">{{ item.total_weight }}</strong>
               </div>
             </v-card-text>
@@ -61,15 +116,33 @@
         </template>
 
         <template v-else-if="item.invoice">
-          <v-card class="ma-2" width="110" flat :color="item.total_tu < item.ocr_tu ? '#e9b5c859' : '#bbb2101f'">
+          <v-card
+            class="ma-2"
+            width="110"
+            flat
+            :color="item.total_tu < item.ocr_tu ? '#e9b5c859' : '#bbb2101f'"
+          >
             <v-card-text class="text-center pa-2">
               <div class="d-flex flex-column align-center">
                 <strong class="mb-1">{{ item.ocr_tu }}</strong>
 
-                <v-progress-linear :value="(item.ocr_tu / item.total_tu) * 100" height="8" :reverse="true"
-                  :color="item.total_tu === 0 ? '#d2d2d2' : item.total_tu < item.ocr_tu ? 'red' : '#bbb210'"
-                  :class="{ 'animate__animated animate__heartBeat animate__infinite': item.total_tu < item.ocr_tu }"
-                  rounded></v-progress-linear>
+                <v-progress-linear
+                  :value="(item.ocr_tu / item.total_tu) * 100"
+                  height="8"
+                  :reverse="true"
+                  :color="
+                    item.total_tu === 0
+                      ? '#d2d2d2'
+                      : item.total_tu < item.ocr_tu
+                      ? 'red'
+                      : '#bbb210'
+                  "
+                  :class="{
+                    'animate__animated animate__heartBeat animate__infinite':
+                      item.total_tu < item.ocr_tu,
+                  }"
+                  rounded
+                ></v-progress-linear>
 
                 <strong class="mt-2">{{ item.total_tu }}</strong>
               </div>
@@ -83,65 +156,117 @@
       </template>
 
       <template #item.IMDG="item" class="d-flex gap-0">
-
         <table class="p-0 m-0">
           <tr>
             <td>AI</td>
             <td colspan="2">
-              <div v-if="item.IMDG > 0 || (matchGate != 1 && item.bijacs?.length > 0 && isDangerous(item))"
-                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default danger">
-                خطرناک</div>
-              <div v-else class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default cyan">غیرخطرناک
+              <div
+                v-if="
+                  item.IMDG > 0 ||
+                  (matchGate != 1 &&
+                    item.bijacs?.length > 0 &&
+                    isDangerous(item))
+                "
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default danger"
+              >
+                خطرناک
+              </div>
+              <div
+                v-else
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default cyan"
+              >
+                غیرخطرناک
               </div>
             </td>
           </tr>
           <tr>
-            <td class="">بیجک
+            <td class="">
+              بیجک
               <span hidden>{{ item.id }}</span>
             </td>
             <td colspan="2">
-              <div v-if="item.bijacs?.length > 0 && isDangerous(item)"
-                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default danger">خطرناک</div>
-              <div v-else-if="item.bijacs?.length > 0"
-                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default cyan">غیرخطرناک
+              <div
+                v-if="item.bijacs?.length > 0 && isDangerous(item)"
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default danger"
+              >
+                خطرناک
               </div>
-              <div v-else class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default orange">فاقد اطلاعات
+              <div
+                v-else-if="item.bijacs?.length > 0"
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default cyan"
+              >
+                غیرخطرناک
+              </div>
+              <div
+                v-else
+                class="v-btn v-btn--is-elevated v-btn--has-bg theme--dark v-size--default orange"
+              >
+                فاقد اطلاعات
               </div>
             </td>
           </tr>
         </table>
-
       </template>
 
-
       <template #item.ocr_tu="item">
-        <div v-if="item.type != 'gcoms' && item.invoice" style="direction: ltr;">
+        <div v-if="item.type != 'gcoms' && item.invoice" style="direction: ltr">
           {{ item.ocr_tu }} / {{ item.total_tu }}
         </div>
       </template>
 
       <template #item.match_status="item">
         <div class="d-flex p-0 m-0">
-
-          <v-btn :color="renderBTN(item, (item.is_custom_check || localConfirmed[item.id])).color" dark
-            @click="_event('ccs.dialog', item)" :data-id="item.id">
+          <v-btn
+            :color="
+              renderBTN(item, item.is_custom_check || localConfirmed[item.id])
+                .color
+            "
+            dark
+            @click="_event('ccs.dialog', item)"
+            :data-id="item.id"
+          >
             <strong>
-              {{ renderBTN(item, (item.is_custom_check || localConfirmed[item.id])).text }}
-              <span v-if="item.invoices.length > 1" class="px-1 ms-1" style="border: 1px solid #fff;">{{
-                item.invoices.length }}</span>
+              {{
+                renderBTN(item, item.is_custom_check || localConfirmed[item.id])
+                  .text
+              }}
+              <span
+                v-if="item.invoices.length > 1"
+                class="px-1 ms-1"
+                style="border: 1px solid #fff"
+                >{{ item.invoices.length }}</span
+              >
             </strong>
             <v-icon
-              v-if="item.bijacs?.length > 0 && (new Date(item.log_time).getTime() - new Date(item.bijacs[0].bijac_date).getTime()) > (3 * 24 * 60 * 60 * 1000)"
-              class="ms-2" color="red">
+              v-if="
+                item.bijacs?.length > 0 &&
+                new Date(item.log_time).getTime() -
+                  new Date(item.bijacs[0].bijac_date).getTime() >
+                  3 * 24 * 60 * 60 * 1000
+              "
+              class="ms-2"
+              color="red"
+            >
               mdi-alert-circle
             </v-icon>
           </v-btn>
 
-          <v-btn small class="" color="orange mr-1" title=" تایید بیجک / فاکتور" @click="customCheck_confirm(item.id)"
-            v-if="item.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(item.match_status) && !item.is_custom_check && !localConfirmed[item.id]">
-            <v-icon class="" color="white">
-              far fa-check
-            </v-icon>
+          <v-btn
+            small
+            class=""
+            color="orange mr-1"
+            title=" تایید بیجک / فاکتور"
+            @click="customCheck_confirm(item.id)"
+            v-if="
+              item.match_status &&
+              ['container_without_bijac', 'plate_without_bijac'].includes(
+                item.match_status
+              ) &&
+              !item.is_custom_check &&
+              !localConfirmed[item.id]
+            "
+          >
+            <v-icon class="" color="white"> far fa-check </v-icon>
           </v-btn>
           <!-- <v-btn small class="" color="success mr-1" title="مدارک بررسی شده"
             v-else-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)">
@@ -157,24 +282,27 @@
       </template>
     </DynamicTemplate>
 
-
     <template>
       <v-dialog v-model="confirmationDialog" max-width="400">
         <v-card>
           <v-card-title class="headline">تأیید عملیات</v-card-title>
           <v-card-text>
-            آیا از تأیید بیجک/فاکتور برای شناسه **{{ itemIdToConfirm }}** اطمینان دارید؟
+            آیا از تأیید بیجک/فاکتور برای شناسه **{{ itemIdToConfirm }}**
+            اطمینان دارید؟
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="grey" text @click="confirmationDialog = false">لغو</v-btn>
+            <v-btn color="grey" text @click="confirmationDialog = false"
+              >لغو</v-btn
+            >
             <!-- این دکمه متد جدید ما را فراخوانی می کند -->
-            <v-btn color="success" text @click="customCheck()">تأیید نهایی</v-btn>
+            <v-btn color="success" text @click="customCheck()"
+              >تأیید نهایی</v-btn
+            >
           </v-card-actions>
         </v-card>
       </v-dialog>
     </template>
-
 
     <template>
       <div id="full-screen-overlay"></div>
@@ -186,7 +314,7 @@
 
 
 <script>
-import 'animate.css';
+import 'animate.css'
 import { mapGetters } from 'vuex'
 import { get as getSafe } from 'lodash'
 import { DynamicTemplate } from 'majra'
@@ -201,7 +329,7 @@ import PlateField from '@/components/utilities/PlateField'
 import ContainerField from '@/components/utilities/ContainerField'
 import NormalizeContainerCodeAsImg from '@/helpers/NormalizeContainerCodeAsImg'
 import NormalizeVehicleNumberAsImg from '@/helpers/NormalizeVehicleNumberAsImg'
-import VehicleCounterCard from '../VehicleCounterCard.vue';
+import VehicleCounterCard from '../VehicleCounterCard.vue'
 
 export default {
   components: {
@@ -211,7 +339,7 @@ export default {
     FactorDialog,
     EditBtn,
     CurrentLog,
-    VehicleCounterCard
+    VehicleCounterCard,
   },
 
   layout: 'dashboard',
@@ -265,9 +393,8 @@ export default {
     //     this.lastTruck = getSafe(this.items, '[0]', {});
     //   }
     // });
-    this.matchGate = this.$route.params.gate || 0;
+    this.matchGate = this.$route.params.gate || 0
     // console.log(this.matchGate)
-
 
     const hiddenActions = getPermissions.call(this)
     // const hiddenActions = ['delete', 'show', 'edit']
@@ -322,7 +449,6 @@ export default {
     if (this.$vuetify.breakpoint.mobile) {
       getEls()
     }
-
   },
 
   methods: {
@@ -361,7 +487,6 @@ export default {
     ],
 
     containerCodeShow(v, form) {
-
       let concat = ''
       // console.log(v)
       // if (form.container_code_2 && form.container_code_2 != v && !form.container_code_3)
@@ -378,19 +503,13 @@ export default {
       // }
 
       if (form.container_code_3) {
-        return (
-          NormalizeContainerCodeAsImg(
-            form.container_code_3,
-            '#2aa2db',
-          )
-        )
+        return NormalizeContainerCodeAsImg(form.container_code_3, '#2aa2db')
       }
 
       return '-'
     },
 
     plateShow(v, form, noplace, justThis = 0) {
-
       let concat = ''
 
       // if (form.plate_number_2 && form.plate_number_2 != v && !form.plate_number_3)
@@ -427,14 +546,14 @@ export default {
           form.plate_type,
           !!form.plate_number_edit,
           form.plate_number_3,
-          (!form.plate_number && form.plate_number_3),
+          !form.plate_number && form.plate_number_3,
           noplace
         ) + concat
       )
     },
 
     handleItemUpdated(updatedItem) {
-      this.$store.commit('updateOcrMatchItem', updatedItem);
+      this.$store.commit('updateOcrMatchItem', updatedItem)
     },
     /*
       handleItemUpdated(updatedItem) {
@@ -449,14 +568,13 @@ export default {
       */
 
     isDangerous(item) {
+      if (!item.bijacs?.length) return 0
+      const dangerous = item.bijacs.some((bijac) => {
+        return bijac.dangerous_code != null && bijac.dangerous_code != '0'
+      })
+      return dangerous ? 1 : 0
 
-      if (!item.bijacs?.length) return 0;
-      const dangerous = item.bijacs.some(bijac => {
-        return bijac.dangerous_code != null && bijac.dangerous_code != "0";
-      });
-      return dangerous ? 1 : 0;
-
-      const im = Boolean(item.IMDG);
+      const im = Boolean(item.IMDG)
       console.log(bij, im)
 
       // var allert = ''
@@ -465,37 +583,36 @@ export default {
       return bij ? 'خطرناک' : 'غیرخطرناک'
     },
 
-
     renderBTN(item, ifFalse = false) {
       var status = item.match_status
       if (!status) {
         return {
           text: 'در حال جستجو فاکتور موردی',
-          color: 'grey'
+          color: 'grey',
         }
       }
 
       if (item && item.bijacs && item.bijacs.length) {
         for (let c = 0; c < item.bijacs.length; c++) {
-          if (item.bijacs[c].is_single_carry == 1) {// && status.includes('_nok')
+          if (item.bijacs[c].is_single_carry == 1) {
+            // && status.includes('_nok')
             return {
-              text: "بدون فاکتور (مادر تخصصی)",
-              color: "red"
+              text: 'بدون فاکتور (مادر تخصصی)',
+              color: 'red',
             }
             break
           }
         }
       }
 
-
       var req = ''
       if (status.includes('_req')) {
-        req = ' - موردی';
-        status = status.replace('_req', '');
+        req = ' - موردی'
+        status = status.replace('_req', '')
       }
       if (status.includes('_Creq')) {
-        req = ' - تایید دستی بیجک';
-        status = status.replace('_Creq', '');
+        req = ' - تایید دستی بیجک'
+        status = status.replace('_Creq', '')
       }
 
       let list = {
@@ -518,29 +635,34 @@ export default {
 
       return {
         text: getSafe(list, status + '[0]', status),
-        color: getSafe(list, status + '[1]', 'grey')
+        color: getSafe(list, status + '[1]', 'grey'),
       }
-
     },
 
     async customCheck_confirm(itemId) {
-      this.itemIdToConfirm = itemId;
-      this.confirmationDialog = true;
+      this.itemIdToConfirm = itemId
+      this.confirmationDialog = true
     },
     async customCheck() {
       if (!this.itemIdToConfirm) {
-        this._event("alert", { text: 'خطا: شناسه مورد نظر یافت نشد.', color: "red" });
-        this.confirmationDialog = false;
-        return;
+        this._event('alert', {
+          text: 'خطا: شناسه مورد نظر یافت نشد.',
+          color: 'red',
+        })
+        this.confirmationDialog = false
+        return
       }
       try {
         this._event('loading')
         this._event('autoRefresh', false)
-        this.confirmationDialog = false;
+        this.confirmationDialog = false
 
-        const res = await this.$axios.$post('/ocr-match/customCheck/' + this.itemIdToConfirm, {
-          OcrMatch: this.form,
-        })
+        const res = await this.$axios.$post(
+          '/ocr-match/customCheck/' + this.itemIdToConfirm,
+          {
+            OcrMatch: this.form,
+          }
+        )
         // console.log(res)
         // this.$emit('item-updated', res.data)
 
@@ -548,34 +670,28 @@ export default {
 
         this._event('loading', false)
 
-        this._event("alert", {
+        this._event('alert', {
           text: 'تغییرات با موفقیت ذخیره شد',
-          color: "green",
-        });
-
+          color: 'green',
+        })
       } catch (error) {
-        this._event('loading', false);
+        this._event('loading', false)
 
-        let errorMessage = "خطایی رخ داده است";
+        let errorMessage = 'خطایی رخ داده است'
 
         if (error.response) {
-          errorMessage = error.response.data.message || "خطای سرور";
+          errorMessage = error.response.data.message || 'خطای سرور'
         } else if (error.request) {
-          errorMessage = "پاسخی از سرور دریافت نشد";
+          errorMessage = 'پاسخی از سرور دریافت نشد'
         }
 
-        this._event("alert", {
+        this._event('alert', {
           text: errorMessage,
-          color: "red",
-        });
-
+          color: 'red',
+        })
       }
     },
-
-
   },
-
-
 }
 </script>
 

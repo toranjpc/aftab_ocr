@@ -16,7 +16,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
         if (!$ocr->plate_number) return false;
 
         $plate = $ocr->plate_number;
-        $match = $matches->where('plate_number_3', $plate)->first();
+        $match = $matches->where('gate_number', $ocr->gate_number)->where('plate_number_3', $plate)->first();
         if ($match) {
             $this->fillMatchFromOcr($match, $ocr, [
                 'vehicle_image_front_url',
@@ -27,7 +27,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
             ]);
             return true;
         } else if (strpos($plate, 'ein')) {
-            $match = $matches->where('plate_number_3', substr($plate, 0, 8))->first();
+            $match = $matches->where('gate_number', $ocr->gate_number)->where('plate_number_3', substr($plate, 0, 8))->first();
             if ($match) {
                 $this->fillMatchFromOcr($match, $ocr, [
                     'vehicle_image_front_url',
@@ -39,7 +39,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
                 return true;
             }
         } else if (strpos($plate, ',L')) {
-            $match = $matches->where('plate_number_3', substr($plate, 3))->first();
+            $match = $matches->where('gate_number', $ocr->gate_number)->where('plate_number_3', substr($plate, 3))->first();
             if ($match) {
                 $this->fillMatchFromOcr($match, $ocr, [
                     'vehicle_image_front_url',
@@ -53,7 +53,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
         }
 
         $numbers = preg_replace('/\D/', '', $plate);
-        $match = $matches->where('plate_number_3', substr($numbers, 0, 5))->first();
+        $match = $matches->where('gate_number', $ocr->gate_number)->where('plate_number_3', substr($numbers, 0, 5))->first();
         if ($match) {
             $this->fillMatchFromOcr($match, $ocr, [
                 'vehicle_image_front_url',
@@ -71,6 +71,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
         if ($bijac && $bijac->type == 'gcoms') {
             $match = $matches->whereNotNull('plate_number')
                 ->whereNull('plate_number_3')
+                ->where('gate_number', $ocr->gate_number)
                 ->first();
 
             if ($match && $this->isSimilarPlate(
@@ -93,7 +94,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
 
         if ($bijac && $bijac->type === 'ccs') {
             $code = str_replace(' ', '', $bijac->container_number);
-            $match = $matches->where('container_number_3', $code)->first();
+            $match = $matches->where('container_number_3', $code)->where('gate_number', $ocr->gate_number)->first();
 
             if ($match) {
                 $this->fillMatchFromOcr($match, $ocr, [
@@ -118,6 +119,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
                             $numbers
                         )
                     )
+                    ->where('gate_number', $ocr->gate_number)
                     ->first();
 
             if ($match) {
@@ -132,7 +134,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
             }
 
             if (Carbon::parse($bijac->bijac_date)->diffInDays(Carbon::parse($ocr->log_time), false) < 3) {
-                foreach ($matches->whereNull('plate_number_3')->take(3) as $match) {
+                foreach ($matches->whereNull('plate_number_3')->where('gate_number', $ocr->gate_number)->take(3) as $match) {
                     if (
                         (
                             $match->plate_number &&
@@ -158,7 +160,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
                     }
                 }
 
-                $lastPlate = $matches->take(3)
+                $lastPlate = $matches->where('gate_number', $ocr->gate_number)->take(3)
                     // ->whereNotNull('plate_number')
                     ->whereNotNull('plate_number_3')
                     ->first();
@@ -193,7 +195,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
                     }
                 }
             } else {
-                $lastPlate = $matches->take(3)
+                $lastPlate = $matches->where('gate_number', $ocr->gate_number)->take(3)
                     // ->whereNotNull('plate_number')
                     ->whereNotNull('plate_number_3')
                     ->first();
@@ -227,7 +229,7 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
         }
 
         if (!$bijac) {
-            foreach ($matches->whereNotNull('plate_number_3')->take(3) as $match) {
+            foreach ($matches->whereNotNull('plate_number_3')->where('gate_number', $ocr->gate_number)->take(3) as $match) {
                 if (
                     $this->isSimilarPlate(
                         $ocr->plate_number,

@@ -66,7 +66,7 @@ class Bijac extends Base
     public function scopeForPlate($query, $item, $isEdited)
     {
         try {
-            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                 ->info("scopeForPlateRun for plate_number : {$item->plate_number}  ");
         } catch (\Throwable $th) {
         }
@@ -128,7 +128,7 @@ class Bijac extends Base
                 ->get();
 
             try {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                     ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {$plate_number} date ({$item->id}) : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
@@ -141,7 +141,7 @@ class Bijac extends Base
                 ->get();
 
             try {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                     ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {$plate_number}% date : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
@@ -160,9 +160,9 @@ class Bijac extends Base
                     ->get();
 
                 try {
-                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                         ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {__{$cleanNumber}_ date : " . json_encode($dateRange_));
-                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                         ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE {__{$cleanNumber} date : " . json_encode($dateRange_));
                 } catch (\Throwable $th) {
                 }
@@ -182,7 +182,7 @@ class Bijac extends Base
                 ->get();
 
             try {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                     ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE {$cleanNumber} date : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
@@ -198,7 +198,7 @@ class Bijac extends Base
 
 
             try {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                     ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE {$wildcardPattern} date : " . json_encode($dateRange_));
             } catch (\Throwable $th) {
             }
@@ -213,7 +213,7 @@ class Bijac extends Base
                 ->get();
 
             try {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  ."(".jdate()->format('ymd').").log"),])
                     ->info("scopeForPlateRun : REGEXP_REPLACE(plate_normal, '[^0-9]', '') LIKE {$wildcardPattern}% ");
             } catch (\Throwable $th) {
             }
@@ -239,7 +239,7 @@ class Bijac extends Base
     public function scopeForContainer($query, $item, $isEdited)
     {
         try {
-            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+            log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                 ->info("scopeForContainerRun for container_code : {$item->container_code}  ");
         } catch (\Throwable $th) {
         }
@@ -318,7 +318,7 @@ class Bijac extends Base
                     ->whereRaw("REGEXP_REPLACE(container_number, '[^a-zA-Z0-9]', '') LIKE ?", ["%" . $code . "%"])
                     ->latestBetween($dateRange);
                 try {
-                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                    log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number  . "(" . jdate()->format('ymd') . ").log"),])
                         ->info($day . "_scopeForPlateRun : REGEXP_REPLACE(container_number, '[^a-zA-Z0-9]', '') LIKE %{$code}% ");
                 } catch (\Throwable $th) {
                 }

@@ -18,7 +18,7 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
 
         $code = $ocr->container_code;
 
-        $match = $matches->where('container_code_3', substr($code, 0, 11))->first();
+        $match = $matches->where('container_code_3', substr($code, 0, 11))->where('gate_number', $ocr->gate_number)->first();
 
         if ($match) {
             $this->fillMatchFromOcr($match, $ocr, [
@@ -43,6 +43,7 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
                         $numbers
                     )
                 )
+                ->where('gate_number', $ocr->gate_number)
                 ->first();
         }
 
@@ -60,11 +61,11 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
         }
 
         $bijacs = $bijacService::getContainerBijacs($ocr);
-        $bijac  = $bijacs[0] ?? null;
+        $bijac = $bijacs[0] ?? null;
 
         if ($bijac) {
             $plate = $bijac->plate_normal ?? $bijac->plate;
-            $match = $matches->where('plate_number_3', $plate)->first();
+            $match = $matches->where('plate_number_3', $plate)->where('gate_number', $ocr->gate_number)->first();
 
             if ($match) {
                 $this->fillMatchFromOcr($match, $ocr, [
@@ -92,10 +93,12 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
                     ->filter(
                         fn($b) => ($b->container_code_3 &&
                             $b->plate_number_3) ||
-                            (!$b->container_code_3 &&
-                                !$b->plate_number_3)
+                        (!$b->container_code_3 &&
+                            !$b->plate_number_3)
 
-                    )->take(3) as $match
+                    )
+                    ->where('gate_number', $ocr->gate_number)
+                    ->take(3) as $match
             ) {
 
                 if (
@@ -110,7 +113,7 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
                     $this->isPlateMatchPossible($bijac, $match)
                 ) {
                     $this->fillMatchFromOcr($match, $ocr, [
-                        'plate_number_3'   => $bijac->plate_normal ?? $bijac->plate,
+                        'plate_number_3' => $bijac->plate_normal ?? $bijac->plate,
                         'container_code_3' => str_replace(' ', '', $bijac->container_number),
                         'container_code_image_url',
                         'vehicle_image_back_url',
@@ -128,7 +131,7 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
 
             if (strlen(preg_replace('/\D/', '', $bijac->plate_normal)) == 5 && $matches[0]->plate_type == 'iran' && strlen(preg_replace('/\D/', '', $matches[0]->plate_number)) > 4 && str_contains(preg_replace('/\D/', '', $bijac->plate_normal), substr(preg_replace('/\D/', '', $matches[0]->plate_number), 0, -2))) {
                 $this->fillMatchFromOcr($matches[0], $ocr, [
-                    'plate_number_3'   => $bijac->plate_normal ?? $bijac->plate,
+                    'plate_number_3' => $bijac->plate_normal ?? $bijac->plate,
                     'container_code_3' => str_replace(' ', '', $bijac->container_number),
                     'container_code_image_url',
                     'vehicle_image_back_url',
@@ -145,7 +148,7 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
         }
 
         if (!$bijac)
-            foreach ($matches->whereNotNull('container_code_3')->take(3) as $match) {
+            foreach ($matches->whereNotNull('container_code_3')->where('gate_number', $ocr->gate_number)->take(3) as $match) {
                 if ($this->isSimilarContainer($ocr->container_code, $match->container_code_3)) {
                     $this->fillMatchFromOcr($match, $ocr, [
                         'container_code_image_url',

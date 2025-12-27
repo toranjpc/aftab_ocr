@@ -121,7 +121,6 @@
 -->
 
 
-              <!--
             <div v-if="selectedTruckBase.plate_number" class="px-4">
               <EditBtn
                 v-if="selectedTruckBase.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(selectedTruckBase.match_status)"
@@ -136,7 +135,6 @@
               <div style="transform: scale(0.7)" v-html="containerCodeShow(selectedTruckBase.container_code, selectedTruckBase)
                 "></div>
             </div>
-            -->
 
               <!-- <LogHistory :ocr-log="selectedTruckBase" /> -->
 

@@ -129,6 +129,7 @@ class EditedMatchBijacs
                 $query->whereBetween('id', [$match->id - 5, $match->id + 5]);
                 $query->where('id', "!=", $match->id);
             })
+            ->where('gate_number', $match->gate_number)
                 ->where(function ($query) use ($plate) {
                     $query->where('plate_number_3', $plate)
                         ->orWhere('plate_number', 'LIKE', '%' . preg_replace('/\D/', '', $plate) . '%');

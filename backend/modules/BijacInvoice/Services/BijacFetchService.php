@@ -78,8 +78,9 @@ class BijacFetchService
             now()->subDays(5)->toDateTimeString();
         // $bijacs = $this->client->fetchBijacs($lastSync)['data'] ?? [];
         // $invoices = collect($bijacs)->pluck('invoices')->collapse();
+        $last_invoice = cache('Invoice_last_sync_id', 0);
 
-        $response = $this->client->fetchBijacs($lastSync);
+        $response = $this->client->fetchBijacs($lastSync, $last_invoice);
         $bijacs = $response['data'] ?? [];
         // $invoices = collect($bijacs)->pluck('invoices')->collapse();
         $invoices = collect($response['invoices'] ?? []); //گرفتن همه فاکتور ها
@@ -144,11 +145,21 @@ class BijacFetchService
             })->toArray();
 
 
-            Invoice::upsert(
-                $processedInvoices,
-                ['source_invoice_id'],
-                $this->invoiceFields
-            );
+            if (!empty($processedInvoices)) {
+                Invoice::upsert(
+                    $processedInvoices,
+                    ['source_invoice_id'],
+                    $this->invoiceFields
+                );
+
+                $maxInvoiceId = $invoices->max('source_invoice_id');
+                cache()->set('Invoice_last_sync_id', $maxInvoiceId);
+                // cache()->set(
+                //     'Invoice_last_sync_id',
+                //     end($processedInvoices)['source_invoice_id']
+                // );
+
+            }
         }
 
         if (count($bijacs)) {

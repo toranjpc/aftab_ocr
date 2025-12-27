@@ -14,7 +14,7 @@ use Modules\Ocr\MatchingStrategies\PlateMatchStrategy;
 use Modules\Ocr\Models\OcrLog;
 
 class ProcessOcrLog implements ShouldQueue
-// class ProcessOcrLog
+    // class ProcessOcrLog
 {
     use Dispatchable, InteractsWithQueue;
 
@@ -49,10 +49,12 @@ class ProcessOcrLog implements ShouldQueue
             $currentId = $ocr->id;
             $count = 10;
             $prevMatches = OcrMatch::where('ocr_log_id', '<', $currentId)
+                ->where('gate_number', $ocr->gate_number)
                 ->orderBy('ocr_log_id', 'desc')
                 ->take($count)
                 ->get();
             $nextMatches = OcrMatch::where('ocr_log_id', '>', $currentId)
+                ->where('gate_number', $ocr->gate_number)
                 ->orderBy('ocr_log_id', 'asc')
                 ->take($count)
                 ->get();
@@ -84,7 +86,8 @@ class ProcessOcrLog implements ShouldQueue
                 // } catch (\Throwable $th) {
                 //     //throw $th;
                 // }
-                if ($strategy->match($ocr, $matches, $bijacService)) break;
+                if ($strategy->match($ocr, $matches, $bijacService))
+                    break;
             }
         } finally {
             $lock->release();
