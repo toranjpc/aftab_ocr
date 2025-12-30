@@ -199,10 +199,10 @@ class BijacMatcher
 
         try {
             if (!empty($item->plate_number)) {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $item->gate_number . ".log"),])
                     ->info("BijacMatcher for plate_number : {$item->plate_number}  ");
             } elseif (!empty($item->container_code)) {
-                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $item->gate_number . ".log"),])
+                log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $item->gate_number . ".log"),])
                     ->info("BijacMatcher for container_code : {$item->container_code}  ");
             }
         } catch (\Throwable $th) {

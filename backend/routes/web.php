@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Modules\Sse\Models\SSE;
 use Modules\Ocr\Controller\LogRepController;
+use Illuminate\Support\Facades\Redis;
 
 //حذف
 Route::get('/', function () {
@@ -27,7 +28,128 @@ Route::get('/', function () {
     //     auth("api")->login($user);
     // }
 });
+Route::get('/dump-redis-data', function () {
+    $redisData = [];
 
+    // Get all hash maps
+    $hashMaps = [
+        'plate_map',
+        // 'plate_numbers_map',
+        // 'plate_first7_set',
+        // 'plate_first5_set',
+        // 'container_map',
+        // 'container_numbers_map',
+        // 'receipt_number_map',
+        // 'bijac_date_map',
+        // 'bijac_number_map',
+    ];
+
+    foreach ($hashMaps as $hashName) {
+        $redisData[$hashName] = Redis::hgetall($hashName);
+    }
+    return response()->json($redisData);
+
+    // Get all set indexes and their members
+    $setIndexes = [
+        'bijac:indexes:plate_first7',
+        'bijac:indexes:plate_first5',
+        'bijac:indexes:container_first7',
+        'bijac:indexes:container_first6',
+    ];
+
+    foreach ($setIndexes as $indexName) {
+        $redisData[$indexName] = [];
+        $members = Redis::smembers($indexName);
+        foreach ($members as $memberKey) {
+            // Each memberKey is itself a set key, e.g., "plate_first7_set:6961111"
+            $redisData[$indexName][$memberKey] = Redis::smembers($memberKey);
+        }
+    }
+    return response()->json($redisData);
+});
+
+Route::get('/test-redis-plate/{plate_number}', function ($plate_number) {
+    $tim = microtime(true);
+    // $plateService = new PlateService();
+    $normalizedPlate = $plate_number; //$plateService->normalizePlate($plate_number);
+
+    echo $cleanNumber = preg_replace('/[^a-zA-Z0-9]/', '', $normalizedPlate);
+    echo " - ";
+    echo $numbersOnly = preg_replace('/[^0-9]/', '', $normalizedPlate);
+    echo " - ";
+    echo $numbersOnly7 = strlen($numbersOnly) >= 7 ? substr($numbersOnly, 0, 7) : null;
+    echo " - ";
+    echo $numbersOnly5 = strlen($numbersOnly) >= 5 ? substr($numbersOnly, 0, 5) : null;
+    echo " - ";
+    $results = collect();
+
+    $alphaNumericMatch = Redis::hget('plate_map', $cleanNumber);
+    if ($alphaNumericMatch) {
+        $results->push(json_decode($alphaNumericMatch, true));
+        echo " 1 - ($normalizedPlate , $cleanNumber) ";
+    }
+    if ($results->isEmpty()) {
+        $numbersOnlyMatch = Redis::hget('plate_numbers_map', $numbersOnly);
+        if ($numbersOnlyMatch) {
+            $results->push(json_decode($numbersOnlyMatch, true));
+            echo " 2 - ($normalizedPlate , $numbersOnly) ";
+        }
+    }
+    if ($results->isEmpty() && strlen($numbersOnly) >= 7) {
+        echo  $plate_first7 = substr($numbersOnly, 0, 7);
+        echo " - ";
+
+        $plateSetKey = "plate_first7_set:$plate_first7";
+        $setMembers = Redis::smembers($plateSetKey);
+        foreach ($setMembers as $member) {
+            $decodedMember = json_decode($member, true);
+            $decodedPlateNumbersOnly = preg_replace('/[^0-9]/', '', $decodedMember['plate_normal'] ?? '');
+
+            if (levenshtein($numbersOnly, $decodedPlateNumbersOnly) <= 1) {
+                $results->push($decodedMember);
+                echo " 3 - ($normalizedPlate , $numbersOnly, $decodedPlateNumbersOnly) ";
+            }
+        }
+    }
+
+    if ($results->isEmpty() && strlen($numbersOnly) >= 5) {
+        echo $plate_first5 = substr($numbersOnly, 0, 5);
+        echo " - ";
+
+        $plateSetKey = "plate_first5_set:$plate_first5";
+        $setMembers = Redis::smembers($plateSetKey);
+        foreach ($setMembers as $member) {
+            $decodedMember = json_decode($member, true);
+            $decodedPlateNumbersOnly = preg_replace('/[^0-9]/', '', $decodedMember['plate_normal'] ?? '');
+
+            if (levenshtein($numbersOnly, $decodedPlateNumbersOnly) <= 1) {
+                $results->push($decodedMember);
+                echo " 4 - ($normalizedPlate , $numbersOnly, $decodedPlateNumbersOnly) ";
+            }
+        }
+    }
+    if ($results->isEmpty()) {
+        $numbersOnly7Match = Redis::hget('plate_numbers_map', $numbersOnly7);
+        if ($numbersOnly7Match) {
+            $results->push(json_decode($numbersOnly7Match, true));
+            echo " 5 - ($normalizedPlate , $numbersOnly7) ";
+        }
+    }
+    if ($results->isEmpty()) {
+        $numbersOnly5Match = Redis::hget('plate_numbers_map', $numbersOnly5);
+        if ($numbersOnly5Match) {
+            $results->push(json_decode($numbersOnly5Match, true));
+            echo " 6 - ($normalizedPlate , $numbersOnly5) ";
+        }
+    }
+
+    // Remove duplicates and return unique results
+    $uniqueResults = $results->unique('id')->values()->all();
+
+    echo microtime(true) - $tim;
+
+    return response()->json($uniqueResults);
+});
 // $user = User::first();
 // auth("api")->login($user);
 
@@ -220,7 +342,7 @@ Route::get('/test', function () {
         $code = '$array = ' . $text . ';';
 
         // اجرای eval (مراقب باشید اگر متن از منبع ناشناس است)
-        eval ($code);
+        eval($code);
 
         dd($array);
 

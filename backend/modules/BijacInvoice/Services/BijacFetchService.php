@@ -8,6 +8,7 @@ use Modules\BijacInvoice\Clients\BijacApiClient;
 use Modules\BijacInvoice\Models\Bijac;
 use Modules\BijacInvoice\Models\Customer;
 use Modules\BijacInvoice\Models\Invoice;
+use Illuminate\Support\Facades\Redis;
 
 class BijacFetchService
 {
@@ -73,12 +74,20 @@ class BijacFetchService
 
     public function fetchAndStore()
     {
+        $tim = microtime(true);
         $lastSync = cache('bijacs_last_sync_time') ?:
             Bijac::max('bijac_date') ?:
             now()->subDays(5)->toDateTimeString();
         // $bijacs = $this->client->fetchBijacs($lastSync)['data'] ?? [];
         // $invoices = collect($bijacs)->pluck('invoices')->collapse();
-        $last_invoice = cache('Invoice_last_sync_id', 0);
+        // $last_invoice = Invoice::max('source_invoice_id') ?? 0; //cache('Invoice_last_sync_id', 0);
+        $limit = 40000000; //فیلتر فاکتور هایی که موردی گرفته میشوند
+        $last_invoice = Invoice::where('source_invoice_id', '<', $limit)->max('source_invoice_id') ?? 0;
+
+        // try {
+        //     Log::info("last_invoice = " . json_encode($last_invoice));
+        // } catch (\Throwable $th) {
+        // }
 
         $response = $this->client->fetchBijacs($lastSync, $last_invoice);
         $bijacs = $response['data'] ?? [];
@@ -152,8 +161,8 @@ class BijacFetchService
                     $this->invoiceFields
                 );
 
-                $maxInvoiceId = $invoices->max('source_invoice_id');
-                cache()->set('Invoice_last_sync_id', $maxInvoiceId);
+                // $maxInvoiceId = $invoices->max('source_invoice_id');
+                // cache()->set('Invoice_last_sync_id', $maxInvoiceId);
                 // cache()->set(
                 //     'Invoice_last_sync_id',
                 //     end($processedInvoices)['source_invoice_id']
@@ -195,6 +204,12 @@ class BijacFetchService
                     ->format('Y-m-d H:i:s')
             );
         }
+
+
+        // Dispatch Redis caching job
+        \Modules\BijacInvoice\Jobs\CacheBijacsRedisJob::dispatch();
+        
+        log::info("time taked : " . microtime(true) - $tim);
 
         // app(BijacCacheService::class)->refreshCache();
     }

@@ -13,8 +13,8 @@
       </template>
 
       <template #item.plate_number="item">
-        <!-- {{ item.id }}
-        <br>
+        {{ item.id }}
+        <!--  <br>
         {{ item.plate_number_3 }} -->
         <EditBtn
           :editItem="item"
@@ -180,10 +180,7 @@
             </td>
           </tr>
           <tr>
-            <td class="">
-              بیجک
-              <span hidden>{{ item.id }}</span>
-            </td>
+            <td class="" :data="item.id">بیجک</td>
             <td colspan="2">
               <div
                 v-if="item.bijacs?.length > 0 && isDangerous(item)"

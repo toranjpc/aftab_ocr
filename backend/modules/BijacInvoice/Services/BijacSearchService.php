@@ -35,6 +35,6 @@ class BijacSearchService
 
     public static function getContainerBijacs($item, $isEdited = false)
     {
-        return Bijac::forContainer($item, $isEdited);
+        return Bijac::forContainer($item, $isEdited)->get();
     }
 }

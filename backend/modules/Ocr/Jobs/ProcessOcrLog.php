@@ -77,10 +77,10 @@ class ProcessOcrLog implements ShouldQueue
             foreach ($strategies as $strategy) {
                 // try {
                 //     if (!empty($ocr->plate_number)) {
-                //         log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $ocr->gate_number . ".log"),])
+                //         log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $ocr->gate_number . ".log"),])
                 //             ->info("ProcessOcrLog for plate_number : {$ocr->plate_number}  ");
                 //     } elseif (!empty($ocr->container_code)) {
-                //         log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_" . $ocr->gate_number . ".log"),])
+                //         log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $ocr->gate_number . ".log"),])
                 //             ->info("ProcessOcrLog for container_code : {$ocr->container_code}  ");
                 //     }
                 // } catch (\Throwable $th) {

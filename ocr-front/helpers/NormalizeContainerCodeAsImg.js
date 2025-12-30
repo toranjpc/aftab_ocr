@@ -66,9 +66,9 @@ export default function (v, color = '#2957a4', v2 = '', diffColor = '#fff', noco
           const charj = numbers[j] || '*'
           const charj2 = numbers2[j] || '*'
           if (charj !== charj2)
-            highlightedNumbers += `<span style="color:${diffColor}">${charj}</span>`
+            highlightedNumbers += `<span style="color:${diffColor}">${charj2}</span>`
           else
-            highlightedNumbers += charj2
+            highlightedNumbers += charj
           // console.log(numbers[j], numbers, highlightedNumbers)
         }
 
