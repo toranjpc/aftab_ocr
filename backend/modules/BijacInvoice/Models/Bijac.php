@@ -162,7 +162,8 @@ class Bijac extends Base
                 } catch (\Throwable $th) {
                 }
 
-                return Bijac::whereIn('id', $uniqueCachedResults);
+                $dateRange_ = (clone $item->created_at)->subdays(3);
+                return Bijac::whereIn('id', $uniqueCachedResults)->where('bijac_date', '>', $dateRange_);
             }
         } catch (\Throwable $th) {
             //throw $th;
@@ -421,7 +422,8 @@ class Bijac extends Base
                 } catch (\Throwable $th) {
                 }
 
-                return Bijac::whereIn('id', $uniqueCachedResults);
+                $dateRange_ = (clone $item->created_at)->subdays(3);
+                return Bijac::whereIn('id', $uniqueCachedResults)->where('bijac_date', '>', $dateRange_);
             }
         } catch (\Throwable $th) {
             //throw $th;

@@ -65,7 +65,15 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
 
         if ($bijac) {
             $plate = $bijac->plate_normal ?? $bijac->plate;
-            $match = $matches->where('plate_number_3', $plate)->where('gate_number', $ocr->gate_number)->first();
+            $match = $matches->where('plate_number_3', $plate)
+                ->where('gate_number', $ocr->gate_number)
+                // ->where(function($q) use ($bijac) {
+                //     $q->whereDoesntHave('bijacs')
+                //       ->orWhereHas('bijacs', function($q2) use ($bijac) {
+                //           $q2->where('id', $bijac->id);
+                //       });
+                // })
+                ->first();
 
             if ($match) {
                 $this->fillMatchFromOcr($match, $ocr, [
@@ -93,8 +101,8 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
                     ->filter(
                         fn($b) => ($b->container_code_3 &&
                             $b->plate_number_3) ||
-                        (!$b->container_code_3 &&
-                            !$b->plate_number_3)
+                            (!$b->container_code_3 &&
+                                !$b->plate_number_3)
 
                     )
                     ->where('gate_number', $ocr->gate_number)
@@ -140,6 +148,11 @@ class ContainerMatchStrategy extends MatchBase implements MatchStrategyInterface
                     'IMDG',
                     'seal',
                 ]);
+
+                if (!$match) {
+                    Log::warning("ContainerMatchStrategy: match is null for OCR ID: {$ocr->id}, container_code: {$ocr->container_code}");
+                    return false;
+                }
 
                 $match->bijacs()->sync($bijacs->pluck('id'));
 

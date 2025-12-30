@@ -94,7 +94,15 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
 
         if ($bijac && $bijac->type === 'ccs') {
             $code = str_replace(' ', '', $bijac->container_number);
-            $match = $matches->where('container_number_3', $code)->where('gate_number', $ocr->gate_number)->first();
+            $match = $matches->where('container_number_3', $code)
+                ->where('gate_number', $ocr->gate_number)
+                // ->where(function($q) use ($bijac) {
+                //     $q->whereDoesntHave('bijacs')
+                //       ->orWhereHas('bijacs', function($q2) use ($bijac) {
+                //           $q2->where('id', $bijac->id);
+                //       });
+                // })
+                ->first();
 
             if ($match) {
                 $this->fillMatchFromOcr($match, $ocr, [
@@ -168,6 +176,11 @@ class PlateMatchStrategy extends MatchBase implements MatchStrategyInterface
                 if ($lastPlate) {
 
                     $b = $lastPlate->bijacs->first();
+                    if (!$b) {
+                        Log::warning("PlateMatchStrategy: bijac is null for lastPlate ID: {$lastPlate->id}, plate: {$lastPlate->plate_number}");
+                        return false;
+                    }
+
                     if (Carbon::parse($b->bijac_date)->diffInDays(Carbon::parse($lastPlate->log_time), false) > 3) {
                         if (
                             (

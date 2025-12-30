@@ -132,7 +132,7 @@ class OcrMatch extends Base
     {
         $code = $this->container_code;
 
-        if (!$code)
+        if (!$code || !is_string($code))
             return '';
 
         $split = explode("_", $code);
@@ -149,7 +149,7 @@ class OcrMatch extends Base
     {
         $code = $this->container_code_2;
 
-        if (!$code)
+        if (!$code || !is_string($code))
             return '';
 
         $split = explode("_", $code);
@@ -166,7 +166,7 @@ class OcrMatch extends Base
     {
         $code = $this->container_code_edit;
 
-        if (!$code)
+        if (!$code || !is_string($code))
             return '';
 
         $split = explode("_", $code);

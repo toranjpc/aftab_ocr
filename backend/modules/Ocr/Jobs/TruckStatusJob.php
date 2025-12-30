@@ -15,6 +15,7 @@ use Modules\BijacInvoice\Services\InvoiceService;
 use Modules\BijacInvoice\Models\Invoice;
 use Modules\BijacInvoice\Models\Customer;
 use Hekmatinasser\Verta\Facades\Verta;
+use Modules\Ocr\OcrComputedResolver;
 
 class TruckStatusJob implements ShouldQueue
 {
@@ -38,13 +39,68 @@ class TruckStatusJob implements ShouldQueue
 
         if ($match) {
 
+            try {
+                // Check total_vehicles <= ocr_vehicles condition
+                // Use same logic as OcrMatchController for consistent data
+                $resolver = new OcrComputedResolver();
+                $context = [
+                    'custom_tariff' => config('ocr.custom_tariff'),
+                    'gate' => $match->gate_number,
+                    'log_time' => $match->log_time,
+                ];
+                $batchComputedData = $resolver->getBatchComputedData([$match->id], $context);
+                $computed = $batchComputedData[$match->id] ?? [];
+
+                if (isset($computed['total_tu']) && isset($computed['ocr_tu'])) {
+                    if ($computed['total_tu'] < $computed['ocr_tu']) {
+
+                        // Check if we already tried noInvoice for this match to avoid infinite loop
+                        $noInvoiceCacheKey = 'truckstatus_noinvoice_attempted_' . $match->id;
+                        if (!cache()->get($noInvoiceCacheKey)) {
+                            // Mark that we're attempting noInvoice
+                            cache()->put($noInvoiceCacheKey, true, now()->addMinutes(30));
+
+                            // Execute noInvoice to try to get better invoice data
+                            $this->noInvoice($this->log, $match);
+
+                            // Reload match after noInvoice execution
+                            $match = OcrMatch::with(["bijacs" => function ($query) {
+                                $query->with('invoices');
+                            }])->find($this->log);
+
+                            // Re-compute data after noInvoice
+                            if ($match) {
+                                $batchComputedDataAfter = $resolver->getBatchComputedData([$match->id], $context);
+                                $computedAfter = $batchComputedDataAfter[$match->id] ?? [];
+
+                                // Check condition again after noInvoice
+                                if (isset($computedAfter['total_tu']) && isset($computedAfter['ocr_tu'])) {
+                                    if ($computedAfter['total_tu'] < $computedAfter['ocr_tu']) {
+                                        // Still true after noInvoice, log it
+                                        log::build(['driver' => 'single', 'path' => storage_path("logs/total_tu_check.log"),])
+                                            ->info("TruckStatusJob: gate({$match->gate_number}) total_tu ({$computedAfter['total_tu']}) < ocr_tu ({$computedAfter['ocr_tu']}) after noInvoice attempt for match ID: {$match->id}, plate: {$match->plate_number}, container: {$match->container_code}");
+                                    }
+                                }
+                            }
+                        } else {
+                            // Already attempted noInvoice for this match, just log
+                            log::build(['driver' => 'single', 'path' => storage_path("logs/total_tu_check.log"),])
+                                ->info("TruckStatusJob: total_tu ({$computed['total_tu']}) < ocr_tu ({$computed['ocr_tu']}) - noInvoice already attempted for match ID: {$match->id}, plate: {$match->plate_number}, container: {$match->container_code}");
+                        }
+                    }
+                }
+            } catch (\Throwable $th) {
+                // Log error if logging fails
+            }
+
+
             if (!$match->bijac_has_invoice && $match->bijacs->first()) {
                 try {
                     if (!empty($match->plate_number)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob invoice not found for plate_number : {$match->plate_number}  ");
                     } elseif (!empty($match->container_code)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob invoice not found for container_code : {$match->container_code}  ");
                     }
                 } catch (\Throwable $th) {
@@ -72,10 +128,10 @@ class TruckStatusJob implements ShouldQueue
 
                 try {
                     if (!empty($match->plate_number)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob bijac_has_invoice plate_number : {$match->plate_number}  ");
                     } elseif (!empty($match->container_code)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob bijac_has_invoice container_code : {$match->container_code}  ");
                     }
                 } catch (\Throwable $th) {
@@ -105,10 +161,10 @@ class TruckStatusJob implements ShouldQueue
 
                 try {
                     if (!empty($match->plate_number)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob _bijacs->first plate_number : {$match->plate_number}  ");
                     } elseif (!empty($match->container_code)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob _bijacs->first container_code : {$match->container_code}  ");
                     }
                 } catch (\Throwable $th) {
@@ -138,10 +194,10 @@ class TruckStatusJob implements ShouldQueue
             } else {
                 try {
                     if (!empty($match->plate_number)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob _without bijac : {$match->plate_number}  ");
                     } elseif (!empty($match->container_code)) {
-                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(".jdate()->format('ymd').")_" . $match->gate_number . ".log"),])
+                        log::build(['driver' => 'single', 'path' => storage_path("logs/gatelog_(" . jdate()->format('ymd') . ")_" . $match->gate_number . ".log"),])
                             ->info("TruckStatusJob _without bijac : {$match->container_code}  ");
                     }
                 } catch (\Throwable $th) {
@@ -157,6 +213,11 @@ class TruckStatusJob implements ShouldQueue
                         'match_status' => 'container_without_bijac' . $noInvoice
                     ])->save();
             }
+
+            //item.total_vehicles) < parseInt(item.ocr_vehicles
+
+
+
         }
 
         try {

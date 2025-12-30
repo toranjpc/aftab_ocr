@@ -161,6 +161,7 @@ class InvoiceService
         $fildes["tax"] = $invoiceService['Total'] - $invoiceService['ParkingCost'];
         $fildes["kutazh"] = null;
         $fildes["number"] = null;
+        $fildes["base"] = 1;
         $fildes["request_date"] = now();
 
         $Invoice = Invoice::create($fildes);
