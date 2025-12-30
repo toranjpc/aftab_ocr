@@ -310,12 +310,7 @@ class Bijac extends Base
         if ($result->isEmpty()) {
             return $query->whereRaw('1=0');
         }
-        $Bijac = Bijac::whereIn('id', $result->pluck('id'));
-        return $Bijac;
-
-        return $result->isNotEmpty()
-            ? Bijac::whereIn('id', $result->pluck('id'))
-            : $query->whereRaw('1=0');
+        return Bijac::whereIn('id', $result->pluck('id'));
     }
 
     public function scopeForContainer($query, $item, $isEdited)
@@ -538,7 +533,10 @@ class Bijac extends Base
             }
         }
 
-        return $result;
+        if ($result->isEmpty()) {
+            return $query->whereRaw('1=0');
+        }
+        return Bijac::whereIn('id', $result->pluck('id'));
     }
 
 
