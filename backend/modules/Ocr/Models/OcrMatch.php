@@ -67,20 +67,38 @@ class OcrMatch extends Base
         return $this->hasOne(GcomsReport::class);
     }
 
-    public function getInvoiceAttribute()
-    {
-        $invoices = $this->bijacs
-            ->flatMap
-            ->invoices
-            ->unique('id')
-            ->sortBy([
-                ['pay_date', 'desc'],
-                ['request_date', 'desc'],
-            ]);
-        $preferred = $invoices->where('base', 1)->first();
+    // public function getInvoiceAttribute()
+    // {
+    //     $invoices = $this->bijacs
+    //         ->flatMap
+    //         ->invoices
+    //         ->unique('id')
+    //         ->sortBy([
+    //             ['pay_date', 'desc'],
+    //             ['request_date', 'desc'],
+    //         ]);
+    //     $preferred = $invoices->where('base', 1)->first();
 
-        return $preferred ?? $invoices->first();
-    }
+    //     return $preferred ?? $invoices->first();
+    // }
+public function getInvoiceAttribute()
+{
+    $invoices = $this->bijacs
+        ->flatMap
+        ->invoices
+        ->unique('id')
+        ->sortByDesc(function ($invoice) {
+            return [
+                (int) $invoice->base,     // اول base=1
+                $invoice->amount,         // بعد بیشترین amount
+                $invoice->pay_date,       // بعد تاریخ پرداخت
+                $invoice->request_date,   // بعد تاریخ ثبت
+            ];
+        });
+
+    return $invoices->first();
+}
+
 
     public function getBijacHasInvoiceAttribute()
     {

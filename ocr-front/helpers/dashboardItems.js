@@ -260,6 +260,22 @@ export default [
   },
 
   {
+    text: 'گزارشات',
+    icon: 'fal fa-file',
+    link: false,
+    isGroup: true,
+    children: [
+      {
+        link: true,
+        to: '/admin/Reports/Traffic',
+        text: 'گزارش تردد',
+        icon: 'truck',
+      },
+
+    ],
+  },
+
+  {
     text: 'کاربران',
     icon: 'fal fa-users-gear',
     link: false,

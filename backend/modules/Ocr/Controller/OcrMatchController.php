@@ -54,16 +54,17 @@ class OcrMatchController extends Controller
         $logwright = 0; // فعال کردن لاگ‌گذاری
 
         $queryBuildStart = microtime(true);
-        $ocrMatches = OcrMatch::with([
-            'bijacs' => function ($query) {
-                $query->withCount('ocrMatches')
-                    ->with('invoices')
-                    ->with('allbijacs')
-                    ->orderBy('bijac_date', 'desc');
-            },
-            "isCustomCheck",
-            "isSerachBijac"
-        ]);
+        $ocrMatches = OcrMatch::query();
+        // with([
+        //     'bijacs' => function ($query) {
+        //         $query->withCount('ocrMatches')
+        //             ->with('invoices')
+        //             ->with('allbijacs')
+        //             ->orderBy('bijac_date', 'desc');
+        //     },
+        //     "isCustomCheck",
+        //     "isSerachBijac"
+        // ]);
 
 
         //http://172.16.13.10/ocrbackend/api/ocr-match/list?_append=invoice_with=bijacs&gate_number=1&gate=1&page=1&filters[plate_number][$contains]=454&filters[IMDG][$in][0]=danger_AI&
@@ -116,6 +117,74 @@ class OcrMatchController extends Controller
             ->sort()
             ->orderBy('id', 'DESC')
             ->paginate($request->itemPerPage ?? 10);
+
+
+        /*
+        // 🔍🔍🔍 **کد جدید برای لاگ‌گیری رکوردهای بدون کش** 🔍🔍🔍
+        if (!$ocrMatches->isEmpty()) {
+            $ocrIds = $ocrMatches->pluck('id');
+
+            // لیست همه کلیدهای کش مربوط به این IDها
+            $allCacheKeys = [];
+            foreach ($ocrIds as $id) {
+                $allCacheKeys[] = "ocr:{$id}:invoice";
+                $allCacheKeys[] = "ocr:{$id}:invoices";
+                // اگر کلیدهای computed data هم می‌خواهی چک کنی، اضافه کن
+                // $allCacheKeys[] = "ocr:computed:{$id}"; 
+            }
+
+            // بررسی وجود در کش
+            $missingCacheRecords = [];
+            foreach ($allCacheKeys as $key) {
+                if (!Cache::has($key)) {
+                    $missingCacheRecords[] = $key;
+                }
+            }
+
+            if (!empty($missingCacheRecords)) {
+                Log::warning("=== MISSING CACHE RECORDS ===", [
+                    "gate" => $request->gate,
+                    "page" => $request->get('page', 1),
+                    "total_records" => $ocrMatches->count(),
+                    "missing_cache_count" => count($missingCacheRecords),
+                    "missing_cache_percentage" => round((count($missingCacheRecords) / count($allCacheKeys)) * 100, 2) . '%',
+                    "missing_keys_sample" => array_slice($missingCacheRecords, 0, 5), // 5 کلید اول
+                    "all_ids" => $ocrIds->toArray(),
+                    "query_conditions" => [
+                        'filters' => $request->input('filters', []),
+                        'sort' => $request->input('sort'),
+                        'gate' => $request->gate,
+                        'findThis' => $request->findThis
+                    ]
+                ]);
+
+                // لاگ مفصل‌تر برای هر ID
+                foreach ($ocrIds as $id) {
+                    $invoiceKey = "ocr:{$id}:invoice";
+                    $invoicesKey = "ocr:{$id}:invoices";
+
+                    if (!Cache::has($invoiceKey) || !Cache::has($invoicesKey)) {
+                        Log::debug("Record missing cache", [
+                            'ocr_id' => $id,
+                            'invoice_cached' => Cache::has($invoiceKey) ? 'YES' : 'NO',
+                            'invoices_cached' => Cache::has($invoicesKey) ? 'YES' : 'NO',
+                            'gate' => $request->gate
+                        ]);
+                    }
+                }
+            } else {
+                Log::info("=== ALL RECORDS CACHED ===", [
+                    "gate" => $request->gate,
+                    "page" => $request->get('page', 1),
+                    "total_records" => $ocrMatches->count(),
+                    "cache_hit_rate" => "100%"
+                ]);
+            }
+        }
+        // 🔍🔍🔍 **پایان کد جدید** 🔍🔍🔍
+        */
+
+
         $this->logTimeSection($timeTok, "pagination", $paginationStart);
 
         // Early return if no results to process
@@ -161,7 +230,7 @@ class OcrMatchController extends Controller
         }
 
         // Ensure ocrIds contains only valid integers
-        $ocrIds = $ocrIds->filter(function($id) {
+        $ocrIds = $ocrIds->filter(function ($id) {
             return is_numeric($id) && (int)$id > 0;
         });
 

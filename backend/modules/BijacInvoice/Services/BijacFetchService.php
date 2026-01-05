@@ -75,26 +75,28 @@ class BijacFetchService
     public function fetchAndStore()
     {
         $tim = microtime(true);
-        $lastSync = cache('bijacs_last_sync_time') ?:
-            Bijac::max('bijac_date') ?:
-            now()->subDays(5)->toDateTimeString();
+        $limit = 30000000; //فیلتر فاکتور هایی که موردی گرفته میشوند
+        $since_updated = Bijac::where('source_bijac_id', '<', $limit)->max('source_bijac_id') ?? 0;
+        // $lastSync = cache('bijacs_last_sync_time') ?:
+        //     Bijac::max('bijac_date') ?:
+        //     now()->subDays(5)->toDateTimeString();
+
         // $bijacs = $this->client->fetchBijacs($lastSync)['data'] ?? [];
         // $invoices = collect($bijacs)->pluck('invoices')->collapse();
         // $last_invoice = Invoice::max('source_invoice_id') ?? 0; //cache('Invoice_last_sync_id', 0);
+
         $limit = 40000000; //فیلتر فاکتور هایی که موردی گرفته میشوند
         $last_invoice = Invoice::where('source_invoice_id', '<', $limit)->max('source_invoice_id') ?? 0;
 
-        // try {
-        //     Log::info("last_invoice = " . json_encode($last_invoice));
-        // } catch (\Throwable $th) {
-        // }
-
-        $response = $this->client->fetchBijacs($lastSync, $last_invoice);
+        $response = $this->client->fetchBijacs($since_updated, $last_invoice);
         $bijacs = $response['data'] ?? [];
         // $invoices = collect($bijacs)->pluck('invoices')->collapse();
         $invoices = collect($response['invoices'] ?? []); //گرفتن همه فاکتور ها
 
-
+        // try {
+        //     Log::info("last_bijack = ", [$response]);
+        // } catch (\Throwable $th) {
+        // }
 
         // $customers = $invoices->pluck('customer')->filter()->unique('id');
 
@@ -208,7 +210,7 @@ class BijacFetchService
 
         // Dispatch Redis caching job
         \Modules\BijacInvoice\Jobs\CacheBijacsRedisJob::dispatch();
-        
+
         log::info("time taked : " . microtime(true) - $tim);
 
         // app(BijacCacheService::class)->refreshCache();

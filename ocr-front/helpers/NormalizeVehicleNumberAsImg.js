@@ -5,6 +5,12 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
   try {
     if (!v && !v2) return '';
     if (type === 'iran-regular') type = 'iran';
+    // console.log(v + " -> " + v2)
+    if (type === 'afghan' || v2?.includes("L") || (v2 && v2.length < 5)) {
+      return afghan(v, edit, v2);
+    }
+
+
     // console.log(v, v2);
     const plate = (!isValidIran(v, v2) && !isValidAfghan(v, v2)) ? v2 : v;
     if (!isValidIran(plate, v2) && !isValidAfghan(plate, v2)) {
@@ -32,10 +38,6 @@ export default function formatPlate(v, type = DEFAULT_TYPE, edit = false, v2 = n
 
     }
 
-    // console.log(v + " -> " + v2)
-    if (type === 'afghan' || v2?.includes("L") || (v2 && v2.length < 5)) {
-      return afghan(v, edit, v2);
-    }
 
     if (v && (v.match(/\d/g) || []).length === 5) {
       const digits = v.replace(/\D/g, '');
@@ -198,7 +200,7 @@ export function converto(t) {
 
 // تابع انتخاب تصویر پس‌زمینه بسته به وضعیت
 export function pickImage(edit, st, miss, Kham = false) {
-  if (Kham) return 'kham.png';
+  // if (Kham) return 'kham.png';
   if (miss) return 'pelakCyan.png';
   if (edit) return 'pelakGreen.png';
   if (st === 'ع') return 'pelak.png';
