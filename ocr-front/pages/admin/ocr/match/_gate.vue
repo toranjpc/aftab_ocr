@@ -589,20 +589,19 @@ export default {
         }
       }
 
+      let is_single_carry = ''
+      var req = ''
+      
       if (item && item.bijacs && item.bijacs.length) {
         for (let c = 0; c < item.bijacs.length; c++) {
           if (item.bijacs[c].is_single_carry == 1) {
-            // && status.includes('_nok')
-            return {
-              text: 'بدون فاکتور (مادر تخصصی)',
-              color: 'red',
-            }
+            is_single_carry = ' (حمل یکسره) '
+
             break
           }
         }
       }
 
-      var req = ''
       if (status.includes('_req')) {
         req = ' - موردی'
         status = status.replace('_req', '')
@@ -611,6 +610,7 @@ export default {
         req = ' - تایید دستی بیجک'
         status = status.replace('_Creq', '')
       }
+      req = req + is_single_carry
 
       let list = {
         // bad_match_nok: ['دو فاکتور متفاوت', 'purple'],

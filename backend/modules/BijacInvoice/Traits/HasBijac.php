@@ -8,10 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 trait HasBijac
 {
-    public function bijacs(): MorphToMany
-    {
-        return $this->morphToMany(Bijac::class, 'bijacable', "bijacables");
-    }
+
 
     /*
     public function getInvoiceAttribute()

@@ -20,7 +20,12 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/ocr-match/{ocrMatch}', [OcrMatchController::class, 'update']);
     Route::middleware('api')->post('/ocr-match/customCheck/{ocrMatch}', [OcrMatchController::class, 'update_customCheck']);
     Route::middleware('api')->post('/ocr-match/addBaseInvoice/{ocrMatch}', [OcrMatchController::class, 'addBaseInvoice']);
+
 });
+    // Traffic Report Routes
+    Route::get('/report/traffic-report', [LogRepController::class, 'makeReport']);
+    Route::get('/report/traffic-report/chart', [LogRepController::class, 'getChartData']);
+    Route::get('/report/customers/search', [LogRepController::class, 'searchCustomers']);
 
 Route::get('/ocr-match/addBaseInvoice/54654/{ocrMatch}', function ($ocrMatch) {
     // return Invoice::selectRaw('id , receipt_number , base')->where("receipt_number", "BSRCC14040169603")->get();

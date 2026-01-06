@@ -4,8 +4,10 @@ namespace Modules\Ocr\Models;
 
 use App\Models\Base;
 use App\Models\Log;
+use Modules\BijacInvoice\Models\Bijac;
 use Modules\BijacInvoice\Traits\HasBijac;
 use Modules\Gcoms\Models\GcomsReport;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class OcrMatch extends Base
 {
@@ -45,6 +47,11 @@ class OcrMatch extends Base
         'data' => 'array'
     ];
 
+    public function bijacs(): MorphToMany
+    {
+        return $this->morphToMany(Bijac::class, 'bijacable', "bijacables");
+    }
+
     public function isSerachBijac()
     {
         return $this->hasOne(Log::class, 'table_id')
@@ -81,23 +88,23 @@ class OcrMatch extends Base
 
     //     return $preferred ?? $invoices->first();
     // }
-public function getInvoiceAttribute()
-{
-    $invoices = $this->bijacs
-        ->flatMap
-        ->invoices
-        ->unique('id')
-        ->sortByDesc(function ($invoice) {
-            return [
-                (int) $invoice->base,     // اول base=1
-                $invoice->amount,         // بعد بیشترین amount
-                $invoice->pay_date,       // بعد تاریخ پرداخت
-                $invoice->request_date,   // بعد تاریخ ثبت
-            ];
-        });
+    public function getInvoiceAttribute()
+    {
+        $invoices = $this->bijacs
+            ->flatMap
+            ->invoices
+            ->unique('id')
+            ->sortByDesc(function ($invoice) {
+                return [
+                    (int) $invoice->base,
+                    $invoice->amount,
+                    $invoice->pay_date,
+                    $invoice->request_date,
+                ];
+            });
 
-    return $invoices->first();
-}
+        return $invoices->first();
+    }
 
 
     public function getBijacHasInvoiceAttribute()

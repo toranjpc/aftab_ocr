@@ -55,16 +55,18 @@ class OcrMatchController extends Controller
 
         $queryBuildStart = microtime(true);
         $ocrMatches = OcrMatch::query();
-        // with([
-        //     'bijacs' => function ($query) {
-        //         $query->withCount('ocrMatches')
-        //             ->with('invoices')
-        //             ->with('allbijacs')
-        //             ->orderBy('bijac_date', 'desc');
-        //     },
-        //     "isCustomCheck",
-        //     "isSerachBijac"
-        // ]);
+        if (!empty($request->gate) && $request->gate != 2) {
+            $ocrMatches = $ocrMatches->with([
+                'bijacs' => function ($query) {
+                    $query->withCount('ocrMatches')
+                        ->with('invoices')
+                        ->with('allbijacs')
+                        ->orderBy('bijac_date', 'desc');
+                },
+                "isCustomCheck",
+                "isSerachBijac"
+            ]);
+        }
 
 
         //http://172.16.13.10/ocrbackend/api/ocr-match/list?_append=invoice_with=bijacs&gate_number=1&gate=1&page=1&filters[plate_number][$contains]=454&filters[IMDG][$in][0]=danger_AI&
