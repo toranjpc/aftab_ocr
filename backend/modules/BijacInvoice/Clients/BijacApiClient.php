@@ -12,21 +12,34 @@ class BijacApiClient
 
     public function __construct()
     {
-        $this->baseUrl = config('services.bijac.url');
-        $this->token = config('services.bijac.token');
+        // $this->baseUrl = config('services.bijac.url');
+        // $this->token = config('services.bijac.token');
+        $this->baseUrl = env('NEW_BIJAC_SERVICE_URL', 'http://172.16.150.2:8000');
+        $this->token = env('NEW_BIJAC_SERVICE_token', 'kICfPLqe6xldx2eV-2DlW-eoieA7E641oetSRhTVHEY');
     }
 
-    public function fetchBijacs($lastSync, $last_invoice = 0)
+    public function fetchBijacs($lastBijac = 0, $lastInvoice = 0)
     {
         try {
+            /*
             $response = Http::withToken($this->token)
                 ->withHeaders([
                     'Accept' => 'application/json',
                 ])
                 ->get("{$this->baseUrl}/updated-bijacs", [
-                    'since_updated' => $lastSync,
-                    'last_invoice' => $last_invoice
+                    'since_updated' => $lastBijac,
+                    'lastInvoice' => $lastInvoice
                 ]);
+                */
+            $DATA = [];
+            if ($lastBijac) $DATA["start_id_bijac"] = $lastBijac;
+            if ($lastInvoice) $DATA["start_id_invoice"] = $lastInvoice;
+            $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Token' => $this->token,
+                ])
+                ->get("{$this->baseUrl}/get_bijac_invoice", $DATA);
+
 
             return $response->json();
         } catch (\Exception $e) {

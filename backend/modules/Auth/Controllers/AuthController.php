@@ -161,7 +161,7 @@ class AuthController extends Controller
 
 
 
-    public function savelog($table, $action = 'create', $des = '')
+    public function savelog($table, $action = 'create', $des = '', $extdata = [])
     {
         if (!$table->id) return;
         $user = auth('api')->user();
@@ -175,6 +175,7 @@ class AuthController extends Controller
             "log_date" => now(),
             "data"     => json_encode([
                 "ip" => request()->ip(),
+                "extdata" => $extdata,
                 "des" => $des
             ]),
         ];

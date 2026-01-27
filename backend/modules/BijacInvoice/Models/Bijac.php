@@ -237,7 +237,7 @@ class Bijac extends Base
             if (strlen($cleanNumber) <= 4) {
                 $result = clone $resultBase;
                 $result = $result->where(function ($q) use ($cleanNumber) {
-                    $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber . '_']);
+                    $q->whereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber . 'L']);
                     $q->orWhereRaw("REGEXP_REPLACE(plate_normal, '[^a-zA-Z0-9]', '') LIKE ?", ['___' . $cleanNumber]);
                 })
                     ->get();
@@ -504,14 +504,15 @@ class Bijac extends Base
                     $cleanNumber = str_replace([' ', '_', '-'], '', $value->container_number);
                     $code = str_replace([' ', '_', '-'], '', $code);
                     $lev = levenshtein($code, $cleanNumber);
-                    if ($lev <= 2) { //با حروف لون 2 باشد
-                        $result[] = $value;
-                        break;
-                    }
+                    // if ($lev <= 2) { //با حروف لون 2 باشد
+                    //     $result[] = $value;
+                    //     break;
+                    // }
                     $cleanNumber = preg_replace('/\D/', '', $value->container_number);
                     $code = preg_replace('/\D/', '', $code);
-                    $lev = levenshtein($code, $cleanNumber);
-                    if ($lev <= 1) { // عدد خالی لون 1 باشد
+                    $lev2 = levenshtein($code, $cleanNumber);
+                    if ($lev <= 2 && $lev2 <= 1) { // با حروف لون2 عدد خالی لون1
+
                         $result[] = $value;
                         break;
                     }

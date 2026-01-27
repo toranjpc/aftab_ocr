@@ -2,20 +2,29 @@
   <div class="d-flex flex-row flex-wrap justify-center col-12">
     <div class="col-12 d-flex flex-row flex-wrap justify-center align-start">
       <div class="col-12 col-md-3 pt-0 d-flex flex-column">
-        <v-card min-width="31%"
+        <v-card
+          min-width="31%"
           class="d-flex py-7 pa-4 elevent-0 ma-2 flex-column text-center justify-center d-flex align-center mx-1"
-          color="#fff" outlined>
+          color="#fff"
+          outlined
+        >
           <v-avatar dark color="#ede9fe" class="" size="64">
             <v-icon color="#8f62f6 !important">
               fal fa-gallery-thumbnails
             </v-icon>
           </v-avatar>
-          <v-btn icon style="position: absolute; left: 18px; top: 14px" @click="getMoves()">
+          <v-btn
+            icon
+            style="position: absolute; left: 18px; top: 14px"
+            @click="getMoves()"
+          >
             <i class="fa fa-refresh text-gray" style="color: gray"></i>
           </v-btn>
 
-          <div class="d-flex flex-column justify-center mt-1" style="width: 100%;">
-
+          <div
+            class="d-flex flex-column justify-center mt-1"
+            style="width: 100%"
+          >
             <table class="my-4">
               <thead>
                 <th>کل تردد های گیت</th>
@@ -33,54 +42,129 @@
             {{ gettime() }} -->
           </div>
         </v-card>
-        <SingleCameraWidget :gate="matchGate" :plate="true" :label="false" :matchGate="matchGate" />
+        <SingleCameraWidget
+          :gate="matchGate"
+          :plate="true"
+          :label="false"
+          :matchGate="matchGate"
+        />
 
-        <TruckListMinimal :fields="truckFields" @select="selectTruck" :matchGate="matchGate" :page.sync="page" />
-
+        <TruckListMinimal
+          :fields="truckFields"
+          @select="selectTruck"
+          :matchGate="matchGate"
+          :page.sync="page"
+        />
       </div>
 
       <div class="col-12 col-md-9 pa-0">
-
-        <div class="popplace back"
-          style="position: fixed;top: 0;left: 0;right: 0;bottom: 0;z-index: 1;background-color: #ffffffa6;"
-          v-if="selectedTruckBase && selectedTruckBase.id">
-          <div class="shadow" @click="clearSelectedTruck" style="width: 100%;height: 100%;margin: 0;padding: 0; "></div>
-          <CardWidget class="mb-4" id="padding-low" :title="statusMessage(selectedTruckBase)"
-            style="position: fixed;width: 80%;left: 5%;top: 10%;right: 10%;z-index: 1;height: unset;"
-            :style="{ outline: '5px solid ' + statusColor(selectedTruckBase) }">
+        <div
+          class="popplace back"
+          style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            background-color: #ffffffa6;
+          "
+          v-if="selectedTruckBase && selectedTruckBase.id"
+        >
+          <div
+            class="shadow"
+            @click="clearSelectedTruck"
+            style="width: 100%; height: 100%; margin: 0; padding: 0"
+          ></div>
+          <CardWidget
+            class="mb-4"
+            id="padding-low"
+            :title="statusMessage(selectedTruckBase)"
+            style="
+              position: fixed;
+              width: 80%;
+              left: 5%;
+              top: 10%;
+              right: 10%;
+              z-index: 1;
+              height: unset;
+            "
+            :style="{ outline: '5px solid ' + statusColor(selectedTruckBase) }"
+          >
             <template #actions>
               <div class="d-flex">
-
                 <div class="flex-1" style="">
                   <v-btn
-                    v-if="['container_without_bijac', 'plate_without_bijac', 'plate_without_bijac_Creq'].includes(selectedTruckBase.match_status)"
-                    small class="" color="success mr-1" @click="fatabInvoiceCheck = true">
+                    v-if="
+                      [
+                        'container_without_bijac',
+                        'plate_without_bijac',
+                        'plate_without_bijac_Creq',
+                      ].includes(selectedTruckBase.match_status)
+                    "
+                    small
+                    class=""
+                    color="success mr-1"
+                    @click="fatabInvoiceCheck = true"
+                  >
                     کانتینر خالی
                   </v-btn>
                 </div>
 
-                <div class="d-flex flex-1" style="width: 200px"
-                  v-if="!selectedTruckBase.bijacs.length && ['container_without_bijac', 'plate_without_bijac', 'plate_without_bijac_Creq'].includes(selectedTruckBase.match_status)">
+                <div
+                  class="d-flex flex-1"
+                  style="width: 200px"
+                  v-if="
+                    !selectedTruckBase.bijacs.length &&
+                    [
+                      'container_without_bijac',
+                      'plate_without_bijac',
+                      'plate_without_bijac_Creq',
+                    ].includes(selectedTruckBase.match_status)
+                  "
+                >
                   <div class="flex-1" style="">
-                    <v-text-field v-model="bijac" label="شماره بیجک" hide-details dense rounded outlined
+                    <v-text-field
+                      v-model="bijac"
+                      label="شماره بیجک"
+                      hide-details
+                      dense
+                      rounded
+                      outlined
                       append-icon="fal fa-check"
-                      @click:append="findBy({ bijac_number: bijac })" /><!-- :disabled="selectedTruckBase?.is_serach_bijac" -->
+                      @click:append="findBy({ bijac_number: bijac })"
+                    /><!-- :disabled="selectedTruckBase?.is_serach_bijac" -->
                   </div>
                 </div>
 
-                <div class="d-flex flex-1" style="width: 300px"
-                  v-if="(selectedTruckBase?.is_serach_bijac && !selectedTruckBase.bijacs.length)">
+                <div
+                  class="d-flex flex-1"
+                  style="width: 300px"
+                  v-if="
+                    // selectedTruckBase?.is_serach_bijac &&
+                    !selectedTruckBase.bijacs.length
+                  "
+                >
                   <!-- selectedTruckBase.match_status.includes('without_bijac')) || selectedTruckBase.match_status.includes('_nok') -->
 
                   <div class="flex-4" style="width: 70%">
-                    <v-text-field v-model="receiptNumber" label="شماره قبض انبار" hide-details dense rounded outlined
-                      append-icon="fal fa-check" @click:append="findBy({ receipt_number: prefix + receiptNumber })" />
+                    <v-text-field
+                      v-model="receiptNumber"
+                      label="شماره قبض انبار"
+                      hide-details
+                      dense
+                      rounded
+                      outlined
+                      append-icon="fal fa-check"
+                      @click:append="
+                        findBy({ receipt_number: prefix + receiptNumber })
+                      "
+                    />
                   </div>
 
                   <div class="flex-1" style="width: 30%">
                     <v-select v-model="prefix" :items="prefixes"></v-select>
                   </div>
-
                 </div>
               </div>
               <!--
@@ -120,29 +204,58 @@
 </div>
 -->
 
+              <div v-if="selectedTruckBase.plate_number" class="px-4">
+                <EditBtn
+                  v-if="
+                    selectedTruckBase.match_status &&
+                    ['container_without_bijac', 'plate_without_bijac'].includes(
+                      selectedTruckBase.match_status
+                    )
+                  "
+                  :editItem="selectedTruckBase"
+                  :fields="plateFields(selectedTruckBase)"
+                  @update="reloadMainData"
+                />
+                <div
+                  v-html="
+                    plateShow(selectedTruckBase.plate_number, selectedTruckBase)
+                  "
+                ></div>
+              </div>
 
-            <div v-if="selectedTruckBase.plate_number" class="px-4">
-              <EditBtn
-                v-if="selectedTruckBase.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(selectedTruckBase.match_status)"
-                :editItem="selectedTruckBase" :fields="plateFields(selectedTruckBase)" @update="reloadMainData" />
-              <div v-html="plateShow(selectedTruckBase.plate_number, selectedTruckBase)"></div>
-            </div>
-
-            <div v-if="selectedTruckBase.container_code" class="px-4">
-              <EditBtn
-                v-if="selectedTruckBase.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(selectedTruckBase.match_status)"
-                :editItem="selectedTruckBase" :fields="containerFields(selectedTruckBase)" @update="reloadMainData" />
-              <div style="transform: scale(0.7)" v-html="containerCodeShow(selectedTruckBase.container_code, selectedTruckBase)
-                "></div>
-            </div>
+              <div v-if="selectedTruckBase.container_code" class="px-4">
+                <EditBtn
+                  v-if="
+                    selectedTruckBase.match_status &&
+                    ['container_without_bijac', 'plate_without_bijac'].includes(
+                      selectedTruckBase.match_status
+                    )
+                  "
+                  :editItem="selectedTruckBase"
+                  :fields="containerFields(selectedTruckBase)"
+                  @update="reloadMainData"
+                />
+                <div
+                  style="transform: scale(0.7)"
+                  v-html="
+                    containerCodeShow(
+                      selectedTruckBase.container_code,
+                      selectedTruckBase
+                    )
+                  "
+                ></div>
+              </div>
 
               <!-- <LogHistory :ocr-log="selectedTruckBase" /> -->
 
-              <v-btn icon class="ml-2 v-btn v-btn--icon v-btn--round theme--light v-size--default danger"
-                @click="clearSelectedTruck" style="position: absolute; left: -25px; top: -25px;">
+              <v-btn
+                icon
+                class="ml-2 v-btn v-btn--icon v-btn--round theme--light v-size--default danger"
+                @click="clearSelectedTruck"
+                style="position: absolute; left: -25px; top: -25px"
+              >
                 <i class="fa fa-times" style="color: #fff"></i>
               </v-btn>
-
             </template>
             <v-card-text class="pb-0 pa-0 d-flex flex-row flex-wrap">
               <div class="col-12 d-flex flex-wrap flex-row pa-0">
@@ -150,22 +263,35 @@
                   <TruckImages :truck="selectedTruckBase" />
                 </div>
 
-                <div v-if="getSafe(selectedTruckBase, 'bijacs[0].type') === 'gcoms'" class="col-12 pa-0 mt-2">
-                  <GcomsInvoiceSearchPanel :fields="gcomsFields" :activePlateNumber="selectedTruckBase" />
+                <div
+                  v-if="
+                    getSafe(selectedTruckBase, 'bijacs[0].type') === 'gcoms'
+                  "
+                  class="col-12 pa-0 mt-2"
+                >
+                  <GcomsInvoiceSearchPanel
+                    :fields="gcomsFields"
+                    :activePlateNumber="selectedTruckBase"
+                  />
                 </div>
 
                 <div class="col-12 mt-8 pa-0">
-                  <TruckBijacs :truck="selectedTruckBase" :bijacFields="bijacFields" />
+                  <TruckBijacs
+                    :truck="selectedTruckBase"
+                    :bijacFields="bijacFields"
+                  />
                 </div>
 
                 <div class="col-12 mt-8 d-flex flex-column">
-                  <TruckInvoice :truck="selectedTruckBase" :invoiceFields="invoiceFields" />
+                  <TruckInvoice
+                    :truck="selectedTruckBase"
+                    :invoiceFields="invoiceFields"
+                  />
                 </div>
               </div>
             </v-card-text>
           </CardWidget>
         </div>
-
 
         <template>
           <v-dialog v-model="fatabInvoiceCheck" max-width="400">
@@ -173,34 +299,56 @@
               <v-card-title class="headline">ثبت کانتینر خالی</v-card-title>
 
               <v-card-text>
-                <v-text-field v-model="invoiceAftab" label="شماره فاکتور/قبض انبار" hide-details="auto" dense rounded
-                  outlined append-icon="fal fa-check" :error="aftabError" :error-messages="aftabErrorMessage"
-                  @click:append="searchInvoiceAftab(invoiceAftab)" />
+                <v-text-field
+                  v-model="invoiceAftab"
+                  label="شماره فاکتور/قبض انبار"
+                  hide-details="auto"
+                  dense
+                  rounded
+                  outlined
+                  append-icon="fal fa-check"
+                  :error="aftabError"
+                  :error-messages="aftabErrorMessage"
+                  @click:append="searchInvoiceAftab(invoiceAftab)"
+                />
               </v-card-text>
 
               <v-card-text v-html="empinvoicetext"></v-card-text>
 
               <v-card-actions class="d-flex justify-space-between px-4 pb-4">
-                <v-btn v-if="fatabInvoiceCheck20tu" vlarge color="primary" class="flex-grow-1 mr-2"
-                  style="font-size: 1.5em;" @click="selectContainer('_20Feet')">
+                <v-btn
+                  v-if="fatabInvoiceCheck20tu"
+                  vlarge
+                  color="primary"
+                  class="flex-grow-1 mr-2"
+                  style="font-size: 1.5em"
+                  @click="selectContainer('_20Feet')"
+                >
                   20Tu
                 </v-btn>
 
-                <v-btn v-if="fatabInvoiceCheck40tu" large color="success" class="flex-grow-1 ml-2"
-                  style="font-size: 1.5em;" @click="selectContainer('_40Feet')">
+                <v-btn
+                  v-if="fatabInvoiceCheck40tu"
+                  large
+                  color="success"
+                  class="flex-grow-1 ml-2"
+                  style="font-size: 1.5em"
+                  @click="selectContainer('_40Feet')"
+                >
                   40Tu
                 </v-btn>
               </v-card-actions>
-
             </v-card>
           </v-dialog>
         </template>
 
-
-        <CardWidget id="padding-low" :title="statusMessage(selectedTruck)" style="border: 2px solid white"
-          :style="{ outline: '5px solid ' + statusColor(selectedTruck) }">
+        <CardWidget
+          id="padding-low"
+          :title="statusMessage(selectedTruck)"
+          style="border: 2px solid white"
+          :style="{ outline: '5px solid ' + statusColor(selectedTruck) }"
+        >
           <template #actions>
-
             <!--
             
             <div class="mx-1" style="width: 200px"
@@ -251,25 +399,49 @@
   </div>
   -->
 
-
             <div v-if="selectedTruck.plate_number" class="px-4">
               <EditBtn
-                v-if="selectedTruck.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)"
-                :editItem="selectedTruck" :fields="plateFields(selectedTruck)" @update="reloadMainData" />
-              <div v-html="plateShow(selectedTruck.plate_number, selectedTruck)"></div>
+                v-if="
+                  selectedTruck.match_status &&
+                  ['container_without_bijac', 'plate_without_bijac'].includes(
+                    selectedTruck.match_status
+                  )
+                "
+                :editItem="selectedTruck"
+                :fields="plateFields(selectedTruck)"
+                @update="reloadMainData"
+              />
+              <div
+                v-html="plateShow(selectedTruck.plate_number, selectedTruck)"
+              ></div>
             </div>
 
             <div v-if="selectedTruck.container_code" class="px-4">
               <EditBtn
-                v-if="selectedTruck.match_status && ['container_without_bijac', 'plate_without_bijac'].includes(selectedTruck.match_status)"
-                :editItem="selectedTruck" :fields="containerFields(selectedTruck)" @update="reloadMainData" />
-              <div style="transform: scale(0.7)" v-html="containerCodeShow(selectedTruck.container_code, selectedTruck)
-                "></div>
+                v-if="
+                  selectedTruck.match_status &&
+                  ['container_without_bijac', 'plate_without_bijac'].includes(
+                    selectedTruck.match_status
+                  )
+                "
+                :editItem="selectedTruck"
+                :fields="containerFields(selectedTruck)"
+                @update="reloadMainData"
+              />
+              <div
+                style="transform: scale(0.7)"
+                v-html="
+                  containerCodeShow(selectedTruck.container_code, selectedTruck)
+                "
+              ></div>
             </div>
 
             <LogHistory :ocr-log="selectedTruck" />
 
-            <component :is="comp" :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number=${matchGate}`" />
+            <component
+              :is="comp"
+              :route="`api/sse/ocr-match?receiver_id=${matchGate}&gate_number=${matchGate}`"
+            />
           </template>
           <v-card-text class="pb-0 pa-0 d-flex flex-row flex-wrap">
             <div class="col-12 d-flex flex-wrap flex-row pa-0">
@@ -277,16 +449,28 @@
                 <TruckImages :truck="selectedTruck" />
               </div>
 
-              <div v-if="getSafe(selectedTruck, 'bijacs[0].type') === 'gcoms'" class="col-12 pa-0 mt-2">
-                <GcomsInvoiceSearchPanel :fields="gcomsFields" :activePlateNumber="selectedTruck" />
+              <div
+                v-if="getSafe(selectedTruck, 'bijacs[0].type') === 'gcoms'"
+                class="col-12 pa-0 mt-2"
+              >
+                <GcomsInvoiceSearchPanel
+                  :fields="gcomsFields"
+                  :activePlateNumber="selectedTruck"
+                />
               </div>
 
               <div class="col-12 mt-8 pa-0">
-                <TruckBijacs :truck="selectedTruck" :bijacFields="bijacFields" />
+                <TruckBijacs
+                  :truck="selectedTruck"
+                  :bijacFields="bijacFields"
+                />
               </div>
 
               <div class="col-12 mt-8 d-flex flex-column">
-                <TruckInvoice :truck="selectedTruck" :invoiceFields="invoiceFields" />
+                <TruckInvoice
+                  :truck="selectedTruck"
+                  :invoiceFields="invoiceFields"
+                />
               </div>
             </div>
           </v-card-text>
@@ -380,12 +564,9 @@ export default {
       aftabErrorMessage: '',
       findInvoice: 0,
       empinvoicetext: '',
-
     }
   },
-  mounted() {
-
-  },
+  mounted() {},
   computed: {
     ...mapGetters({
       getItemsWithKey: 'dynamic/getItemsWithKey',
@@ -401,7 +582,9 @@ export default {
       handler(value) {
         this.AllTrucks = structuredClone(value)
 
-        const updated = this.AllTrucks.find(t => t.id === this.selectedTruckBase.id)
+        const updated = this.AllTrucks.find(
+          (t) => t.id === this.selectedTruckBase.id
+        )
         if (updated) {
           this.selectedTruckBase = JSON.parse(JSON.stringify(updated))
         } else {
@@ -415,14 +598,12 @@ export default {
         this.selectedTruck = latestTruck
 
         this.getMoves()
-
       },
     },
   },
 
   created() {
-    this.matchGate = this.$route.params.id || 0;
-
+    this.matchGate = this.$route.params.id || 0
 
     this.getMoves()
     this.$majra.init({
@@ -449,7 +630,6 @@ export default {
     this._listen('selected.truck.change', (truck) => {
       // this.selectedTruckBase = truck
       // window.scrollTo({ top: 0, behavior: 'smooth' });
-
       // this.selectedTruck = truck
     })
   },
@@ -465,7 +645,7 @@ export default {
     },
 
     clearSelectedTruck() {
-      this.selectedTruckBase = {};
+      this.selectedTruckBase = {}
 
       this.invoiceAftab = ''
       this.fatabInvoiceCheck = false
@@ -481,16 +661,13 @@ export default {
       const [s, e] = this.getRoundedHourRange() // دریافت بازه زمانی
 
       this.$axios
-        .$post(
-          `/log/gateCounter?&gate_number=${this.matchGate}`
-        )
+        .$post(`/log/gateCounter?&gate_number=${this.matchGate}`)
         .then((res) => {
-          const east_ = [2, 3, 4];
+          const east_ = [2, 3, 4]
           // this.movement = res.all
           this.gate_count = res.gate_count
           this.gate_count_last_hour = res.gate_count_last_hour
           this.gate_collection = res.gate_collection
-
         })
         .catch((error) => {
           // console.error('خطا در دریافت داده‌ها:', error)
@@ -563,11 +740,9 @@ export default {
         concat = '</br>' + NormalizeContainerCodeAsImg(form.container_code_2)
 
       if (v) {
-        return (
-          NormalizeContainerCodeAsImg(
-            form.container_code_edit || v,
-            form.container_code_edit ? 'green' : '#2957a4'
-          )
+        return NormalizeContainerCodeAsImg(
+          form.container_code_edit || v,
+          form.container_code_edit ? 'green' : '#2957a4'
         )
       }
 
@@ -613,12 +788,14 @@ export default {
         .then((res) => {
           console.log(res)
           if (res.message === 'success') {
-            this._event('alert', { text: 'عملیات انجام شد. درحال بارگزاری اطلاعات ...' })
-          } else if (res.message === "bijac_has_invoice") {
+            this._event('alert', {
+              text: 'عملیات انجام شد. درحال بارگزاری اطلاعات ...',
+            })
+          } else if (res.message === 'bijac_has_invoice') {
             this._event('alert', { text: 'فاکتور قبلا ثبت شده است' })
-          } else if (res.message === "receipt_number is wrong") {
+          } else if (res.message === 'receipt_number is wrong') {
             this._event('alert', { text: 'شماره قبض انبار اشتباه می باشد' })
-          } else if (res.message === "err") {
+          } else if (res.message === 'err') {
             this._event('alert', { text: 'خطایی رخ داده' })
           } else {
             this._event('alert', { text: 'موردی یافت نشد' })
@@ -630,7 +807,9 @@ export default {
             key: 'OcrMatch',
           })
 
-          const updated = this.AllTrucks.find(t => t.id === this.selectedTruckBase.id)
+          const updated = this.AllTrucks.find(
+            (t) => t.id === this.selectedTruckBase.id
+          )
           if (updated) {
             this.selectedTruckBase = JSON.parse(JSON.stringify(updated))
           } else {
@@ -664,9 +843,9 @@ export default {
     },
 
     selectTruck(truck) {
-      this.selectedTruckBase = truck;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      console.log(this.selectedTruckBase)
+      this.selectedTruckBase = truck
+      // console.log(this.selectedTruckBase)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       if (truck.bijacs.length === 0) {
         this._event('alert', { text: 'بیجکی یافت نشد' })
       } else {
@@ -675,49 +854,53 @@ export default {
     },
 
     async customCheck_confirm(itemId) {
-      this.itemIdToConfirm = itemId;
-      this.confirmationDialog = true;
+      this.itemIdToConfirm = itemId
+      this.confirmationDialog = true
     },
     async customCheck() {
       if (!this.itemIdToConfirm) {
-        this._event("alert", { text: 'خطا: شناسه مورد نظر یافت نشد.', color: "red" });
-        this.confirmationDialog = false;
-        return;
+        this._event('alert', {
+          text: 'خطا: شناسه مورد نظر یافت نشد.',
+          color: 'red',
+        })
+        this.confirmationDialog = false
+        return
       }
       try {
         this._event('loading')
 
-        const res = await this.$axios.$post('/ocr-match/customCheck/' + this.itemIdToConfirm, {
-          OcrMatch: this.form,
-        })
+        const res = await this.$axios.$post(
+          '/ocr-match/customCheck/' + this.itemIdToConfirm,
+          {
+            OcrMatch: this.form,
+          }
+        )
         // this.$emit('item-updated', res.data)
 
         this.$set(this.localConfirmed, this.itemIdToConfirm, true)
 
         this._event('loading', false)
-        this.confirmationDialog = false;
+        this.confirmationDialog = false
 
-        this._event("alert", {
+        this._event('alert', {
           text: 'تغییرات با موفقیت ذخیره شد',
-          color: "green",
-        });
-
+          color: 'green',
+        })
       } catch (error) {
-        this._event('loading', false);
+        this._event('loading', false)
 
-        let errorMessage = "خطایی رخ داده است";
+        let errorMessage = 'خطایی رخ داده است'
 
         if (error.response) {
-          errorMessage = error.response.data.message || "خطای سرور";
+          errorMessage = error.response.data.message || 'خطای سرور'
         } else if (error.request) {
-          errorMessage = "پاسخی از سرور دریافت نشد";
+          errorMessage = 'پاسخی از سرور دریافت نشد'
         }
 
-        this._event("alert", {
+        this._event('alert', {
           text: errorMessage,
-          color: "red",
-        });
-
+          color: 'red',
+        })
       }
     },
 
@@ -741,7 +924,7 @@ export default {
             this._event('alert', { text: res.message })
             this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
                 <p style="text-align: center;font-size: 1.5em;color: red;">${res.message}</p>          
-                </div>`;
+                </div>`
 
             if (res.reload && res.reload == 1) {
               this.$store.dispatch('dynamic/get', {
@@ -750,7 +933,7 @@ export default {
               })
               setTimeout(() => {
                 this.fatabInvoiceCheck = false
-              }, 1000);
+              }, 1000)
             }
             return false
           }
@@ -763,10 +946,10 @@ export default {
                   </div>`
             return false
           }
-          var downedTu = 0;
-          res.bijacs.forEach(item => {
+          var downedTu = 0
+          res.bijacs.forEach((item) => {
             downedTu++
-            if (item.container_size && item.container_size == "_40Feet") {
+            if (item.container_size && item.container_size == '_40Feet') {
               downedTu++
             }
           })
@@ -790,15 +973,14 @@ export default {
           this.findInvoice = res.id
           if (mandeTu >= 1) this.fatabInvoiceCheck20tu = true
           if (mandeTu >= 2) this.fatabInvoiceCheck40tu = true
-
-        }).catch((data) => {
+        })
+        .catch((data) => {
           console.log(data)
           this._event('loading', false)
-        }).finally(() => {
-          this._event('loading', false)
-
         })
-
+        .finally(() => {
+          this._event('loading', false)
+        })
     },
     async selectContainer(data) {
       console.log(data, this.findInvoice)
@@ -815,23 +997,23 @@ export default {
             this._event('alert', { text: res.message })
             this.empinvoicetext = `<div dir="rtl"style="text-align: center;">
                 <p style="text-align: center;font-size: 1.5em;color: red;">${res.message}</p>          
-                </div>`;
+                </div>`
             setTimeout(() => {
               this.fatabInvoiceCheck = false
-            }, 1000);
+            }, 1000)
           }
 
           this.$store.dispatch('dynamic/get', {
             page: this.page,
             key: 'OcrMatch',
           })
-          this._event('alert', { text: "درحال لود مجدد ..." })
+          this._event('alert', { text: 'درحال لود مجدد ...' })
 
-          const DATA = res.DATA;
-          var downedTu = 0;
-          DATA.bijacs.forEach(item => {
+          const DATA = res.DATA
+          var downedTu = 0
+          DATA.bijacs.forEach((item) => {
             downedTu++
-            if (item.container_size && item.container_size == "_40Feet") {
+            if (item.container_size && item.container_size == '_40Feet') {
               downedTu++
             }
           })
@@ -840,10 +1022,11 @@ export default {
           <p style="text-align: center;font-size: 1.5em;color: red;">تعداد ثبت شده : ${downedTu} TU</p>          
           <p style="text-align: center;font-size: 1.5em;color: green;">تعداد مجاز : ${totalTu} TU</p>     
           </div>`
-
-        }).catch((data) => {
+        })
+        .catch((data) => {
           console.log(data)
-        }).finally(() => {
+        })
+        .finally(() => {
           this._event('loading', false)
           this.invoiceAftab = ''
           // this.fatabInvoiceCheck = false
@@ -854,15 +1037,13 @@ export default {
           this.findInvoice = 0
           // this.empinvoicetext = ''
         })
-    }
-
-
+    },
   },
 }
 </script>
 
 <style>
-#padding-low>.v-card__title {
+#padding-low > .v-card__title {
   padding: 8px !important;
 }
 </style>

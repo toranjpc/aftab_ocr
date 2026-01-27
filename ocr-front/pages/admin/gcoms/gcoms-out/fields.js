@@ -30,7 +30,7 @@ export default function (val) {
       field: 'customNb',
       type: 'text',
       isHeader: true,
-      col: { md: 5 },
+      col: { md: 6 },
       props: {
         id: 'customNb',
         rules: [validations.required()],
@@ -52,7 +52,7 @@ export default function (val) {
       field: 'weight',
       type: 'text',
       isHeader: true,
-      col: { md: 3 },
+      col: { md: 6 },
       props: {
         id: 'weight',
         ref: 'weight',
@@ -61,21 +61,22 @@ export default function (val) {
       },
     },
 
-    {
-      title: 'تاریخ وزن کشی',
-      field: 'full_scale_date',
-      type: 'date',
-      props: {
-        rules: [validations.required()],
-        format: 'YYYY-MM-DD',
-        type: 'date',
-        view: 'month',
-      },
-      inList(date) {
-        return new Date(date).toLocaleString('fa-IR')
-      },
-      isHeader: true,
-      col: { md: 4 },
-    },
+    // {
+    //   title: 'تاریخ وزن کشی',
+    //   field: 'full_scale_date',
+    //   type: 'text',
+    //   value: "2121",
+    //   props: {
+    //     // rules: [validations.required()],
+    //     format: 'YYYY-MM-DD',
+    //     type: 'date',
+    //     view: 'month',
+    //   },
+    //   inList(date) {
+    //     // return new Date(date).toLocaleString('fa-IR')
+    //   },
+    //   isHeader: true,
+    //   col: { md: 4 },
+    // },
   ]
 }

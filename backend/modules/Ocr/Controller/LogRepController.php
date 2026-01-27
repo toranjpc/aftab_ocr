@@ -8,10 +8,14 @@ use Illuminate\Support\Facades\Log;
 use Hekmatinasser\Verta\Verta;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
+use Imanghafoori\SearchReplace\Filters\InArray;
 use Modules\Ocr\Models\OcrLog;
 use Modules\Ocr\Models\OcrMatch;
 use Mpdf\Tag\Tr;
 use Modules\BijacInvoice\Models\Customer;
+use Modules\BijacInvoice\Models\Bijac;
+use Modules\BijacInvoice\Models\Invoice;
+use PhpOffice\PhpSpreadsheet\Shared\Trend\Trend;
 use PhpParser\Node\Expr\AssignOp\Minus;
 
 class LogRepController extends Controller
@@ -99,7 +103,7 @@ class LogRepController extends Controller
                 ->filter();
 
             // if ($request->has('date_filter')) {
-            //     $now = now();
+            //     $now = now('Asia/Tehran');
 
             //     switch ($request->input('date_filter')) {
             //         case 'today':
@@ -156,7 +160,7 @@ class LogRepController extends Controller
             $subSql = $subQuery->toSql();
             $bindings = $subQuery->getBindings();
 
-            $oneHourAgo = now()->subHour();
+            $oneHourAgo = now('Asia/Tehran')->subHour();
             if (in_array($request->gate_number, ['2', '3', '4'])) $qq = "COUNT(CASE WHEN gate_number IN (2,3,4) THEN 1 END) AS `gate_collection`,";
             else $qq = "COUNT(CASE WHEN gate_number IN (1) THEN 1 END) AS `gate_collection`,";
             $counts = DB::table(DB::raw("($subSql) as sub"))
@@ -216,8 +220,8 @@ class LogRepController extends Controller
     public function gateCounter(Request $request)
     {
         try {
-            $today = now()->format('Y-m-d');
-            $oneHourAgo = now()->subHour();
+            $today = now('Asia/Tehran')->format('Y-m-d');
+            $oneHourAgo = now('Asia/Tehran')->subHour();
             if (in_array($request->gate_number, ['2', '3', '4'])) {
                 $qq = "COUNT(CASE WHEN gate_number IN (2,3,4) THEN 1 END) AS `gate_collection`,";
             } else {
@@ -237,236 +241,427 @@ class LogRepController extends Controller
 
 
 
-
-
-
     public function makeReport(Request $request)
     {
         $startTime = microtime(true);
+        $log["start"] = 0;
         $inputData = $request->all();
 
-        // try {
+        // تعیین بازه زمانی
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
         $dateRange = $request->input('dateRange', 'today');
+
         switch ($dateRange) {
             case '1hour':
-                $dateTo = now()->format('Y-m-d H:i:s');
-                $dateFrom = now()->subHour()->format('Y-m-d H:i:s');
+                $dateTo = now('Asia/Tehran')->format('Y-m-d H:i:s');
+                $dateFrom = now('Asia/Tehran')->subHours(5)->format('Y-m-d H:i:s');
                 break;
             case 'today':
-                $dateFrom = now()->startOfDay()->format('Y-m-d H:i:s');
-                $dateTo = now()->endOfDay()->format('Y-m-d H:i:s');
+                $dateFrom = now('Asia/Tehran')->startOfDay()->format('Y-m-d H:i:s');
+                $dateTo = now('Asia/Tehran')->endOfDay()->format('Y-m-d H:i:s');
                 break;
             case 'week':
-                $dateFrom = now()->startOfWeek()->format('Y-m-d H:i:s');
-                $dateTo = now()->endOfWeek()->format('Y-m-d H:i:s');
+                $dateFrom = now('Asia/Tehran')->startOfWeek()->format('Y-m-d H:i:s');
+                $dateTo = now('Asia/Tehran')->endOfWeek()->format('Y-m-d H:i:s');
                 break;
             case 'month':
-                $dateFrom = now()->startOfMonth()->format('Y-m-d H:i:s');
-                $dateTo = now()->endOfMonth()->format('Y-m-d H:i:s');
+                $dateFrom = now('Asia/Tehran')->startOfMonth()->format('Y-m-d H:i:s');
+                $dateTo = now('Asia/Tehran')->endOfMonth()->format('Y-m-d H:i:s');
                 break;
             case 'custom':
-                // Use provided dates
+                // از ورودی استفاده می‌کنیم
                 break;
             default:
-                $dateFrom = now()->startOfDay()->format('Y-m-d H:i:s');
-                $dateTo = now()->endOfDay()->format('Y-m-d H:i:s');
+                $dateFrom = now('Asia/Tehran')->startOfDay()->format('Y-m-d H:i:s');
+                $dateTo = now('Asia/Tehran')->endOfDay()->format('Y-m-d H:i:s');
                 break;
         }
+        $log["after_Date_Config"] = microtime(true) - $startTime;
+        // $Bijac_check = false;
+        // $dateRange_ = now('Asia/Tehran')->subHours(3)->format('Y-m-d H:i:s');
+        // $Bijac = Bijac::select('id'); //->where('bijac_date', '>', $dateRange_);
+        // $Invoice_check = false;
+        // $Invoice = Invoice::select('id');
+        $query = OcrMatch::select('*')
+            ->with([
+                "bijacs" => function ($q) {
+                    $q->with(['invoices' => function ($qq) {
+                        $qq->with('customer:id,title')
+                            ->select('id', 'customer_id', 'invoice_number', 'receipt_number');
+                    }])
+                        ->select('id', 'plate_normal', 'receipt_number', 'container_number', 'bijac_date', 'bijac_number', 'type');
+                }
+            ])
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->orderBy('id', "DESC");
 
-        $query = OcrMatch::query()
-            ->with("bijacs.invoices.customer")
-            ->whereBetween('created_at', [$dateFrom, $dateTo]);
+        // return [$dateFrom, $dateTo];
+        // return $query->paginate(10);
+        // return vsprintf(str_replace('?', "'%s'", $query->toSql()), $query->getBindings());
 
-        if ($request->has('gate') && !empty($request->gate)) {
+        //☺
+        $log["after_Query_make"] = microtime(true) - $startTime;
+
+        if ($request->filled('gate')) {
             $gates = is_array($request->gate) ? $request->gate : explode(',', $request->gate);
             $query->whereIn('ocr_matches.gate_number', $gates);
         }
+        $log["after_Gate_if"] = microtime(true) - $startTime;
 
-        if ($request->has('cargo_type') && !empty($request->cargo_type)) {
-            $cargoTypes = is_array($request->cargo_type) ? $request->cargo_type : explode(',', $request->cargo_type);
-            $query->whereHas('bijacs', function ($bq) use ($cargoTypes) {
-                if (in_array('bulk', $cargoTypes) && in_array('container', $cargoTypes)) {
-                    // Both types - no filter needed
-                } elseif (in_array('bulk', $cargoTypes)) {
-                    $bq->whereNull('container_number');
-                } elseif (in_array('container', $cargoTypes)) {
-                    $bq->whereNotNull('container_number');
-                }
-            });
-        }
+        //☺
+        // if ($request->filled('cargo_type')) {
+        // $cargoTypes = is_array($request->cargo_type) ? $request->cargo_type : explode(',', $request->cargo_type);
+        // $Bijac->where(function ($bq) use ($cargoTypes) {
+        // if (in_array('bulk', $cargoTypes) && !in_array('container', $cargoTypes)) {
+        // $bq->whereNull('container_number');
+        // } elseif (!in_array('bulk', $cargoTypes) && in_array('container', $cargoTypes)) {
+        // $bq->whereNotNull('container_number');
+        // }
+        // });
+        // $Bijac_check = true;
 
-        if ($request->has('status') && !empty($request->status)) {
+
+        // if (in_array('bijac_nok', $cargoTypes)) $query->whereDoesntHave('bijacs');
+        // else {
+        //     $query->whereHas('bijacs', function ($bq) use ($cargoTypes) {
+        //         if (in_array('bulk', $cargoTypes)) {
+        //             $bq->whereNull('container_number');
+        //         }
+        //         if (in_array('container', $cargoTypes)) {
+        //             $bq->whereNotNull('container_number');
+        //         }
+        //     });
+        // }
+
+        // $data = [
+        //     "gcoms_ok",
+        //     "ccs_ok",
+        //     "plate_ccs_ok",
+        //     "container_ccs_ok",
+        //     "gcoms_nok",
+        //     "ccs_nok",
+        //     "plate_ccs_nok",
+        //     "container_ccs_nok",
+        //     "plate_without_bijac",
+        //     "container_without_bijac",
+        // ];
+
+        // }
+        // $log["after_cargo_type_if"] = microtime(true) - $startTime;
+
+        //☺
+        $cargo_types = [
+            'bulk' => [
+                'gcoms_ok',
+                'gcoms_nok',
+            ],
+            'container' => [
+                'ccs_ok',
+                'plate_ccs_ok',
+                'container_ccs_ok',
+                'ccs_nok',
+                'plate_ccs_nok',
+                'container_ccs_nok',
+            ],
+            'bijac_nok' => [
+                'plate_without_bijac',
+                'container_without_bijac',
+            ]
+        ];
+        if ($request->filled('status')) {
             $statuses = is_array($request->status) ? $request->status : explode(',', $request->status);
-            $query->where(function ($q) use ($statuses) {
-                foreach ($statuses as $status) {
-                    switch ($status) {
-                        case 'gcoms_ok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereHas('bijacs', function ($bq) {
-                                    $bq->where('type', 'gcoms')
-                                        ->whereHas('invoices');
-                                });
-                            });
-                            break;
-                        case 'gcoms_nok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereHas('bijacs', function ($bq) {
-                                    $bq->where('type', 'gcoms')
-                                        ->doesntHave('invoices');
-                                });
-                            });
-                            break;
-                        case 'container_ccs_ok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereNotNull('container_code')
-                                    ->whereHas('bijacs', function ($bq) {
-                                        $bq->where('type', 'ccs')
-                                            ->whereHas('invoices');
-                                    });
-                            });
-                            break;
-                        case 'container_ccs_nok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereNotNull('container_code')
-                                    ->whereHas('bijacs', function ($bq) {
-                                        $bq->where('type', 'ccs')
-                                            ->doesntHave('invoices');
-                                    });
-                            });
-                            break;
-                        case 'container_without_bijac':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereNotNull('container_code')
-                                    ->doesntHave('bijacs');
-                            });
-                            break;
-                        case 'plate_without_bijac':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereNull('container_code')
-                                    ->doesntHave('bijacs');
-                            });
-                            break;
-                        case 'plate_ccs_ok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereNull('container_code')
-                                    ->whereHas('bijacs', function ($bq) {
-                                        $bq->where('type', 'ccs')
-                                            ->whereHas('invoices');
-                                    });
-                            });
-                            break;
-                        case 'plate_ccs_nok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereNull('container_code')
-                                    ->whereHas('bijacs', function ($bq) {
-                                        $bq->where('type', 'ccs')
-                                            ->doesntHave('invoices');
-                                    });
-                            });
-                            break;
-                        case 'ccs_ok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereHas('bijacs', function ($bq) {
-                                    $bq->where('type', 'ccs')
-                                        ->whereHas('invoices');
-                                });
-                            });
-                            break;
-                        case 'ccs_nok':
-                            $q->orWhere(function ($sq) {
-                                $sq->whereHas('bijacs', function ($bq) {
-                                    $bq->where('type', 'ccs')
-                                        ->doesntHave('invoices');
-                                });
-                            });
-                            break;
-                    }
-                }
-            });
-        }
 
-        if ($request->has('danger_type') && !empty($request->danger_type)) {
+            $arr = $statuses;
+            if ($request->filled('cargo_type') && isset($cargo_types[$request->cargo_type])) {
+                $arr = [];
+                foreach ($cargo_types[$request->cargo_type] as $value) {
+                    if (in_array($value, $statuses)) $arr[] = $value;
+                }
+            }
+            $query->whereIn('ocr_matches.match_status', $arr);
+            // if (
+            //     in_array('container_without_bijac', $statuses) ||
+            //     in_array('plate_without_bijac', $statuses)
+            // ) {
+            //     $query->where(function ($q) use ($statuses) {
+            //         foreach ($statuses as $status) {
+            //             if (!in_array($status, ['container_without_bijac', 'plate_without_bijac'])) continue;
+            //             switch ($status) {
+            //                 case 'container_without_bijac':
+            //                     $q->orWhere(fn($sq) => $sq->whereNotNull('container_code')->doesntHave('bijacs'));
+            //                     break;
+            //                 case 'plate_without_bijac':
+            //                     $q->orWhere(fn($sq) => $sq->whereNull('container_code')->doesntHave('bijacs'));
+            //                     break;
+            //             }
+            //         }
+            //     });
+            // }
+
+            // if (
+            //     in_array('gcoms_ok', $statuses) ||
+            //     in_array('gcoms_nok', $statuses) ||
+            //     in_array('container_ccs_ok', $statuses) ||
+            //     in_array('container_ccs_nok', $statuses) ||
+            //     in_array('plate_ccs_ok', $statuses) ||
+            //     in_array('plate_ccs_nok', $statuses) ||
+            //     in_array('ccs_ok', $statuses) ||
+            //     in_array('ccs_nok', $statuses)
+            // ) {
+            //     $Bijac = $Bijac->with('invoices');
+            //     $Bijac->where(function ($q) use ($statuses) {
+            //         foreach ($statuses as $status) {
+            //             if (!in_array($status, [
+            //                 'gcoms_ok',
+            //                 'gcoms_nok',
+            //                 'container_ccs_ok',
+            //                 'container_ccs_nok',
+            //                 'plate_ccs_ok',
+            //                 'plate_ccs_nok',
+            //                 'ccs_ok',
+            //                 'ccs_nok',
+            //             ])) continue;
+            //             switch ($status) {
+            //                 case 'gcoms_ok':
+            //                     $q->orWhere(fn($bq) => $bq->where('type', 'gcoms')->whereHas('invoices'));
+            //                     break;
+            //                 case 'gcoms_nok':
+            //                     $q->orWhere(fn($bq) => $bq->where('type', 'gcoms')->doesntHave('invoices'));
+            //                     break;
+            //                 case 'container_ccs_ok':
+            //                     $q->orWhere(fn($bq) => $bq->whereNotNull('container_number')->where('type', 'ccs')->whereHas('invoices'));
+            //                     break;
+            //                 case 'container_ccs_nok':
+            //                     $q->orWhere(fn($bq) => $bq->whereNotNull('container_number')->where('type', 'ccs')->doesntHave('invoices'));
+            //                     break;
+            //                 case 'plate_ccs_ok':
+            //                     $q->orWhere(fn($bq) => $bq->where('type', 'ccs')->whereHas('invoices')->whereNull('container_number'));
+            //                     break;
+            //                 case 'plate_ccs_nok':
+            //                     $q->orWhere(fn($bq) => $bq->where('type', 'ccs')->doesntHave('invoices')->whereNull('container_number'));
+            //                     break;
+            //                 case 'ccs_ok':
+            //                     $q->orWhere(fn($bq) => $bq->where('type', 'ccs')->whereHas('invoices'));
+            //                     break;
+            //                 case 'ccs_nok':
+            //                     $q->orWhere(fn($bq) => $bq->where('type', 'ccs')->doesntHave('invoices'));
+            //                     break;
+            //             }
+            //         }
+            //     });
+            // }
+
+
+            // $Bijac_check = true;
+            // $query->where(function ($q) use ($statuses) {
+            //     foreach ($statuses as $status) {
+            //         switch ($status) {
+            //             case 'gcoms_ok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->where('type', 'gcoms')->whereHas('invoices'));
+            //                 break;
+            //             case 'gcoms_nok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->where('type', 'gcoms')->doesntHave('invoices'));
+            //                 break;
+            //             case 'container_ccs_ok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->whereNotNull('container_number')->where('type', 'ccs')->whereHas('invoices'));
+            //                 break;
+            //             case 'container_ccs_nok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->whereNotNull('container_number')->where('type', 'ccs')->doesntHave('invoices'));
+            //                 break;
+            //             case 'container_without_bijac':
+            //                 $q->orWhere(fn($sq) => $sq->whereNotNull('container_code')->doesntHave('bijacs'));
+            //                 break;
+            //             case 'plate_without_bijac':
+            //                 $q->orWhere(fn($sq) => $sq->whereNull('container_code')->doesntHave('bijacs'));
+            //                 break;
+            //             case 'plate_ccs_ok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->where('type', 'ccs')->whereHas('invoices')->whereNull('container_number'));
+            //                 break;
+            //             case 'plate_ccs_nok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->where('type', 'ccs')->doesntHave('invoices')->whereNull('container_number'));
+            //                 break;
+            //             case 'ccs_ok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->where('type', 'ccs')->whereHas('invoices'));
+            //                 break;
+            //             case 'ccs_nok':
+            //                 $q->orWhereHas('bijacs', fn($bq) => $bq->where('type', 'ccs')->doesntHave('invoices'));
+            //                 break;
+            //         }
+            //     }
+            // });
+
+            // $statuss = is_array($request->status) ? $request->status : explode(',', $request->status);
+            // foreach ($statuss as $value) {
+            //     $statuss[] = $value . "_req";
+            //     $statuss[] = $value . "_Creq";
+            // }
+            // $query->whereIn('ocr_matches.match_status', $statuss);
+        } elseif ($request->filled('cargo_type') && isset($cargo_types[$request->cargo_type])) {
+            $query->whereIn('ocr_matches.match_status', $cargo_types[$request->cargo_type]);
+        }
+        $log["after_status_if"] = microtime(true) - $startTime;
+
+        if ($request->filled('submitType')) {
+            $submitType = is_array($request->submitType) ? $request->submitType : explode(',', $request->submitType);
+            $query->where(function ($q) use ($submitType) {
+                if (in_array('custom', $submitType)) $q->orWhere('ocr_matches.match_status', "LIKE", "%_Creq");
+                if (in_array('moredi', $submitType)) $q->orWhere('ocr_matches.match_status', "LIKE", "%_req");
+                if (in_array('system', $submitType)) $q->orWhere('ocr_matches.match_status', "NOT LIKE", "%_req");
+            });
+            if (in_array('moredi', $submitType) && !in_array('custom', $submitType)) $query->Where('ocr_matches.match_status', "NOT LIKE", "%_Creq");
+        }
+        $log["after_submitType_if"] = microtime(true) - $startTime;
+
+        //☺
+        if ($request->filled('danger_type')) {
             $dangerTypes = is_array($request->danger_type) ? $request->danger_type : explode(',', $request->danger_type);
+
+            // if (
+            //     in_array('danger_AI', $dangerTypes) ||
+            //     in_array('no_danger_AI', $dangerTypes)
+            // ) {
+            //     $query->where(function ($q) use ($dangerTypes) {
+            //         foreach ($dangerTypes as $dt) {
+            //             if (!in_array($dt, ['danger_AI', 'no_danger_AI'])) continue;
+            //             switch ($dt) {
+            //                 case 'danger_AI':
+            //                     $q->orWhere('IMDG', '!=', '');
+            //                     break;
+            //                 case 'no_danger_AI':
+            //                     $q->orWhere(fn($sq) => $sq->whereNull('IMDG')->orWhere('IMDG', ''));
+            //                     break;
+            //             }
+            //         }
+            //     });
+            // }
+
+            // if (
+            //     in_array('danger_Bijac', $dangerTypes) ||
+            //     in_array('no_danger_Bijac', $dangerTypes)
+            // ) {
+            //     $Bijac->where(function ($q) use ($dangerTypes) {
+            //         foreach ($dangerTypes as $dt) {
+            //             if (!in_array($dt, ['danger_Bijac', 'no_danger_Bijac'])) continue;
+            //             switch ($dt) {
+            //                 case 'danger_Bijac':
+            //                     $q->orWhere(fn($sq) => $sq->whereNotNull('dangerous_code')->where('dangerous_code', "!=", 0));
+            //                     break;
+            //                 case 'no_danger_Bijac':
+            //                     $q->orWhere(fn($sq) => $sq->whereNull('dangerous_code')->orWhere('dangerous_code', 0));
+            //                     break;
+            //             }
+            //         }
+            //     });
+            // }
+            // $Bijac_check = true;
             $query->where(function ($q) use ($dangerTypes) {
-                foreach ($dangerTypes as $dangerType) {
-                    switch ($dangerType) {
+                foreach ($dangerTypes as $dt) {
+                    switch ($dt) {
                         case 'danger_AI':
                             $q->orWhere('IMDG', '!=', '');
                             break;
                         case 'no_danger_AI':
-                            $q->orWhereNull('IMDG')
-                                ->orWhere('IMDG', '');
+                            $q->orWhere(fn($sq) => $sq->whereNull('IMDG')->orWhere('IMDG', ''));
                             break;
                         case 'danger_Bijac':
-                            $q->orWhereHas('bijacs', function ($bq) {
-                                $bq->whereNotNull('dangerous_code');
-                            });
+                            $q->orWhereHas('bijacs', fn($bq) => $bq->whereNotNull('dangerous_code'));
                             break;
                         case 'no_danger_Bijac':
-                            $q->orWhereDoesntHave('bijacs', function ($bq) {
-                                $bq->whereNotNull('dangerous_code');
-                            });
+                            $q->orWhereDoesntHave('bijacs', fn($bq) => $bq->whereNotNull('dangerous_code'));
                             break;
                     }
                 }
             });
-            // return $query->toSql();
         }
+        $log["after_danger_type_if"] = microtime(true) - $startTime;
 
-        if ($request->has('plate_number') && !empty($request->plate_number)) {
-            $plate_number = $request->plate_number;
-            // $plate_number = str_replace("_", "", $plate_number);
-            $query->whereHas('bijacs', function ($q) use ($plate_number) {
-                $q->where('plate_normal', 'LIKE', '%' . $plate_number . '%');
-            });
-
-            // $query->where(function ($q) use ($plate_number) {
-            //     $q->where('ocr_matches.plate_number', 'LIKE', '%' . $plate_number . '%')
-            //         ->orWhere('ocr_matches.plate_number_edit', 'LIKE', '%' . $plate_number . '%')
-            //         ->orWhere('ocr_matches.plate_number_3', 'LIKE', '%' . $plate_number . '%');
-            // });
-        }
-
-        if ($request->has('container_code') && !empty($request->container_code)) {
-            $container_code = $request->container_code;
-            // $container_code = str_replace("_", "", $container_code);
-            $query->whereHas('bijacs', function ($q) use ($container_code) {
-                $q->where('container_number', 'LIKE', '%' . $container_code . '%');
-            });
-
-            // $query->where(function ($q) use ($container_code) {
-            //     $q->where('ocr_matches.container_code', 'LIKE', '%' . $container_code . '%')
-            //         ->orWhere('ocr_matches.container_code_edit', 'LIKE', '%' . $container_code . '%')
-            //         ->orWhere('ocr_matches.container_code_3', 'LIKE', '%' . $container_code . '%');
-            // });
-        }
-
-        if ($request->has('customer_id') && !empty($request->customer_id)) {
+        //☺
+        if ($request->filled('customer_id')) {
             $customerIds = is_array($request->customer_id) ? $request->customer_id : explode(',', $request->customer_id);
-            $query->whereHas('bijacs.invoices.customer', function ($cq) use ($customerIds) {
-                $cq->whereIn('id', $customerIds);
+            // $Invoice = $Invoice->with('customer');
+            // $Invoice->whereHas('customer', fn($cq) => $cq->whereIn('id', $customerIds));
+            // $Invoice_check = true;
+            // $Bijac_check = true;
+            $query->whereHas('bijacs.invoices.customer', fn($cq) => $cq->whereIn('id', $customerIds));
+        }
+        $log["after_customer_id_if"] = microtime(true) - $startTime;
+
+        //☺
+        if ($request->filled('plate_number')) {
+            $plate_number = $request->plate_number;
+            // $Bijac->where('plate_normal', "LIKE", "%$plate_number%");
+            // $Bijac_check = true;
+            $query->where(function ($q) use ($plate_number) {
+                $q->where('plate_number', "LIKE", "%$plate_number%")
+                    ->orWhere('plate_number_3', "LIKE", "%$plate_number%")
+                    ->orWhere('plate_number_edit', "LIKE", "%$plate_number%");
             });
+            // $query->whereHas('bijacs', fn($bq) => $bq->where('plate_normal', 'LIKE', "%{$plate_number}%"));
+        }
+        $log["after_plate_number_if"] = microtime(true) - $startTime;
+
+        //☺
+        if ($request->filled('container_code')) {
+            $container_code = $request->container_code;
+            // $Bijac->where('container_code', "LIKE", "%$container_code%");
+            // $Bijac_check = true;
+            $query->where(function ($q) use ($container_code) {
+                $q->where('container_code', "LIKE", "%$container_code%")
+                    ->orWhere('container_code_3', "LIKE", "%$container_code%")
+                    ->orWhere('container_code_edit', "LIKE", "%$container_code%");
+            });
+            // $query->whereHas('bijacs', fn($bq) => $bq->where('container_number', 'LIKE', "%{$container_code}%"));
+        }
+        $log["after_container_code_if"] = microtime(true) - $startTime;
+
+        //☺
+        if ($request->filled('warehouse_bill')) {
+            $warehouse_bill = $request->warehouse_bill;
+            // $Bijac->where('receipt_number', "LIKE", "%$warehouse_bill%");
+            // $Bijac_check = true;
+            $query->whereHas('bijacs', fn($bq) => $bq->where('receipt_number', $warehouse_bill));
+            // $query->whereHas('bijacs', fn($bq) => $bq->where('receipt_number', 'LIKE', "%{$warehouse_bill}%"));
+        }
+        $log["after_warehouse_bill_if"] = microtime(true) - $startTime;
+
+        //☺
+        if ($request->filled('bijak_number')) {
+            $bijak_number = $request->bijak_number;
+            // $Bijac->where('bijac_number', "LIKE", "%$bijak_number%");
+            // $Bijac_check = true;
+            $query->whereHas('bijacs', fn($bq) => $bq->where('bijac_number', $bijak_number));
+            // $query->whereHas('bijacs', fn($bq) => $bq->where('bijac_number', 'LIKE', "%{$bijak_number}%"));
+        }
+        $log["after_bijak_number_if"] = microtime(true) - $startTime;
+
+        // if ($Invoice_check) {
+        //     $Bijac->whereHas('invoices', fn($bq) => $bq->whereIn('id', $Invoice->get()));
+        //     if (!$Bijac_check) {
+        //         $query->whereHas('bijacs', fn($bq) => $bq->whereIn('id', $Bijac->get()));
+        //     }
+        // }
+        // if ($Bijac_check) {
+        //     $query->whereHas('bijacs', fn($bq) => $bq->whereIn('id', $Bijac->get()));
+        // }
+
+        // return vsprintf(str_replace('?', "'%s'", $query->toSql()), $query->getBindings());
+        $results = clone $query;
+        $perPage = $request->input('per_page', 10);
+        $results = $results->paginate($perPage);
+        $results->data = $results->append('invoice');
+
+        $log["after_paginate"] = microtime(true) - $startTime;
+        if (!empty($request->onlyTable)) {
+            return  response()->json([
+                'table' => $results,
+                'success' => true,
+                'message' => 'گزارش تردد با موفقیت تولید شد'
+            ], Response::HTTP_OK);
         }
 
-        if ($request->has('warehouse_bill') && !empty($request->warehouse_bill)) {
-            $query->whereHas('bijacs', function ($bq) use ($request) {
-                $bq->where('receipt_number', 'LIKE', '%' . $request->warehouse_bill . '%');
-            });
-        }
-
-        if ($request->has('bijak_number') && !empty($request->bijak_number)) {
-            $query->whereHas('bijacs', function ($bq) use ($request) {
-                $bq->where('bijac_number', 'LIKE', '%' . $request->bijak_number . '%');
-            });
-        }
-
-        // return $query->toSql();
-
+        $tosql = clone $query;
         $chartQuery = clone $query;
-        // $perPage = $request->input('per_page', 10);
-        // $results = $query->paginate($perPage);
 
         $DATA = [
             'total_traffic' => 0,
@@ -476,200 +671,122 @@ class LogRepController extends Controller
             'bulk_count' => 0,
             'danger_AI' => 0,
             'danger_Bijac' => 0,
+            'gate_count' => [],
+            'status_count' => []
         ];
-        $chartQuery = $chartQuery->get();
-        foreach ($chartQuery as $key => $value) {
+        foreach ($chartQuery->get() as $value) {
             $firstBijac = $value->bijacs->first();
             $firstInvoice = $firstBijac ? $firstBijac->invoices->first() : null;
-            // $firstCustomer = $firstInvoice ? $firstInvoice->customer : null;
+
             $unit = 1;
-            if (!$firstBijac && $value->container_code && 0) { //!$value->plate_number && !$value->plate_number_3
-                $prevItem = $chartQuery[$key - 1];
-                if (!$prevItem->bijacs->first() && $prevItem->plate_number) {
-                    $unit = 0;
-                } else {
-                    $nextItem = $chartQuery[$key + 1];
-                    if (
-                        (!$nextItem->bijacs->first() && $nextItem->plate_number) &&
-                        abs($nextItem->created_at->timestamp - $value->created_at->timestamp) <= 30
-                    ) {
-                        $unit = 0;
-                    }
-                }
-            }
 
-            $cargoType = '';
-            $cargoType = '';
-            if ($firstBijac) {
-                $DATA['with_bijac'] += $unit;
+            // آمار کانتینر / بار فله
+            $cargo_types = [
+                'bulk' => [
+                    'gcoms_ok',
+                    'gcoms_nok',
+                    'gcoms_ok_Creq',
+                    'gcoms_nok_req',
+                    'gcoms_ok_Creq',
+                    'gcoms_nok_req',
+                ],
+                'container' => [
+                    'ccs_ok',
+                    'plate_ccs_ok',
+                    'container_ccs_ok',
+                    'ccs_nok',
+                    'plate_ccs_nok',
+                    'container_ccs_nok',
+                    'ccs_ok_Creq',
+                    'plate_ccs_ok_Creq',
+                    'container_ccs_ok_Creq',
+                    'ccs_nok_Creq',
+                    'plate_ccs_nok_Creq',
+                    'container_ccs_nok_Creq',
+                    'ccs_ok_req',
+                    'plate_ccs_ok_req',
+                    'container_ccs_ok_req',
+                    'ccs_nok_req',
+                    'plate_ccs_nok_req',
+                    'container_ccs_nok_req',
+                ],
+                'bijac_nok' => [
+                    'plate_without_bijac',
+                    'container_without_bijac',
+                ]
+            ];
 
-                if (!empty($firstBijac->container_number)) {
-                    $cargoType = 'container';
-                    $DATA['container_count'] += $unit;
-                } else {
-                    $cargoType = 'bulk';
-                    $DATA['bulk_count'] += $unit;
-                    // return $value;
-                }
+            $cargoType = $value->container_code ? 'container' : 'bulk';
+            if (in_array($value->match_status, $cargo_types['container'])) {
+                $DATA['container_count'] += $unit;
+                $cargoType = 'container';
+            } elseif (in_array($value->match_status, $cargo_types['bulk'])) {
+                $DATA['bulk_count'] += $unit;
+                $cargoType = 'bulk';
             }
+            // if ($firstBijac) {
+            //     $DATA['with_bijac'] += $unit;
+            //     if (!empty($firstBijac->container_number)) {
+            //         $DATA['container_count'] += $unit;
+            //         $cargoType = 'container';
+            //     } else {
+            //         $DATA['bulk_count'] += $unit;
+            //         $cargoType = 'bulk';
+            //     }
+            // } else {
+            //     $cargoType = $value->container_code ? 'container' : 'bulk';
+            // }
+
             if ($firstInvoice) $DATA['with_invoice'] += $unit;
 
-            if (!isset($DATA['gate_count'][$value->gate_number])) $DATA['gate_count'][$value->gate_number] = 0;
-            $DATA['gate_count'][$value->gate_number] += $unit;
+            // آمار گیت
+            $gate = $value->gate_number ?? 'unknown';
+            if (!isset($DATA['gate_count'][$gate])) $DATA['gate_count'][$gate] = 0;
+            $DATA['gate_count'][$gate] += $unit;
 
-            $bijacType = $firstBijac ? $firstBijac->type : null;
+            // محاسبه وضعیت
+            $bijacType = $firstBijac->type ?? null;
             $hasInvoice = $firstInvoice ? true : false;
-            $status = 'ccs_nok'; // Default
-            if ($bijacType === 'gcoms' && $hasInvoice) {
-                $status = 'gcoms_ok';
-            } elseif ($bijacType === 'gcoms' && !$hasInvoice) {
-                $status = 'gcoms_nok';
-            } elseif ($cargoType === 'container' && $bijacType === 'ccs' && $hasInvoice) {
-                $status = 'container_ccs_ok';
-            } elseif ($cargoType === 'container' && $bijacType === 'ccs' && !$hasInvoice) {
-                $status = 'container_ccs_nok';
-            } elseif ($cargoType === 'container' && !$bijacType) {
-                $status = 'container_without_bijac';
-            } elseif ($cargoType === 'bulk' && !$bijacType) {
-                $status = 'plate_without_bijac';
-            } elseif ($cargoType === 'bulk' && $bijacType === 'ccs' && $hasInvoice) {
-                $status = 'plate_ccs_ok';
-            } elseif ($cargoType === 'bulk' && $bijacType === 'ccs' && !$hasInvoice) {
-                $status = 'plate_ccs_nok';
-            } elseif ($bijacType === 'ccs' && $hasInvoice) {
-                $status = 'ccs_ok';
-            }
+            $status = $value->match_status;
+            // $status = 'ccs_nok';
+            // if ($bijacType === 'gcoms' && $hasInvoice) $status = 'gcoms_ok';
+            // elseif ($bijacType === 'gcoms') $status = 'gcoms_nok';
+            // elseif ($cargoType === 'container' && $bijacType === 'ccs' && $hasInvoice) $status = 'container_ccs_ok';
+            // elseif ($cargoType === 'container' && $bijacType === 'ccs') $status = 'container_ccs_nok';
+            // elseif ($cargoType === 'container' && !$bijacType) $status = 'container_without_bijac';
+            // elseif ($cargoType === 'bulk' && !$bijacType) $status = 'plate_without_bijac';
+            // elseif ($cargoType === 'bulk' && $bijacType === 'ccs' && $hasInvoice) $status = 'plate_ccs_ok';
+            // elseif ($cargoType === 'bulk' && $bijacType === 'ccs') $status = 'plate_ccs_nok';
+            // elseif ($bijacType === 'ccs' && $hasInvoice) $status = 'ccs_ok';
+
             if (!isset($DATA['status_count'][$status])) $DATA['status_count'][$status] = 0;
             $DATA['status_count'][$status] += $unit;
 
-
+            // محاسبه خطر
             if (!empty($value->IMDG)) $DATA['danger_AI'] += $unit;
             if ($firstBijac && !empty($firstBijac->dangerous_code)) $DATA['danger_Bijac'] += $unit;
+
+            $DATA['total_traffic']++;
         }
-        $DATA["total_traffic"] = $chartQuery->count();
-        $DATA["request"] = $request->all();
-
-        /*
-            $results = collect([
-                // "request" => $request->all(),
-                // "SQL" => vsprintf(str_replace('?', "'%s'", $query->toSql()), $query->getBindings()),
-                "data" => $results->items(),
-                "total_traffic" => $results->total(),
-                "current_page" => $results->currentPage(),
-                "per_page" => $results->perPage(),
-                "total_pages" => $results->lastPage(),
-            ]);
-            */
-
+        $log["after_foreach"] = microtime(true) - $startTime;
 
         $response = response()->json([
-            'success' => true,
+            // 'request' => $request->all(),
+            'query' =>  vsprintf(str_replace('?', "'%s'", $tosql->toSql()), $tosql->getBindings()),
+            'table' => $results,
             'chart' => $DATA,
-            // 'table' => $results,
-            'message' => 'گزارش تردد با موفقیت تولید شد'
-        ], Response::HTTP_OK);
-        return $response;
-
-
-
-
-        return $transformedResults = $results->getCollection()->map(function ($item) {
-            // Determine cargo type
-            $cargoType = !empty($item->container_code) ? 'container' : 'bulk';
-
-            // Get first bijac relationship (if exists)
-
-
-            // Determine danger type
-            $hasDangerAI = !empty($item->IMDG);
-            $hasDangerBijac = $firstBijac && !empty($firstBijac->dangerous_code);
-
-            if ($hasDangerAI || $hasDangerBijac) {
-                $dangerType = 'danger_AI'; // Prioritize AI detection
-            } elseif ($hasDangerBijac) {
-                $dangerType = 'danger_Bijac';
-            } else {
-                $dangerType = $hasDangerAI ? 'no_danger_AI' : 'no_danger_Bijac';
-            }
-
-            // Determine status
-            $bijacType = $firstBijac ? $firstBijac->type : null;
-            $hasInvoice = $firstInvoice ? true : false;
-            $status = 'ccs_nok'; // Default
-            if ($bijacType === 'gcoms' && $hasInvoice) {
-                $status = 'gcoms_ok';
-            } elseif ($bijacType === 'gcoms' && !$hasInvoice) {
-                $status = 'gcoms_nok';
-            } elseif ($cargoType === 'container' && $bijacType === 'ccs' && $hasInvoice) {
-                $status = 'container_ccs_ok';
-            } elseif ($cargoType === 'container' && $bijacType === 'ccs' && !$hasInvoice) {
-                $status = 'container_ccs_nok';
-            } elseif ($cargoType === 'container' && !$bijacType) {
-                $status = 'container_without_bijac';
-            } elseif ($cargoType === 'bulk' && !$bijacType) {
-                $status = 'plate_without_bijac';
-            } elseif ($cargoType === 'bulk' && $bijacType === 'ccs' && $hasInvoice) {
-                $status = 'plate_ccs_ok';
-            } elseif ($cargoType === 'bulk' && $bijacType === 'ccs' && !$hasInvoice) {
-                $status = 'plate_ccs_nok';
-            } elseif ($bijacType === 'ccs' && $hasInvoice) {
-                $status = 'ccs_ok';
-            }
-
-            return [
-                'id' => $item->id,
-                'gate_number' => $item->gate_number,
-                'cargo_type' => $cargoType,
-                'date' => $item->created_at->format('Y-m-d'),
-                'plate_number' => $item->plate_number,
-                'container_code' => $item->container_code,
-                'danger_type' => $dangerType,
-                'bijac_number' => $firstBijac ? $firstBijac->bijac_number : null,
-                'warehouse_bill' => $firstBijac ? $firstBijac->receipt_number : null,
-                'customer_name' => $firstCustomer ? $firstCustomer->title : null,
-                // 'total_traffic' => 1, // Each record represents 1 traffic
-                // 'success_traffic' => $hasInvoice ? 1 : 0,
-                // 'failed_traffic' => $hasInvoice ? 0 : 1,
-                // 'avg_processing_time' => null, // Not implemented in current schema
-                'status' => $status,
-                'log_time' => $item->log_time,
-                'vehicle_image_front_url' => $item->vehicle_image_front_url,
-                'vehicle_image_back_url' => $item->vehicle_image_back_url,
-                'plate_image_url' => $item->plate_image_url
-            ];
-        });
-        // Generate chart data (raw numbers)
-        $chartData = $this->generateChartData($chartQuery);
-
-        $response = response()->json([
+            // 'timeLog' => $log,
             'success' => true,
-            'data' => [
-                'table' => $results, // Paginated table data
-                'chart' => [] // Raw numbers for chart
-            ],
             'message' => 'گزارش تردد با موفقیت تولید شد'
         ], Response::HTTP_OK);
-
-        $this->logFunctionExecution('makeReport', $inputData, $response, microtime(true) - $startTime);
-
-        // return [
-        //     "request" => $request->all(),
-        //     "SQL" => vsprintf(str_replace('?', "'%s'", $query->toSql()), $query->getBindings()),
-        //     "count" => $query->get()->count()
-        // ];
-
+        $log["after_response_create"] = microtime(true) - $startTime;
         return $response;
-        // } catch (\Throwable $th) {
-        //     $response = response()->json([
-        //         'success' => false,
-        //         'message' => 'خطا در تولید گزارش: ' . $th->getMessage(),
-        //         'data' => null
-        //     ], Response::HTTP_INTERNAL_SERVER_ERROR);
 
-        //     $this->logFunctionExecution('makeReport', $inputData, $response, microtime(true) - $startTime);
-        //     return $response;
-        // }
+
+        return microtime(true) - $startTime;
+        $this->logFunctionExecution('makeReport', $inputData, $response, microtime(true) - $startTime);
     }
+
 
     public function getChartData(Request $request)
     {
@@ -681,7 +798,7 @@ class LogRepController extends Controller
             $dateFrom = $request->input('date_from');
             $dateTo = $request->input('date_to');
 
-            $now = now();
+            $now = now('Asia/Tehran');
             if (!$dateFrom || !$dateTo) {
                 $dateFrom = $now->startOfDay()->format('Y-m-d H:i:s');
                 $dateTo = $now->endOfDay()->format('Y-m-d H:i:s');

@@ -12,7 +12,11 @@
         <v-col cols="4">
           <CardWidget title="Gate Ocr">
             <div class="d-flex flex-column">
-              <div v-for="field in logFields" :key="field.field" class="d-flex flex-row">
+              <div
+                v-for="field in logFields"
+                :key="field.field"
+                class="d-flex flex-row"
+              >
                 <span v-if="field.title" class="ml-2">{{ field.title }}:</span>
                 <span v-html="showLogField(field)" />
               </div>
@@ -31,14 +35,23 @@
               </div>
             </template>
             <template #actions>
-              <v-btn v-for="bijacItem in sortBy(log.bijacs, 'bijac_number')" small
-                :color="selectedBijac.id === bijacItem.id ? 'info' : 'primary'" class="black--text ma-1"
-                @click="selectedBijac = bijacItem" :key="bijacItem.id">
+              <v-btn
+                v-for="bijacItem in sortBy(log.bijacs, 'bijac_number')"
+                small
+                :color="selectedBijac.id === bijacItem.id ? 'info' : 'primary'"
+                class="black--text ma-1"
+                @click="selectedBijac = bijacItem"
+                :key="bijacItem.id"
+              >
                 {{ bijacItem.receipt_number }}
               </v-btn>
             </template>
             <div class="d-flex flex-column">
-              <div v-for="field in bijacFields" :key="field.field" class="d-flex flex-row">
+              <div
+                v-for="field in bijacFields"
+                :key="field.field"
+                class="d-flex flex-row"
+              >
                 <span class="ml-2">{{ field.title }}:</span>
                 <span>
                   {{
@@ -57,24 +70,49 @@
             <template #title>
               <div class="d-flex align-center">
                 <span>فاکتورهای صادر شده</span>
-                <v-chip append-icon="mdi-cake-variant" class="ma-2" size="small" variant="outlined">
+                <v-chip
+                  append-icon="mdi-cake-variant"
+                  class="ma-2"
+                  size="small"
+                  variant="outlined"
+                >
                   {{ log.invoices?.length || 0 }}
                 </v-chip>
               </div>
             </template>
             <template #actions>
-              <v-btn v-for="invoice in log.invoices" small
-                :color="(selectedInvoice.id === invoice.id || (log.invoices?.length > 0 && invoice.base)) ? 'info' : 'primary'"
-                class="black--text ma-1 pe-1" @click="selectedInvoice = invoice" :key="invoice.id">
+              <v-btn
+                v-for="invoice in log.invoices"
+                small
+                :color="
+                  selectedInvoice.id === invoice.id ||
+                  (log.invoices?.length > 0 && invoice.base)
+                    ? 'info'
+                    : 'primary'
+                "
+                class="black--text ma-1 pe-1"
+                @click="selectedInvoice = invoice"
+                :key="invoice.id"
+              >
                 {{ invoice.invoice_number }}
 
-                <input v-if="log.invoices?.length > 1" type="radio" class="ms-2" :name="'F_' + log.id"
-                  :value="invoice.id" :checked="invoice.base" @change="onInvoiceSelect(invoice)" />
+                <input
+                  v-if="log.invoices?.length > 1"
+                  type="radio"
+                  class="ms-2"
+                  :name="'F_' + log.id"
+                  :value="invoice.id"
+                  :checked="invoice.base"
+                  @change="onInvoiceSelect(invoice)"
+                />
               </v-btn>
-
             </template>
             <div class="d-flex flex-column">
-              <div v-for="field in invoiceFields" :key="field.field" class="d-flex flex-row">
+              <div
+                v-for="field in invoiceFields"
+                :key="field.field"
+                class="d-flex flex-row"
+              >
                 <span class="ml-2">{{ field.title }}:</span>
                 <span>
                   {{
@@ -83,7 +121,10 @@
                     // : getSafe(selectedInvoice, field.field)
 
                     'inList' in field
-                      ? field.inList(getSafe(selectedInvoice, field.field), selectedInvoice)
+                      ? field.inList(
+                          getSafe(selectedInvoice, field.field),
+                          selectedInvoice
+                        )
                       : getSafe(selectedInvoice, field.field)
                   }}
                 </span>
@@ -103,8 +144,11 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="container in getSafe(log, 'invoice.containers', [])" :key="container.id"
-                  :class="{ green: checkIsThisContainer(container) }">
+                <tr
+                  v-for="container in getSafe(log, 'invoice.containers', [])"
+                  :key="container.id"
+                  :class="{ green: checkIsThisContainer(container) }"
+                >
                   <td v-for="field in containerFields" :key="field.field">
                     {{ getSafe(container, field.field, '-') }}
                   </td>
@@ -121,7 +165,7 @@
 <script>
 import { get as getSafe, sortBy } from 'lodash'
 import logFields from '@/pages/admin/ocr/logFields'
-import { persianDateGlobal } from '~/helpers/helpers'
+import { persianDateGlobal } from '@/helpers/helpers'
 import CardWidget from '@/components/widgets/CardWidget.vue'
 import ContainerValidator from '@/helpers/ContainerValidator.js'
 
@@ -149,9 +193,9 @@ export default {
           type: 'date',
           title: 'تاریخ فاکتور',
           inList(date, item) {
-            return item.request_date ?
-              persianDateGlobal(item.request_date, 'dateTime') :
-              persianDateGlobal(date, 'dateTime')
+            return item.request_date
+              ? persianDateGlobal(item.request_date, 'dateTime')
+              : persianDateGlobal(date, 'dateTime')
           },
         },
         {
@@ -197,7 +241,6 @@ export default {
           field: 'kutazh',
           type: 'text',
         },
-
       ],
       bijacFields: [
         {
@@ -322,6 +365,8 @@ export default {
 
   created() {
     this._listen('ccs.dialog', (log) => {
+      console.log(log)
+      
       this.log = log
       // console.log(log)
       this.dialog = true
@@ -375,11 +420,13 @@ export default {
       try {
         this.selectedInvoice = invoice
 
-        const response = await this.$axios.post('/ocr-match/addBaseInvoice/' + this.log.id, {
-          // log_id: this.log.id,
-          invoice_id: invoice.id,
-        })
-
+        const response = await this.$axios.post(
+          '/ocr-match/addBaseInvoice/' + this.log.id,
+          {
+            // log_id: this.log.id,
+            invoice_id: invoice.id,
+          }
+        )
 
         this.$store.dispatch('dynamic/get', {
           page: this.page,
@@ -387,24 +434,20 @@ export default {
         })
         this.dialog = false
 
-
         // console.log(invoice.id)
         console.log('✅ پاسخ سرور:', response.data)
         this.$toast?.success?.('فاکتور انتخاب شد')
-
       } catch (error) {
         // console.error('❌ خطا در ارسال درخواست:', error)
         this.$toast?.error?.('خطا در ثبت انتخاب فاکتور')
       }
     },
-
-
   },
 }
 </script>
 
 <style>
-.container-code>div {
+.container-code > div {
   color: #132b8c !important;
   text-shadow: 1px 1px 3px #061f83;
 }

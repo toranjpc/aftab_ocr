@@ -23,9 +23,67 @@ use Modules\Ocr\Jobs\ProcessOcrLog;
 use Modules\Ocr\Jobs\EditedMatchBijacs;
 
 use function PHPUnit\Framework\isNull;
+use function PHPUnit\Framework\returnValue;
+use Modules\Sse\Models\SSE;
 
 class OcrMatchController extends Controller
 {
+    public function getListnew(Request $request)
+    {
+        if (empty($request->gate)) return;
+        $startTime = microtime(true);
+        $timeTokarr = [];
+        $logwright = 0;
+        try {
+            $ocrMatches = OcrMatch::with([
+                "isCustomCheck",
+                "isSerachBijac",
+                "isSerachInvoice"
+            ])
+                ->where('gate_number', $request->gate)
+                ->with([
+                    'bijacs' => function ($query) {
+                        $query->withCount('ocrMatches')
+                            ->with('invoices')
+                            ->with('allbijacs')
+                            ->orderBy('bijac_date', 'desc');
+                    },
+                ]);
+            if (!empty($request->findThis)) {
+                return $ocrMatches->where('id', $request->findThis)->first();
+            }
+            return  $ocrMatches = $ocrMatches->paginate(request('perpage', 10));
+
+            $timeTokarr['queryBuildStart'] = microtime(true) - $startTime;
+
+            // return $ocrMatches->orderBy("id", "DESC")->first();
+            // return vsprintf(str_replace('?', "'%s'", $ocrMatches->toSql()), $ocrMatches->getBindings());
+
+            return $timeTok = [
+                "total" => microtime(true) - $startTime,
+                ...$timeTokarr
+            ];
+        } catch (\Throwable $th) {
+            $erCode = null;
+            foreach ($th->getTrace() as $trace) {
+                if (isset($trace['file']) && !str_contains($trace['file'], 'vendor')) {
+                    $erCode .= '[file => ' . $trace['file'] . ', line => ' . $trace['line'] . ']';
+                }
+            }
+            log::build(['driver' => 'single', 'path' => storage_path("logs_monitoring/ocr/ocr_match_" . jdate()->format('ymd') . "_" . $request->gate . ".log"),])
+                ->info(
+                    'OcrMatchController:getListnew:',
+                    [
+                        'project_location' => $erCode ? $erCode : 'Not found in trace',
+                        'message' => $th->getMessage(),
+                        'file' => $th->getFile(),
+                        'request' => request()->all(),
+                        'url' => request()->fullUrl(),
+                    ]
+                );
+            return "error occurred !!!";
+        }
+    }
     /**
      * ثبت زمان سپری شده برای یک بخش
      */
@@ -64,7 +122,8 @@ class OcrMatchController extends Controller
                         ->orderBy('bijac_date', 'desc');
                 },
                 "isCustomCheck",
-                "isSerachBijac"
+                "isSerachBijac",
+                "isSerachInvoice"
             ]);
         }
 
@@ -483,7 +542,88 @@ class OcrMatchController extends Controller
     }
 
 
+    public function deleteMatch($gate = 0, OcrMatch $ocr)
+    {
+        if (!$ocr->bijacs->isEmpty()) {
+            return response()->json([
+                'status' => 0,
+                'error' => 'این مورد قابل حذف نیست !!!'
+            ]);
+        }
 
+        $user = auth()->user();
+        if (
+            $ocr->gate_number == $gate &&
+            $user->userLevel &&
+            is_array($user->userLevel->permission_do) &&
+            (
+                in_array('*', $user->userLevel->permission_do) ||
+                in_array("admin-ocr-match-" . $gate . ".delete", $user->userLevel->permission_do)
+            )
+        ) {
+            $AuthController = new AuthController();
+            $AuthController->savelog($ocr, "mache", "ثبت بیجک دستی", $ocr->toArray());
+
+            SSE::create([
+                // 'message' => ['data' => $item->toArray()],
+                'message' => ['data' => $ocr->id],
+                'event' => 'ocr-match',
+                'model' => OcrMatch::class,
+                'receiver_id' => $ocr->gate_number,
+            ]);
+            $ocr->delete();
+            return response()->json([
+                'status' => 1,
+                'error' => 'تردد حذف شد'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 0,
+            'error' => 'شما دسترسی حذف این مورد را ندارید !!!!'
+        ]);
+    }
+
+    public function customMatch($gate = 0, OcrMatch $match1, OcrMatch $match2)
+    {
+        if (
+            $match1->gate_number == $gate &&
+            $match1->bijacs->isEmpty() &&
+            $match2->gate_number == $gate &&
+            $match2->bijacs->isEmpty()
+        ) {
+            $AuthController = new AuthController();
+            $AuthController->savelog($match1, "mache_without_bijac", "ثبت مچ دستی", [$match1->toArray(), $match2->toArray()]);
+
+            SSE::create([
+                // 'message' => ['data' => $item->toArray()],
+                'message' => ['data' => $match1->id],
+                'event' => 'ocr-match',
+                'model' => OcrMatch::class,
+                'receiver_id' => $match1->gate_number,
+            ]);
+            $data = (clone $match1)->toArray();
+            foreach ($data as $key => $value) {
+                if ((!$value || is_null($value)) && ($match2[$key] && !is_null($match2[$key]))) $data[$key] = $match2[$key];
+            }
+            $id = $match1->id;
+            $match1->update($data);
+            OcrMatch::find($id)->forceFill([
+                'match_status' => 'without_bijac'
+            ])->save();
+            // return OcrMatch::find($id);
+            $match2->delete();
+            return response()->json([
+                'status' => 1,
+                'error' => 'مچ انجام شد'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 0,
+            'error' => 'شما دسترسی انجام این عملیات را ندارید !!!!'
+        ]);
+    }
 
     public function getGroupItems(OcrMatch $ocr)
     {

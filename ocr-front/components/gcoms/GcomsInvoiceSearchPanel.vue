@@ -1,12 +1,21 @@
 <template>
   <CardWidget title="ثبت اطلاعات بیجک گمرک">
     <div class="d-flex flex-row flex-wrap mb-2">
-      <v-alert v-show="gcomsInvoice === null" dense class="w-100" color="error" dark>
+      <v-alert
+        v-show="gcomsInvoice === null"
+        dense
+        class="w-100"
+        color="error"
+        dark
+      >
         فاکتوری پیدا نشد
       </v-alert>
 
-      <div v-if="gcomsInvoice" class="d-flex flex-wrap rounded-lg mb-1 w-100"
-        style="border: 1px dashed rgba(0, 0, 0, 0.4)">
+      <div
+        v-if="gcomsInvoice"
+        class="d-flex flex-wrap rounded-lg mb-1 w-100"
+        style="border: 1px dashed rgba(0, 0, 0, 0.4)"
+      >
         <span class="mx-3">
           <span class="font-weight-bold">اسم شرکت:</span>
           {{ gcomsInvoice?.customer?.title }}
@@ -19,7 +28,10 @@
           <span class="font-weight-bold">خارج شده :</span>
           {{ formatNumber(sumWeight) }}
         </span>
-        <span class="mx-3" :class="gcomsInvoice?.weight - sumWeight < 0 ? 'red--text' : ''">
+        <span
+          class="mx-3"
+          :class="gcomsInvoice?.weight - sumWeight < 0 ? 'red--text' : ''"
+        >
           <span class="font-weight-bold">مانده :</span>
           {{ formatNumber(gcomsInvoice.weight - sumWeight) }}
         </span>
@@ -34,11 +46,23 @@
       </div>
     </div>
 
-    <DynamicForm v-model="form" :fields="fields" ref="dynamicForm" :edit-item="editItem" class="white rounded" />
+    <DynamicForm
+      v-model="form"
+      :fields="fields"
+      ref="dynamicForm"
+      :edit-item="editItem"
+      class="white rounded"
+    />
 
     <v-card-actions>
       <v-spacer />
-      <v-btn small elevation="0" color="success" @click="save">
+      <v-btn
+        v-if="submitable"
+        small
+        elevation="0"
+        color="success"
+        @click="save"
+      >
         <v-icon small left>fal fa-check-circle</v-icon>
         <span>ذخیره</span>
       </v-btn>
@@ -63,6 +87,7 @@ export default {
 
   data() {
     return {
+      submitable: false,
       form: {},
       alert: '',
       editItem: {},
@@ -157,8 +182,18 @@ export default {
       const res = await this.$axios.$get(
         `/invoice?_with=gcomsOutData&filters[kutazh][$eq]=${inputValue}`
       )
+      // console.log(res.Invoice.data[0].weight)
+
+      if (res.Invoice.data.length > 1) {
+        let weight = 0
+        for (let i = 1; i < res.Invoice.data.length; i++) {
+          weight += parseInt(res.Invoice.data[i].weight)
+        }
+        res.Invoice.data[0].weight = weight
+      }
 
       this.gcomsInvoice = getSafe(res, 'Invoice.data[0]') || { weight: '' }
+      this.submitable = true
 
       // this.gcomsInvoice.weight = getSafe(res, 'Invoice.data', []).reduce(
       //   (acc, item) => acc + item.weight,
@@ -169,7 +204,6 @@ export default {
         ...this.form,
         customNb: getSafe(this.gcomsInvoice, 'customNb') || this.form.customNb,
       }
-
       this._event('loading', false)
     },
 
@@ -178,10 +212,13 @@ export default {
     },
 
     saveLog() {
+      this.submitable = false
+
       this.form.plate_number = this.activePlateNumber?.plate_number
       this.form.plate_type = this.activePlateNumber?.plate_type
       this.form.user_id = this.$auth.user.id
       this.form.invoice_id = this.gcomsInvoice.id
+      this.form.full_scale_date = new Date().toISOString().slice(0, 10)
       this.$axios
         .$post('gcoms-out-data', {
           GcomsOutData: { ...this.form, gate: this.$route.params.gate_id },
@@ -199,6 +236,8 @@ export default {
           this.activePlateNumber = null
           this._event('reloadOcrLogData')
         })
+
+      this.submitable = true
     },
 
     weightIsOver() {

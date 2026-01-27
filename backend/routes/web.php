@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Redis;
 
 //حذف
 Route::get('/', function () {
+    return env('DB_USERNAME');
     return now();
     // if (!auth()->check()) {
     //     $user = User::first();
@@ -159,6 +160,11 @@ Route::get('/test-redis-plate/{plate_number}', function ($plate_number) {
 // php artisan queue:work --daemon --sleep=1 --tries=3
 // php artisan optimize:clear
 
+// php artisan config:clear
+// php artisan cache:clear
+// php artisan config:cache
+
+
 // Route::post('/test', function () {
 //     try {
 //         Log::error('Simulation failed: ' . json_encode(request()->all()));
@@ -199,8 +205,8 @@ Route::get('/test', function () {
             }
 
 
-            $sourceFolder = public_path('uploaded/img');
-            $destinationFolder = public_path('uploaded/img/sorted');
+            $sourceFolder = public_path('uploaded');
+            $destinationFolder = public_path('uploaded/danger');
 
             if (!is_dir($destinationFolder)) {
                 mkdir($destinationFolder, 0777, true);

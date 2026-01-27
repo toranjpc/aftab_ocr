@@ -111,6 +111,9 @@ class GateController extends Controller
 
             if (isset($receipt_number) or isset($params['receipt_number'])) {
                 if (isset($params['receipt_number'])) {
+                    $AuthController = new AuthController();
+                    $AuthController->savelog($ocrMatch, "serachInvoice", "جست و جو برای فاکتور");
+
                     $receipt_number = $params['receipt_number'];
 
                     $ocrMatch = OcrMatch::with('bijacs')->find(request('id'));

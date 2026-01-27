@@ -155,27 +155,60 @@ export default {
       }
     },
 
-    renderBTN(item) {
+    renderBTN(item, ifFalse = false) {
+      var status = item.match_status
+      if (!status) {
+        return {
+          text: 'در حال جستجو فاکتور موردی',
+          color: 'grey',
+        }
+      }
 
-      const list = {
+      let is_single_carry = ''
+      var req = ''
+
+      if (item && item.bijacs && item.bijacs.length) {
+        for (let c = 0; c < item.bijacs.length; c++) {
+          if (item.bijacs[c].is_single_carry == 1) {
+            is_single_carry = ' (حمل یکسره) '
+
+            break
+          }
+        }
+      }
+
+      if (status.includes('_req')) {
+        req = ' - موردی'
+        status = status.replace('_req', '')
+      }
+      if (status.includes('_Creq')) {
+        req = ' - تایید دستی بیجک'
+        status = status.replace('_Creq', '')
+      }
+      req = req + is_single_carry
+
+      let list = {
         // bad_match_nok: ['دو فاکتور متفاوت', 'purple'],
-        gcoms_ok: ['فاکتور', 'cyan'],
-        gcoms_nok: ['بدون فاکتور', 'red'],
-        ccs_ok: ['فاکتور', 'green darken-4'],
-        ccs_nok: ['بدون فاکتور', 'red'],
-        container_without_bijac: ['بدون بیجک', 'orange'],
+        gcoms_ok: ['فاکتور' + req, 'cyan'],
+        gcoms_nok: ['بدون فاکتور' + req, 'red'],
+        ccs_ok: ['فاکتور' + req, 'green darken-4'],
+        ccs_nok: ['بدون فاکتور' + req, 'red'],
+        container_without_bijac: ['بدون بیجک' + req, 'orange'],
         plate_without_bijac: ['بدون بیجک', 'orange'],
-        container_ccs_ok: ['فاکتور (کانتینر)', 'green'],
-        container_ccs_nok: ['بدون فاکتور', 'red'],
-        plate_ccs_ok: ['فاکتور (پلاک)', 'green'],
-        plate_ccs_nok: ['بدون فاکتور', 'red'],
+        container_ccs_ok: ['فاکتور (کانتینر)' + req, 'green'],
+        container_ccs_nok: ['بدون فاکتور' + req, 'red'],
+        plate_ccs_ok: ['فاکتور (پلاک)' + req, 'green'],
+        plate_ccs_nok: ['بدون فاکتور' + req, 'red'],
+      }
+      if (ifFalse) {
+        list['container_without_bijac'] = ['بیجک تأیید شده', 'success']
+        list['plate_without_bijac'] = ['بیجک تأیید شده', 'success']
       }
 
       return {
-        text: getSafe(list, item.match_status + '[0]', item.match_status),
-        color: getSafe(list, item.match_status + '[1]', 'grey')
+        text: getSafe(list, status + '[0]', status),
+        color: getSafe(list, status + '[1]', 'grey'),
       }
-
     },
 
     getBtnColor(item) {

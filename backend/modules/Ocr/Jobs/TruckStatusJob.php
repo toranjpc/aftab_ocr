@@ -229,6 +229,7 @@ class TruckStatusJob implements ShouldQueue
 
     public function noInvoice($log, $match, $forAll = true)
     {
+        // return;
         log::build(['driver' => 'single', 'path' => storage_path("logs/invoiceMoredi.log"),])
             ->info("noInvoice run match:{$match->plate_number} id : {$match->id} ");
         // return;

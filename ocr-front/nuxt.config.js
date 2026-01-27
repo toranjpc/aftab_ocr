@@ -76,6 +76,10 @@ export default {
 
   plugins: [
     {
+      src: '@/plugins/jsmpeg.min',
+      ssr: false,
+    },
+    {
       src: '@/plugins/vuetify',
       ssr: false,
     },

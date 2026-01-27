@@ -5,6 +5,7 @@ namespace Modules\Dynamic\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class DynamicController extends Controller
 {
@@ -66,6 +67,15 @@ class DynamicController extends Controller
         [$key, $query, $model] = $this->resolveModel($modelName);
 
         $this->checkAccess();
+
+        $hash = md5(json_encode($request->$key ?? []));
+        $lockKey = "store_lock:$modelName:" . auth()->id() . ":$hash";
+        $lock = Cache::lock($lockKey, 15); // 15 seconds lock
+        if (! $lock->get()) {
+            return response([
+                'message' => 'لطفاً ۱۵ ثانیه صبر کنید و دوباره تلاش کنید.'
+            ], Response::HTTP_TOO_MANY_REQUESTS);
+        }
 
         if (method_exists($model, 'overwriteStore')) {
             return $model->overwriteStore($key, $query);

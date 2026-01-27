@@ -5,6 +5,21 @@
 
     <DynamicTemplate>
       <template #header-btn>
+        <v-btn
+          small
+          class=""
+          title="لغو مچ دستی"
+          @click="
+            customMatch = {}
+            customMatchArray = []
+            customMatchDialog = false
+          "
+          v-if="customMatchArray.length > 0"
+        >
+          <v-icon class="far fa-times" color="red"></v-icon>
+          لغو مچ دستی
+        </v-btn>
+
         <AddPlateDialog :matchGate="matchGate" :page.sync="page" />
 
         <SseBtn
@@ -14,6 +29,23 @@
 
       <template #item.plate_number="item">
         {{ item.id }}
+        <v-btn
+          small
+          class=""
+          :color="customMatch[item.id] ? 'green' : 'orange'"
+          title="مچ بدون بیجک"
+          @click="addForCustomMatch(item)"
+          v-if="
+            !(item.plate_number && item.container_code) &&
+            ['container_without_bijac', 'plate_without_bijac'].includes(
+              item.match_status
+            ) &&
+            deleteBtn
+          "
+        >
+          <v-icon class="far fa-link" color="white"></v-icon>
+        </v-btn>
+
         <!--  <br>
         {{ item.plate_number_3 }} -->
         <EditBtn
@@ -125,7 +157,6 @@
             <v-card-text class="text-center pa-2">
               <div class="d-flex flex-column align-center">
                 <strong class="mb-1">{{ item.ocr_tu }}</strong>
-
                 <v-progress-linear
                   :value="(item.ocr_tu / item.total_tu) * 100"
                   height="8"
@@ -255,6 +286,7 @@
             title=" تایید بیجک / فاکتور"
             @click="customCheck_confirm(item.id)"
             v-if="
+              0 &&
               item.match_status &&
               ['container_without_bijac', 'plate_without_bijac'].includes(
                 item.match_status
@@ -263,8 +295,26 @@
               !localConfirmed[item.id]
             "
           >
-            <v-icon class="" color="white"> far fa-check </v-icon>
+            <v-icon class=""> far fa-check </v-icon>
           </v-btn>
+
+          <v-btn
+            small
+            class=""
+            color="red mr-1"
+            title="حذف تردد"
+            @click="deleteBtn_confirm(item.id)"
+            v-if="
+              !(item.plate_number && item.container_code) &&
+              ['container_without_bijac', 'plate_without_bijac'].includes(
+                item.match_status
+              ) &&
+              deleteBtn
+            "
+          >
+            <v-icon class="" color="white"> far fa-trash </v-icon>
+          </v-btn>
+
           <!-- <v-btn small class="" color="success mr-1" title="مدارک بررسی شده"
             v-else-if="['container_without_bijac', 'plate_without_bijac'].includes(item.match_status)">
             <v-icon class="" color="white">
@@ -278,6 +328,49 @@
         <FactorDialog />
       </template>
     </DynamicTemplate>
+
+    <template>
+      <v-dialog v-model="confirmdeleteDialog" max-width="400">
+        <v-card>
+          <v-card-title class="headline">تأیید عملیات</v-card-title>
+          <v-card-text>
+            آیا از تردد با شناسه {{ itemIdToDelete }} اطمینان دارید؟
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="grey" text @click="confirmdeleteDialog = false"
+              >لغو</v-btn
+            >
+            <!-- این دکمه متد جدید ما را فراخوانی می کند -->
+            <v-btn color="success" text @click="deleteBtn_submit()">حذف</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </template>
+
+    <template>
+      <v-dialog v-model="customMatchDialog" max-width="400">
+        <v-card>
+          <v-card-title class="headline">تأیید عملیات</v-card-title>
+          <v-card-text>
+            تردد های {{ customMatchArray[0]?.id }} و
+            {{ customMatchArray[1]?.id }} بدون بیجک مچ میشوند
+            <br />
+            آیا از ادامه عملیات اطمینان دارید؟
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="grey" text @click="customMatchDialog = false"
+              >لغو</v-btn
+            >
+            <!-- این دکمه متد جدید ما را فراخوانی می کند -->
+            <v-btn color="success" text @click="addForCustomMatchsubmit()"
+              >ادامه</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </template>
 
     <template>
       <v-dialog v-model="confirmationDialog" max-width="400">
@@ -346,12 +439,19 @@ export default {
     dialog: false,
     gateId: 1,
     lastTruck: {},
-
     confirmationDialog: false,
     itemIdToConfirm: null,
     localConfirmed: {},
 
     matchGate: null,
+    confirmdeleteDialog: false,
+    itemIdToDelete: null,
+    deleteBtn: false,
+
+    customMatchable: {},
+    customMatch: {},
+    customMatchArray: [],
+    customMatchDialog: false,
   }),
 
   computed: {
@@ -395,6 +495,14 @@ export default {
 
     const hiddenActions = getPermissions.call(this)
     // const hiddenActions = ['delete', 'show', 'edit']
+    // console.log('getPermissions : ', this.$auth.user.user_level.permission_do)
+
+    this.deleteBtn =
+      this.$auth.user.user_level.permission_do.includes(`*`) ||
+      this.$auth.user.user_level.permission_do.includes(
+        `admin-ocr-match-${this.matchGate}.delete`
+      )
+    // console.log(this.deleteBtn)
 
     this.$majra.init({
       hiddenActions,
@@ -450,6 +558,100 @@ export default {
 
   methods: {
     getSafe,
+
+    getItemIndex(item) {
+      return this.items.findIndex((i) => i.id === item.id)
+    },
+    addForCustomMatch(match) {
+      const itemId = match.id
+
+      if (this.customMatch[itemId]) {
+        this.$delete(this.customMatch, itemId)
+        this.customMatchArray = this.customMatchArray.filter(
+          (val) => val.id !== itemId
+        )
+      } else {
+        if (this.customMatchArray.length >= 2) {
+          const oldestId = this.customMatchArray.shift()
+          this.$delete(this.customMatch, oldestId)
+          this.customMatchArray = this.customMatchArray.filter(
+            (val) => val.id !== oldestId
+          )
+          console.log(this.customMatch, this.customMatchArray)
+        }
+        if (this.customMatchArray.length > 0) {
+          const prev = this.customMatchArray[0]
+          let alert = null
+          if (prev.plate_number && match.plate_number) {
+            alert = 'امکان مچ این پلاک با پلاک وجود ندارد !!!'
+          } else if (prev.container_code && match.container_code) {
+            alert = 'امکان مچ این کانتینر با کانتینر وجود ندارد !!!'
+          }
+          if (alert) {
+            this._event('alert', {
+              text: alert,
+              color: 'red',
+            })
+            return
+          }
+
+          const prevIndex = this.getItemIndex(prev)
+          const currentIndex = this.getItemIndex(match)
+          if (Math.abs(prevIndex - currentIndex) !== 1) {
+            this._event('alert', {
+              text: 'فقط امکان مچ کردن با سطر بالا یا پایین وجود دارد',
+              color: 'red',
+            })
+            return
+          }
+        }
+
+        this.$set(this.customMatch, itemId, true)
+        this.customMatchArray.push(match)
+      }
+
+      if (this.customMatchArray.length === 2) {
+        this.customMatchDialog = true
+      }
+
+      console.log(
+        this.customMatch,
+        this.customMatchArray,
+        this.customMatchArray.length
+      )
+    },
+
+    async addForCustomMatchsubmit() {
+      if (this.customMatchArray.length != 2) return
+      this._event('loading')
+
+      try {
+        const res = await this.$axios.$post(
+          `/ocr-match/addCustomMatch/${this.matchGate}/${this.customMatchArray[0].id}-${this.customMatchArray[1].id}`
+        )
+        console.log(res)
+        this.customMatch = {}
+        this.customMatchArray = []
+        this.customMatchDialog = false
+        this._event('loading', false)
+        this._event('alert', {
+          text: 'تغییرات با موفقیت ذخیره شد',
+          color: 'green',
+        })
+      } catch (error) {
+        this._event('loading', false)
+        let errorMessage = 'خطایی رخ داده است'
+        if (error.response) {
+          errorMessage = error.response.data.message || 'خطای سرور'
+        } else if (error.request) {
+          errorMessage = 'پاسخی از سرور دریافت نشد'
+        }
+        this._event('alert', {
+          text: errorMessage,
+          color: 'red',
+        })
+      }
+    },
 
     plateFields: (item) => [
       {
@@ -584,14 +786,14 @@ export default {
       var status = item.match_status
       if (!status) {
         return {
-          text: 'در حال جستجو فاکتور موردی',
+          text: 'در حال جستجو بیجک/فاکتور',
           color: 'grey',
         }
       }
 
       let is_single_carry = ''
       var req = ''
-      
+
       if (item && item.bijacs && item.bijacs.length) {
         for (let c = 0; c < item.bijacs.length; c++) {
           if (item.bijacs[c].is_single_carry == 1) {
@@ -607,7 +809,11 @@ export default {
         status = status.replace('_req', '')
       }
       if (status.includes('_Creq')) {
-        req = ' - تایید دستی بیجک'
+        let searchi = ''
+        if (item.is_serach_bijac) searchi = ' (شماره بیجک) '
+        if (item.is_serach_invoice) searchi = ' (قبض انبار) '
+
+        req = ' - تایید دستی بیجک' + searchi
         status = status.replace('_Creq', '')
       }
       req = req + is_single_carry
@@ -637,6 +843,7 @@ export default {
     },
 
     async customCheck_confirm(itemId) {
+      return
       this.itemIdToConfirm = itemId
       this.confirmationDialog = true
     },
@@ -670,6 +877,56 @@ export default {
         this._event('alert', {
           text: 'تغییرات با موفقیت ذخیره شد',
           color: 'green',
+        })
+      } catch (error) {
+        this._event('loading', false)
+
+        let errorMessage = 'خطایی رخ داده است'
+
+        if (error.response) {
+          errorMessage = error.response.data.message || 'خطای سرور'
+        } else if (error.request) {
+          errorMessage = 'پاسخی از سرور دریافت نشد'
+        }
+
+        this._event('alert', {
+          text: errorMessage,
+          color: 'red',
+        })
+      }
+    },
+
+    async deleteBtn_confirm(itemId) {
+      this.confirmdeleteDialog = true
+      this.itemIdToDelete = itemId
+    },
+    async deleteBtn_submit() {
+      if (!this.itemIdToDelete) {
+        this._event('alert', {
+          text: 'خطا: شناسه مورد نظر یافت نشد.',
+          color: 'red',
+        })
+        this.confirmdeleteDialog = false
+        return
+      }
+      try {
+        this._event('loading')
+        this._event('autoRefresh', false)
+        this.confirmdeleteDialog = false
+
+        const res = await this.$axios.$delete(
+          `/ocr-match/dalete/${this.matchGate}/${this.itemIdToDelete}`
+        )
+
+        console.log(res)
+        // this.$emit('item-updated', res.data)
+
+        this._event('loading', false)
+        this._event('autoRefresh', true)
+
+        this._event('alert', {
+          text: res.error,
+          color: res.satatus ? 'green' : 'red',
         })
       } catch (error) {
         this._event('loading', false)
